@@ -70,7 +70,7 @@ fn unit_json(raw : Int64?) -> Json {
 }
 
 ///|
-/// A JSON component. Wrap in the schema_version=1 descriptor export for storage.
+/// A JSON component. Wrap in the schema_version=2 descriptor export for storage.
 pub fn layout_to_json(layout : Layout) -> Json {
   let reports : Array[Json] = []
   let seen : Map[Int, Bool] = Map([])
@@ -143,6 +143,15 @@ pub fn report_to_json(report : DecodedReport) -> Json {
   {
     "kind": Json::string(report_kind_name(report.kind)),
     "report_id": report.report_id.to_json(),
+    "opaque_values": Json::array(
+      report.opaque_values.map(v => {
+        "field_index": v.field_index.to_json(),
+        "element_index": v.element_index.to_json(),
+        "bit_offset": v.bit_offset.to_json(),
+        "bit_size": v.bit_size.to_json(),
+        "hex": Json::string(format_hex(v.bytes)),
+      }),
+    ),
     "values": Json::array(
       report.values.map(v => {
         "field_index": v.field_index.to_json(),
@@ -168,7 +177,7 @@ pub fn diagnostic_to_json(error : Diagnostic) -> Json {
 }
 
 ///|
-/// Schema version 1. Array order follows the descriptor; absent metadata is null.
+/// Schema version 2. Array order follows the descriptor; absent metadata is null.
 /// All numbers are exact within JavaScript's integer range for compiled layouts.
 pub fn descriptor_to_json(bytes : Bytes) -> Result[Json, Diagnostic] {
   let layout = match compile_descriptor(bytes) {
@@ -180,7 +189,7 @@ pub fn descriptor_to_json(bytes : Bytes) -> Result[Json, Diagnostic] {
     Err(error) => return Err(error)
   }
   Ok({
-    "schema_version": 1,
+    "schema_version": 2,
     "descriptor_hex": Json::string(format_hex(bytes)),
     "byte_length": bytes.length().to_json(),
     "items": Json::array(

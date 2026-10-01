@@ -33,7 +33,7 @@ const diagnosticText = {
   text_limit: '十六进制文本过长', truncated_item: 'Item 数据被截断', value_size: 'Item 数据长度不受支持',
   unsupported_item: '不支持长 Item 或保留 Item', unsupported_main: '未知的 Main Item', unsupported_global: '不支持的 Global Item',
   unsupported_local: '不支持的 Local Item', usage_page: 'Usage Page 超过 16 位', usage_range: 'Usage 范围无效', usage_limit: 'Usage 数量超出上限',
-  logical_range: 'Logical 范围无效或超出 Report Size', report_size: 'Report Size 超出 1..32', report_count: 'Report Count 超出 1..1024',
+  logical_range: 'Logical 范围无效或超出 Report Size', report_size: 'Report Size 无效（Data Array 限 1..32 位）', report_count: 'Report Count 超出 1..1024',
   report_id: 'Report ID 必须是 1..255', mixed_report_ids: '有的报告带 Report ID，有的没有', global_stack: 'Push / Pop 不配对',
   collection: 'Collection 不配对或嵌套过深', dangling_local: 'Local Item 之后缺少 Main Item', missing_dimensions: 'Main Item 之前缺少 Report Size 或 Report Count',
   main_flags: '不支持的 Main 标志', buffered_bytes: '不支持 Buffered Bytes', unit_exponent: 'Unit Exponent 超出 -8..7', unit_range: 'Unit 超过 32 位', field_limit: '字段数量超出上限',
@@ -548,8 +548,9 @@ function renderReportStatus() {
   const values = state.decoded.values;
   const outside = values.filter(v => !v.in_logical_range && !v.is_null).length;
   const nulls = values.filter(v => v.is_null).length;
+  const opaqueCount = state.decoded.opaque_values.length;
   const extra = [outside ? `${outside} 个越界` : null, nulls ? `${nulls} 个 Null State` : null].filter(Boolean).join('，');
-  setStatus('report-status', outside ? 'warn' : 'ok', h('span', { class: 'status-text' }, `已解码 ${plural(values.length, '个值')}${extra ? ` · ${extra}` : ''}`));
+  setStatus('report-status', outside ? 'warn' : 'ok', h('span', { class: 'status-text' }, `已解码 ${plural(values.length, '个值')}${opaqueCount ? ` · ${opaqueCount} 个原始字节值` : ''}${extra ? ` · ${extra}` : ''}`));
 }
 function renderBitmap() {
   const box = $('bitmap');
@@ -628,6 +629,7 @@ function renderValues() {
     else for (let e = 0; e < field.count; e++) rows.push({ field, index, element: e });
   }
   const decoded = new Map((state.decoded?.values ?? []).map(v => [`${v.field_index}:${v.element_index}`, v]));
+  const opaque = new Map((state.decoded?.opaque_values ?? []).map(v => [`${v.field_index}:${v.element_index}`, v]));
   const fields = reportFields();
   $('values-meta').textContent = `${plural(fields.length, '个字段')} · ${plural(rows.filter(r => !r.pad).length, '个元素')}`;
   const page = rows.slice(state.valuePage * VALUE_PAGE, (state.valuePage + 1) * VALUE_PAGE);
@@ -639,6 +641,7 @@ function renderValues() {
       return h('tr', { class: `pad${index === state.selected ? ' on' : ''}`, dataset: { field: index }, onclick: () => selectField(index) },
         h('td', null, ref), h('td', { class: 'dim' }, `填充 · ${field.bit_size * field.count} bit`), h('td', { class: 'bits' }, `${start}–${end}`), h('td', { class: 'num dim' }, '—'), h('td', null, h('span', { class: 'tag' }, '不解码')));
     }
+    const raw = opaque.get(`${index}:${row.element}`);
     const value = decoded.get(`${index}:${row.element}`);
     const usage = value ? value.usage : elementUsage(field, row.element);
     const start = field.bit_offset + row.element * field.bit_size;
@@ -647,14 +650,15 @@ function renderValues() {
       ? h('span', { class: 'usage' }, h('span', null, usageName(usage)), h('span', { class: 'usage-code' }, usageCode(usage)))
       : h('span', { class: 'dim' }, isArray ? (value ? '未映射' : '数组元素') : '未声明');
     let tag;
-    if (value?.is_null) tag = h('span', { class: 'tag warn' }, 'Null State');
+    if (field.bit_size > 32) tag = h('span', { class: 'tag' }, '原始字节');
+    else if (value?.is_null) tag = h('span', { class: 'tag warn' }, 'Null State');
     else if (value && !value.in_logical_range) tag = h('span', { class: 'tag bad' }, '越界');
     else tag = h('span', { class: 'dim' }, isArray ? '数组' : field.flags & 4 ? '相对' : '绝对');
     return h('tr', { class: `${colorClass(index)}${index === state.selected ? ' on' : ''}`, dataset: { field: index }, onclick: () => selectField(index) },
       h('td', null, ref, field.count > 1 ? h('span', { class: 'elem' }, ` [${row.element}]`) : null),
       h('td', null, usageCell),
       h('td', { class: 'bits' }, field.bit_size > 1 ? `${start}–${start + field.bit_size - 1}` : start),
-      h('td', { class: `num${value ? '' : ' dim'}` }, value ? value.value : '—'),
+      h('td', { class: `num${value || raw ? '' : ' dim'}` }, raw ? `${raw.hex.split(' ').slice(0, 16).join(' ')}${raw.bit_size > 128 ? ` … 共 ${Math.ceil(raw.bit_size / 8)} 字节` : ''}` : value ? value.value : '—'),
       h('td', null, tag));
   });
   const table = h('table', null,
@@ -704,7 +708,7 @@ function renderDetail() {
     pad ? null : h('div', { class: 'usage-chips' }, usages.length
       ? [...usages.slice(0, 48).map(u => h('span', { class: 'usage-chip', title: usageCode(u) }, usageName(u))), usages.length > 48 ? h('span', { class: 'usage-chip dim' }, `另有 ${usages.length - 48} 个`) : null]
       : h('span', { class: 'dim' }, '未声明')),
-    h('p', { class: 'detail-note' }, '解码值保留原始整数；Physical 与单位只作为元数据显示，不做换算。'));
+    h('p', { class: 'detail-note' }, field.bit_size > 32 ? '原始字节字段，不解码为整数；最后一个字节的未用高位补 0。' : '解码值保留原始整数；Physical 与单位只作为元数据显示，不做换算。'));
 }
 function renderCollections() {
   const box = $('collections');
@@ -754,7 +758,7 @@ function loadFixture(fixture) {
 }
 function exportJson() {
   const report = currentReport();
-  const result = { schema_version: 1, descriptor: state.descriptor, selected_report: { kind: report.kind, report_id: report.report_id }, wire_hex: state.wireHex, decoded: state.decoded };
+  const result = { schema_version: 2, descriptor: state.descriptor, selected_report: { kind: report.kind, report_id: report.report_id }, wire_hex: state.wireHex, decoded: state.decoded };
   const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2) + '\n'], { type: 'application/json' }));
   h('a', { href: url, download: 'moonhid-inspection.json' }).click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);

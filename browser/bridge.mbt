@@ -2,7 +2,7 @@
 fn failure(stage : String, error : @hid.Diagnostic) -> String {
   let result : Json = {
     "ok": false,
-    "schema_version": 1,
+    "schema_version": 2,
     "stage": Json::string(stage),
     "error": @hid.diagnostic_to_json(error),
   }
@@ -22,7 +22,7 @@ pub fn inspect_descriptor(descriptor_hex : String) -> String {
   }
   let result : Json = {
     "ok": true,
-    "schema_version": 1,
+    "schema_version": 2,
     "descriptor": descriptor,
   }
   result.stringify()
@@ -63,7 +63,7 @@ pub fn decode_wire(
   }
   let result : Json = {
     "ok": true,
-    "schema_version": 1,
+    "schema_version": 2,
     "wire_hex": Json::string(@hid.format_hex(wire)),
     "decoded": @hid.report_to_json(report),
   }

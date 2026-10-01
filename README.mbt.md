@@ -64,7 +64,7 @@ Input / Output / Feature 与 Report ID，填入完整报告后自动解码，`Ct
 页面不加载外部脚本或 CDN，数据只在页面内处理。服务只监听 `127.0.0.1`。
 解码值表每页最多 200 行，Items 每页最多 500 项，位布局最多展示前 256 个字节，Collection 树最多列出 500 个；
 分页表格、报告输入和 JSON 保留完整数据。位布局每行一个字节、左侧为最高位，载荷按 HID 的 LSB 位序解释。
-「导出 JSON」保存当前描述符及已成功解码的报告，格式见 [JSON v1](docs/json-v1.md)。
+「导出 JSON」保存当前描述符及已成功解码的报告，格式见 [JSON v2](docs/json-v2.md)。
 生成的 `web/moonhid-core.js` 不提交，始终从仓库中的 MoonBit 源码构建。
 
 ## API 示例
@@ -99,6 +99,7 @@ test "README: decode one relative axis" {
 | `decode_unit` / `effective_physical_range` | 展开单位维度，并应用 HID 物理范围缺省规则 |
 | `descriptor_to_json` / `layout_to_json` / `report_to_json` | 导出版本化描述符与布局、解码组件 |
 | `report_length` | 查询指定方向和 ID 的完整报告字节长度 |
+| `extract_bytes` | 按 LSB 位序提取原始字节，支持非字节对齐 |
 | `extract_bits` | 提取跨字节、带符号或无符号的位字段 |
 | `decode_report` | 校验长度并返回变量值、数组 Usage 与 Null State 标记 |
 
@@ -113,7 +114,7 @@ test "README: decode one relative axis" {
   Report ID 0 和 Report Count 0 仍拒绝；Report Size 0 不能用于定义字段。
 - 变量字段按声明顺序对应 Usage，数量不足时重复最后一个 Usage。
   数组值按 `value - logical_min` 索引 Usage 列表；未映射的值保留原值。
-- 保留填充字段的布局，解码输出省略 Constant 字段；保留超出逻辑范围的值，
+- 保留填充字段的布局，解码输出省略 Constant 字段；超宽值存入 `opaque_values`，不进行整数或 Usage 索引解释；保留超出逻辑范围的值，
   通过 `in_logical_range` 和 `is_null` 区分异常值与声明的 Null State。
 - 字段位偏移从报告载荷的第 0 位计算，不含 Report ID 字节；解码输入必须包含
   描述符要求的 ID 前缀，并且长度必须精确匹配，不能带额外传输层前缀或尾部字节。
@@ -121,7 +122,8 @@ test "README: decode one relative axis" {
   本地项目前也会明确报错；Buffered Bytes 单独返回 `buffered_bytes`。Physical 范围和 Unit 全局项允许存在，
   解码返回原始整数，不进行物理单位换算。核心保留数字 Usage；页面只补充常见 Usage 名称，
   不是完整 HID Usage Tables 数据库。
-- 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，每值 1..32 位，
+- 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，整数每值 1..32 位，超过 32 位的 Data Variable 字段按原始字节解码，
+  Constant 字段也允许超宽；Data Array 位宽仍限 1..32。
   每字段最多 1024 个值，每报告最多 65536 位，Usage 列表最多 1024 项，
   Collection 最多 4096 项，Collection 与 Global 栈深度最多 64。Global Push/Pop 要求平衡。
   Unit Exponent 支持 -8..7 的四位编码及常见符号扩展编码；保留 Unit 的系统与保留位。

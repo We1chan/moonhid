@@ -17,10 +17,27 @@ pub extend DecodedValue with @debug.Debug::{to_repr}
 pub extend DecodedValue with Eq::{equal, not_equal}
 
 ///|
+/// Values wider than 32 bits remain raw bytes with zero-filled trailing high bits.
+pub(all) struct OpaqueValue {
+  field_index : Int
+  element_index : Int
+  bit_offset : Int
+  bit_size : Int
+  bytes : Bytes
+} derive(Debug, Eq)
+
+///|
+pub extend OpaqueValue with @debug.Debug::{to_repr}
+
+///|
+pub extend OpaqueValue with Eq::{equal, not_equal}
+
+///|
 pub(all) struct DecodedReport {
   kind : ReportKind
   report_id : Int
   values : Array[DecodedValue]
+  opaque_values : Array[OpaqueValue]
 } derive(Debug, Eq)
 
 ///|
@@ -47,7 +64,8 @@ pub fn report_length(
     }
     found = true
     if field.bit_size < 1 ||
-      field.bit_size > 32 ||
+      field.bit_size > 65536 ||
+      ((field.flags & 3) == 0 && field.bit_size > 32) ||
       field.count < 1 ||
       field.count > 1024 ||
       field.bit_offset != bits {
@@ -59,11 +77,17 @@ pub fn report_length(
         ),
       )
     }
+    if field.bit_size > (65536 - bits) / field.count {
+      return Err(
+        diagnostic(
+          field.descriptor_offset,
+          "invalid_layout",
+          "Report exceeds 65536 bits",
+        ),
+      )
+    }
     bits = bits + field.bit_size * field.count
-    if bits > 65536 ||
-      field.usages.length() > 1024 ||
-      field.flags < 0 ||
-      field.flags > 255 {
+    if field.usages.length() > 1024 || field.flags < 0 || field.flags > 255 {
       return Err(
         diagnostic(
           field.descriptor_offset,
@@ -117,6 +141,7 @@ pub fn decode_report(
   }
   let prefix_bits = if layout.has_report_ids { 8 } else { 0 }
   let values : Array[DecodedValue] = []
+  let opaque_values : Array[OpaqueValue] = []
   for field_index = 0
       field_index < layout.fields.length()
       field_index = field_index + 1 {
@@ -130,6 +155,21 @@ pub fn decode_report(
         element_index < field.count
         element_index = element_index + 1 {
       let offset = field.bit_offset + element_index * field.bit_size
+      if field.bit_size > 32 {
+        let packed = match
+          extract_bytes(bytes, prefix_bits + offset, field.bit_size) {
+          Ok(packed) => packed
+          Err(error) => return Err(error)
+        }
+        opaque_values.push({
+          field_index,
+          element_index,
+          bit_offset: offset,
+          bit_size: field.bit_size,
+          bytes: packed,
+        })
+        continue
+      }
       let value = match
         extract_bits(
           bytes,
@@ -169,5 +209,5 @@ pub fn decode_report(
       })
     }
   }
-  Ok({ kind, report_id, values, })
+  Ok({ kind, report_id, values, opaque_values, })
 }

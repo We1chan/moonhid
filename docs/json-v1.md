@@ -1,5 +1,7 @@
 # MoonHID JSON schema v1
 
+本页保留历史格式；当前导出已使用 [JSON v2](json-v2.md)，v1 已被取代。
+
 `descriptor_to_json(Bytes)` 返回 `Result[Json, Diagnostic]`，成功值是版本化描述符文档。
 `layout_to_json`、`report_to_json` 和 `diagnostic_to_json` 返回其中的组件。
 版本字段为整数 `schema_version: 1`；不兼容的字段或语义变更会增加版本号。
