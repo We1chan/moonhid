@@ -1,3 +1,5 @@
+import { createHIDController, compareCollections } from './hid-live.js';
+
 const $ = id => document.getElementById(id);
 const MAX_TEXT = 393216;
 const VALUE_PAGE = 200;
@@ -44,6 +46,43 @@ const diagnosticText = {
 
 let core = null;
 let fixtures = [];
+let compiledDescriptorText = null;
+let pendingInput = null;
+let inputFrame = 0;
+let liveState = { status: 'idle', device: null, busy: false, received: 0, error: null };
+const hidAvailable = Boolean(navigator.hid && window.isSecureContext);
+const hidController = createHIDController(hidAvailable ? navigator.hid : null, {
+  onState: next => {
+    liveState = next;
+    if (!next.device) { pendingInput = null; cancelAnimationFrame(inputFrame); inputFrame = 0; }
+    renderLiveState();
+    renderLiveComparison();
+  },
+  onReport: entry => {
+    pendingInput = { ...entry, version: state.version };
+    if (inputFrame) return;
+    inputFrame = requestAnimationFrame(() => {
+      inputFrame = 0;
+      const input = pendingInput;
+      pendingInput = null;
+      if (!input || input.device !== hidController.device) return;
+      liveState = { ...liveState, status: 'connected', received: input.received, error: null };
+      if (!state.descriptor || compiledDescriptorText !== descriptorEditor.value || input.version !== state.version) {
+        renderLiveState('已收到报告，请先解析当前描述符。');
+        return;
+      }
+      const key = `input:${input.reportId}`;
+      if (!state.descriptor.layout.reports.some(r => reportKey(r) === key)) {
+        renderLiveState(`unknown_report @0：描述符没有 Input ID ${input.reportId}`);
+        return;
+      }
+      state.drafts.set(key, input.wireHex);
+      if (state.reportKey !== key) switchReport(key);
+      else { reportEditor.value = input.wireHex; decodeReport(); applySelection(); }
+      renderLiveState();
+    });
+  },
+});
 const state = {
   fixture: null,
   descriptor: null,
@@ -61,6 +100,30 @@ const state = {
   itemPage: 0,
   valuePage: 0,
 };
+
+function renderLiveState(note = null) {
+  const ready = core && state.descriptor && compiledDescriptorText === descriptorEditor.value;
+  $('hid-connect').disabled = !hidAvailable || !ready || hidController.busy || Boolean(hidController.device);
+  $('hid-disconnect').disabled = !hidController.device && !hidController.busy;
+  document.querySelector('.offline').textContent = hidController.device ? '实时' : '离线';
+  const labels = {
+    idle: '可选模式：连接前请粘贴并解析描述符。', connecting: '等待设备选择与连接…',
+    connected: `${liveState.device?.productName || 'HID 设备'} · 已收到 ${liveState.received} 个报告`,
+    disconnected: '已断开，输入可继续离线编辑。', unplugged: '设备已拔出，已停止接收。',
+    cancelled: '没有选择设备。', error: `连接或报告错误：${liveState.error}`,
+  };
+  const message = !hidAvailable ? 'WebHID 不可用：请使用 Chromium 与 HTTPS 或 127.0.0.1。' : note ?? labels[liveState.status];
+  setStatus('hid-status', liveState.error || note ? 'warn' : hidController.device ? 'ok' : '', h('span', { class: 'status-text' }, message));
+}
+
+function renderLiveComparison() {
+  const box = $('hid-diff');
+  if (!hidController.device || !state.descriptor) return box.replaceChildren(empty('连接设备并解析描述符后，比较浏览器可见的报告字段。'));
+  const result = compareCollections(state.descriptor.layout, hidController.device.collections);
+  box.replaceChildren(h('p', null, `已比较 ${result.comparedFields} 个字段；${result.differences.length} 项差异。浏览器屏蔽的 Collection 无法用于验证。`),
+    result.differences.length ? h('ul', null, result.differences.slice(0, 200).map(text => h('li', null, text))) : h('p', null, '可见报告的 size / count / flags / Logical / Usage 一致。'),
+    result.differences.length > 200 ? h('p', null, '只展示前 200 项差异。') : null);
+}
 
 function h(tag, attrs, ...children) {
   const node = document.createElement(tag);
@@ -335,6 +398,7 @@ function guard(text, stage) {
 }
 function parseDescriptor() {
   const text = descriptorEditor.value;
+  compiledDescriptorText = null;
   if (!text.trim()) {
     Object.assign(state, { descriptor: null, info: null, descriptorError: null, decoded: null, wireHex: null, reportError: null, selected: null, focus: null });
     return renderAll();
@@ -348,6 +412,7 @@ function parseDescriptor() {
   }
   const previous = state.descriptor;
   state.descriptor = result.descriptor;
+  compiledDescriptorText = text;
   state.descriptorError = null;
   state.version++;
   state.info = annotate(result.descriptor);
@@ -458,6 +523,8 @@ function switchReport(key, select = null) {
 
 // ---------- Rendering ----------
 function renderAll() {
+  renderLiveState();
+  renderLiveComparison();
   renderFixtures();
   renderDescriptorStatus();
   renderItems();
@@ -779,6 +846,8 @@ function exportJson() {
 }
 
 $('descriptor').addEventListener('input', () => {
+  compiledDescriptorText = null;
+  renderLiveState();
   state.fixture = null;
   renderFixtures();
   descriptorEditor.setMarks([]);
@@ -800,6 +869,9 @@ $('sample-report').addEventListener('click', () => {
   applySelection();
 });
 $('export').addEventListener('click', exportJson);
+$('hid-connect').addEventListener('click', () => hidController.connect());
+$('hid-disconnect').addEventListener('click', () => hidController.disconnect());
+window.addEventListener('pagehide', () => { void hidController.dispose(); });
 
 try {
   core = await import('./moonhid-core.js');

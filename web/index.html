@@ -23,7 +23,7 @@
       <div id="fixtures" class="segmented"><button type="button" disabled>加载中…</button></div>
     </nav>
     <div class="topbar-actions">
-      <span class="offline" title="描述符与报告只在本页处理，不上传、不连接设备">离线</span>
+      <span class="offline" title="默认离线处理；仅在点击连接 HID 后接收本机 Input 报告">离线</span>
       <button id="export" type="button" class="btn" disabled>导出 JSON</button>
       <a class="btn btn-quiet" href="https://github.com/We1chan/moonhid" target="_blank" rel="noreferrer">GitHub</a>
     </div>
@@ -54,6 +54,17 @@
 
     <section class="pane pane-report" aria-labelledby="report-title">
       <div class="report-inner">
+        <section class="live-panel" aria-label="WebHID 实时输入">
+          <div class="live-actions">
+            <strong>WebHID 实时输入</strong>
+            <button id="hid-connect" type="button" class="btn" disabled>连接 HID</button>
+            <button id="hid-disconnect" type="button" class="link" disabled>断开</button>
+          </div>
+          <p class="block-note">先粘贴描述符，再选择设备。仅 Chromium 支持；键盘和鼠标的受保护 Collection 不可读。
+            <a href="https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md#自行读取描述符" target="_blank" rel="noreferrer">如何读取描述符</a></p>
+          <div id="hid-status" class="status" role="status" aria-live="polite">检查 WebHID 支持…</div>
+          <details><summary>与浏览器 collections 对照</summary><div id="hid-diff"></div></details>
+        </section>
         <div class="pane-head">
           <h2 id="report-title">报告</h2>
           <span id="report-meta" class="meta"></span>

@@ -8,6 +8,7 @@
 - 超宽 Data Variable 字段返回原始字节，Constant 字段保留布局，Data Array 仍限 32 位。
 - Report Count 由每报告 65536 位预算约束；大 Usage 范围按区间保存。
 - 保留 String/Designator 元数据和 Delimiter 备选 Usage。
+- 增加可选 WebHID Input 实时模式与 collections 差异提示（已模拟验证，真实输入待验收）。
 - 增加 native/Node JS 文件 CLI，支持 inspect/decode 与 0/1/2 退出码。
 - 七份真实描述符全部通过结构断言；hid-tools 对照和 headless Chrome 检查可复现并纳入 CI。
 
