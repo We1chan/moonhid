@@ -157,7 +157,8 @@ moon fmt --check
 ```
 
 CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
-Physical/Unit、完整 uint32 和错误路径。浏览器 DOM 交互的人工验收记录见
+Physical/Unit、完整 uint32 和错误路径。独立 hid-tools 对照与 headless Chrome DOM 检查也纳入 JS CI，验证真实描述符布局与界面。
+浏览器人工和自动验收记录见
 [检查器验收](docs/inspector-validation.md)。
 
 ## 协议与参考
