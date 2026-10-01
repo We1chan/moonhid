@@ -16,7 +16,7 @@ test "mouse layout retains padding and signed relative axes" {
     "05 09 19 01 29 03 15 00 25 01 75 01 95 03 81 02 75 05 95 01 81 01 05 01 09 30 09 31 15 81 25 7f 75 08 95 02 81 06",
   )
   assert_eq(layout.fields.length(), 3)
-  assert_eq(layout.fields[0].usages.map(u => u.id), [1, 2, 3])
+  assert_eq(layout.fields[0].usage_spans, [{ page: 9, min: 1, max: 3, }])
   assert_eq(layout.fields[1].bit_offset, 3)
   assert_eq(layout.fields[2].bit_offset, 8)
   assert_eq(layout.fields[2].logical_min, -127L)
@@ -30,11 +30,11 @@ test "local state resets at Collections and report kinds have independent offset
     "05 01 09 02 a1 01 75 08 95 01 15 00 25 ff 09 30 81 02 09 31 91 02 81 02 b1 02 c0",
   )
   assert_eq(layout.fields[0].logical_max, 255L)
-  assert_eq(layout.fields[0].usages[0].id, 0x30)
+  assert_eq(layout.fields[0].usage_spans[0].min, 0x30)
   assert_eq(layout.fields[1].kind, @moonhid.Output)
   assert_eq(layout.fields[1].bit_offset, 0)
   assert_eq(layout.fields[2].bit_offset, 8)
-  assert_eq(layout.fields[2].usages, [])
+  assert_eq(layout.fields[2].usage_spans, [])
   assert_eq(layout.fields[3].bit_offset, 0)
 }
 

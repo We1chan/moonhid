@@ -7,7 +7,7 @@ test "zero-length Global and Local values are zero" {
   assert_eq(field.physical_max, Some(0L))
   assert_eq(field.unit, Some(0L))
   assert_eq(field.unit_exponent, Some(0))
-  assert_eq(field.usages, [{ page: 0, id: 0, }])
+  assert_eq(field.usage_spans, [{ page: 0, min: 0, max: 0, }])
   assert_eq(decode(layout, @moonhid.Input, b"\x00").values[0].value, 0L)
 }
 
