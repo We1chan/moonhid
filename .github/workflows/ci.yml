@@ -37,6 +37,11 @@ jobs:
         run: moon test --target ${{ matrix.target }}
       - name: Run device examples
         run: moon run cmd/main --target ${{ matrix.target }}
+      - name: Build and verify browser module
+        if: matrix.target == 'js'
+        run: |
+          node scripts/build-web.mjs
+          node scripts/test-web.mjs
       - name: Verify formatting and public API
         if: matrix.target == 'wasm'
         run: |

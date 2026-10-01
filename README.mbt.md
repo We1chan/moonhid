@@ -17,9 +17,10 @@ MoonHID 的目标是将这些二进制定义转换为可检查、可复用的数
 ## 当前状态
 
 这是正在开发的初始版本，尚未发布到 mooncakes.io。核心库为纯 MoonBit，
-已实现十六进制输入、短项/长项分词、布局编译和报告解码。
+已实现十六进制输入、短项/长项分词、布局编译、Collection 层级、Physical/Unit 元数据和报告解码。
 仓库提供合成的鼠标、键盘和手柄样例，运行时不依赖 USB 权限、真实设备或网络服务。
-浏览器查看器、真实设备兼容性验证和正式发布见 [开发路线](ROADMAP.md)。
+浏览器检查器直接运行 MoonBit 编译的 JS 模块，提供字段布局、解码值与版本化 JSON 导出。
+真实设备兼容性验证和正式发布见 [开发路线](ROADMAP.md)。
 
 ## 快速运行
 
@@ -34,6 +35,30 @@ moon run cmd/main
 程序打印三个设备样例的字段偏移、数字 Usage 和原始整数值。其中鼠标样例
 `05 ff 02 fe` 表示按钮 1 和 3 按下，X/Y/滚轮变化分别为 `-1 / 2 / -2`；
 手柄样例带 Report ID `7`，两个 16 位轴分别为 `-32768 / 32767`。
+
+## 浏览器检查器
+
+安装 MoonBit、Node.js 22+ 和 Python 3 后：
+
+```sh
+node scripts/build-web.mjs
+python3 scripts/serve-web.py
+```
+
+打开 <http://127.0.0.1:8765/>。macOS 可直接双击仓库根目录的
+[start-inspector.command](start-inspector.command)，自动构建并打开浏览器；
+终端中按 `Ctrl+C` 关闭服务。端口被其他程序占用时，可设置 `MOONHID_PORT=8766`。
+
+点击鼠标、键盘或手柄载入合成样例。粘贴自己的描述符后点「解析描述符」，
+选择 Input / Output / Feature 与 ID，填入完整报告再点「解码报告」。
+键盘切换到 Output 后可点击「载入当前方向的样例报告」，检查 `03` 的 LED 值。
+字段、位区块和来源链接相互关联，可查看集合路径、物理范围、单位维度与原始 item。
+十六进制输入错误提供字符或字节位置，并能在文本中定位；修改输入会清除旧结果。
+
+页面不加载外部脚本或 CDN，数据只在页面内处理。服务只监听 `127.0.0.1`。
+表格每页最多 200 行，位区块最多展示前 128 个字段；分页表格和 JSON 保留完整数据。
+「导出 JSON」保存当前描述符及已成功解码的报告，格式见 [JSON v1](docs/json-v1.md)。
+生成的 `web/moonhid-core.js` 不提交，始终从仓库中的 MoonBit 源码构建。
 
 ## API 示例
 
@@ -63,7 +88,9 @@ test "README: decode one relative axis" {
 | `parse_hex` | 严格解析连续或 ASCII 空白分隔的十六进制字节对 |
 | `parse_items` | 保留 item 类型、tag、原始数据和字节位置 |
 | `unsigned_value` / `signed_value` | 小端短项数值，完整保留 32 位范围 |
-| `compile_descriptor` | 计算 Main 字段、Usage、报告 ID 与位偏移 |
+| `compile_descriptor` | 计算 Main 字段、集合树、元数据、报告 ID 与位偏移 |
+| `decode_unit` / `effective_physical_range` | 展开单位维度，并应用 HID 物理范围缺省规则 |
+| `descriptor_to_json` / `layout_to_json` / `report_to_json` | 导出版本化描述符与布局、解码组件 |
 | `report_length` | 查询指定方向和 ID 的完整报告字节长度 |
 | `extract_bits` | 提取跨字节、带符号或无符号的位字段 |
 | `decode_report` | 校验长度并返回变量值、数组 Usage 与 Null State 标记 |
@@ -73,7 +100,8 @@ test "README: decode one relative axis" {
 ## 支持范围与边界
 
 - 支持 Input / Output / Feature、Usage / Usage 范围 / 32 位扩展 Usage、
-  Logical 范围、Report Size / Count / ID、Global Push / Pop 与 Collection 配对检查。
+  Logical / Physical 范围、Unit / Unit Exponent、Report Size / Count / ID、Global Push / Pop，
+  并保留 Collection 的类型、Usage、父索引与字段所属集合。
 - 变量字段按声明顺序对应 Usage，数量不足时重复最后一个 Usage。
   数组值按 `value - logical_min` 索引 Usage 列表；未映射的值保留原值。
 - 保留填充字段的布局，解码输出省略 Constant 字段；保留超出逻辑范围的值，
@@ -82,10 +110,13 @@ test "README: decode one relative axis" {
   描述符要求的 ID 前缀，并且长度必须精确匹配，不能带额外传输层前缀或尾部字节。
 - 长项仅支持原始分词，布局编译会拒绝；保留字、Delimiter、Designator、String
   本地项及 Buffered Bytes 目前也会明确报错。Physical 范围和 Unit 全局项允许存在，
-  当前仅返回原始整数，不计算物理单位。尚不输出 Collection 层级树或 Usage 名称。
+  解码返回原始整数，不进行物理单位换算。核心保留数字 Usage；页面只补充常见 Usage 名称，
+  不是完整 HID Usage Tables 数据库。
 - 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，每值 1..32 位，
   每字段最多 1024 个值，每报告最多 65536 位，Usage 列表最多 1024 项，
-  Collection 与 Global 栈深度最多 64。Global Push/Pop 要求平衡。
+  Collection 最多 4096 项，Collection 与 Global 栈深度最多 64。Global Push/Pop 要求平衡。
+  Unit Exponent 支持 -8..7 的四位编码及常见符号扩展编码；保留 Unit 的系统与保留位。
+  Physical 缺少任一端点或两端均为 0 时，有效范围采用 Logical 范围，原声明仍可查询。
 - 当前没有设备读写、驱动安装或 Boot Protocol 切换功能；合成样例测试不能代表
   已兼容所有 HID 设备。
 
@@ -104,9 +135,15 @@ moon build
 moon test
 moon test --target native
 moon test --target js # 需要 Node.js
+node scripts/build-web.mjs
+node scripts/test-web.mjs
 moon info
 moon fmt --check
 ```
+
+CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
+Physical/Unit、完整 uint32 和错误路径。浏览器 DOM 交互的人工验收记录见
+[检查器验收](docs/inspector-validation.md)。
 
 ## 协议与参考
 

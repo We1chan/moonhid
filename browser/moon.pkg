@@ -1,0 +1,13 @@
+import {
+  "We1chan/moonhid" @hid,
+  "We1chan/moonhid/examples",
+}
+
+options(
+  link: {
+    "js": {
+      "exports": [ "inspect_descriptor", "decode_wire", "examples_json" ],
+      "format": "esm",
+    },
+  },
+)

@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import { inspect_descriptor, decode_wire, examples_json } from '../web/moonhid-core.js';
+
+const inspect = hex => JSON.parse(inspect_descriptor(hex));
+const decode = (descriptor, kind, wire) => JSON.parse(decode_wire(descriptor, kind, wire));
+const fixtures = JSON.parse(examples_json());
+assert.deepEqual(fixtures.map(f => f.name), ['mouse', 'keyboard', 'gamepad']);
+for (const fixture of fixtures) {
+  const result = inspect(fixture.descriptor_hex);
+  assert.equal(result.ok, true);
+  assert.equal(result.schema_version, 1);
+  assert.equal(result.descriptor.layout.collections[0].parent_index, null);
+  const report = decode(fixture.descriptor_hex, 'input', fixture.input_hex);
+  assert.equal(report.ok, true);
+  assert.deepEqual(report.decoded.values.map(v => v.value), fixture.expected_values);
+  assert.ok(report.decoded.values.every(v => v.in_logical_range));
+  assert.equal(result.descriptor.layout.reports.find(r => r.kind === 'input').wire_bytes, fixture.input_hex.split(' ').length);
+}
+const keyboard = fixtures.find(f => f.name === 'keyboard');
+assert.deepEqual(decode(keyboard.descriptor_hex, 'output', keyboard.output_hex).decoded.values.map(v => v.value), [1, 1, 0, 0, 0]);
+assert.equal(decode(keyboard.descriptor_hex, 'input', '00').error.code, 'report_length');
+assert.equal(decode(keyboard.descriptor_hex, 'feature', '00').error.code, 'unknown_report');
+assert.equal(decode(keyboard.descriptor_hex, 'invalid', '00').error.code, 'report_kind');
+assert.deepEqual([inspect('05 q1').stage, inspect('05 q1').error.offset], ['descriptor_hex', 3]);
+assert.equal(inspect('75').error.code, 'truncated_item');
+assert.equal(inspect('75 08 95 01 81 02 fe 01 80 01').error.code, 'unsupported_item');
+assert.equal(decode(keyboard.descriptor_hex, 'input', '0x00').stage, 'report_hex');
+const composite = '75 08 95 01 85 01 15 00 25 ff 81 02 91 02 85 02 15 81 25 7f 81 02 b1 02';
+assert.deepEqual(inspect(composite).descriptor.layout.reports.map(r => [r.kind, r.report_id]), [['input', 1], ['output', 1], ['input', 2], ['feature', 2]]);
+assert.equal(decode(composite, 'input', '02 ff').decoded.values[0].value, -1);
+assert.equal(decode(composite, 'feature', '02 ff').decoded.values[0].value, -1);
+assert.equal(decode(composite, 'input', '03 ff').error.code, 'unknown_report');
+const metadata = '05 01 09 02 a1 01 09 01 a1 00 15 81 25 7f 36 99 f3 46 67 0c 55 0c 65 13 75 08 95 01 09 30 81 06 c0 c0';
+const layout = inspect(metadata).descriptor.layout;
+assert.deepEqual(layout.collections.map(c => c.parent_index), [null, 0]);
+assert.equal(layout.fields[0].collection_index, 1);
+assert.equal(layout.fields[0].physical_min, -3175);
+assert.equal(layout.fields[0].unit_exponent, -4);
+assert.deepEqual([layout.fields[0].unit.system, layout.fields[0].unit.length], [3, 1]);
+const unsigned = '15 00 27 ff ff ff ff 75 20 95 01 81 02';
+assert.equal(inspect(unsigned).descriptor.layout.fields[0].logical_max, 4294967295);
+assert.equal(decode(unsigned, 'input', 'ff ff ff ff').decoded.values[0].value, 4294967295);
+console.log('Browser bridge: three fixtures, LED output, multi-ID/Feature, metadata, uint32 and error paths passed.');

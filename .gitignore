@@ -4,3 +4,6 @@ target/
 target
 .mooncakes/
 .moonagent/
+web/moonhid-core.js
+/submission/
+__pycache__/
