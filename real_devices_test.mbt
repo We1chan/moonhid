@@ -163,14 +163,40 @@ test "real device F: report structure" {
 }
 
 ///|
-test "real device G: known compatibility diagnostic" {
-  let bytes = match @moonhid.parse_hex(real_device_g()) {
-    Ok(bytes) => bytes
-    Err(_) => fail("invalid fixture hex")
-  }
-  assert_true(
-    @moonhid.compile_descriptor(bytes)
-    is Err({ code: "usage_range", offset: 102, .. }),
+test "real device G: report structure and large System Control span" {
+  let layout = compile(real_device_g())
+  assert_eq(layout.fields.length(), 15)
+  assert_eq(real_report_summary(layout), [
+    (@moonhid.Input, 1, 64),
+    (@moonhid.Output, 1, 8),
+    (@moonhid.Input, 2, 16),
+    (@moonhid.Input, 3, 16),
+    (@moonhid.Input, 7, 120),
+    (@moonhid.Input, 5, 56),
+    (@moonhid.Input, 6, 520),
+    (@moonhid.Output, 6, 520),
+  ])
+  assert_eq(layout.fields.map(f => (f.bit_size, f.count, f.flags)), [
+    (1, 8, 2),
+    (8, 1, 3),
+    (1, 5, 2),
+    (3, 1, 3),
+    (8, 6, 0),
+    (16, 1, 0),
+    (16, 1, 0),
+    (1, 120, 2),
+    (1, 5, 2),
+    (1, 3, 1),
+    (16, 2, 6),
+    (8, 1, 6),
+    (8, 1, 6),
+    (8, 65, 0),
+    (8, 65, 0),
+  ])
+  assert_eq(layout.fields[6].usage_spans, [{ page: 1, min: 0, max: 32767, }])
+  assert_eq(
+    decode(layout, @moonhid.Input, b"\x03\xff\x7f").values[0].usage,
+    Some({ page: 1, id: 32767, }),
   )
 }
 

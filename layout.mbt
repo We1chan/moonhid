@@ -24,6 +24,77 @@ pub extend Usage with @debug.Debug::{to_repr}
 pub extend Usage with Eq::{equal, not_equal}
 
 ///|
+/// Inclusive Usage IDs on one page; a single Usage has min=max.
+pub(all) struct UsageSpan {
+  page : Int
+  min : Int
+  max : Int
+} derive(Debug, Eq)
+
+///|
+pub extend UsageSpan with @debug.Debug::{to_repr}
+
+///|
+pub extend UsageSpan with Eq::{equal, not_equal}
+
+///|
+fn valid_usage_spans(spans : Array[UsageSpan]) -> Bool {
+  spans.length() <= 1024 &&
+  spans.all(s => {
+    s.page >= 0 &&
+    s.page <= 65535 &&
+    s.min >= 0 &&
+    s.min <= s.max &&
+    s.max <= 65535
+  })
+}
+
+///|
+fn usage_count(spans : Array[UsageSpan]) -> Int {
+  spans.fold(init=0, (n, s) => n + s.max - s.min + 1)
+}
+
+///|
+fn usage_at(
+  spans : Array[UsageSpan],
+  index : Int,
+  repeat_last : Bool,
+) -> Usage? {
+  if index < 0 {
+    return None
+  }
+  let mut remaining = index
+  for span in spans {
+    if span.min < 0 || span.max > 65535 || span.min > span.max {
+      return None
+    }
+    let count = span.max - span.min + 1
+    if remaining < count {
+      return Some({ page: span.page, id: span.min + remaining, })
+    }
+    remaining = remaining - count
+  }
+  if repeat_last {
+    match spans.last() {
+      Some(span) => Some({ page: span.page, id: span.max, })
+      None => None
+    }
+  } else {
+    None
+  }
+}
+
+///|
+/// Variable indices repeat the last Usage; Array selector indices never repeat.
+/// For Arrays, pass value-logical_min after checking the logical range.
+pub fn field_usage(field : Field, index : Int) -> Usage? {
+  if (field.flags & 1) != 0 {
+    return None
+  }
+  usage_at(field.usage_spans, index, (field.flags & 2) != 0)
+}
+
+///|
 /// Collections are stored in descriptor order. Parent indices form a tree.
 pub(all) struct Collection {
   descriptor_offset : Int
@@ -56,7 +127,7 @@ pub(all) struct Field {
   unit : Int64?
   unit_exponent : Int?
   collection_index : Int?
-  usages : Array[Usage]
+  usage_spans : Array[UsageSpan]
 } derive(Debug, Eq)
 
 ///|
@@ -130,7 +201,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
     count: 0,
     report_id: 0,
   }
-  let locals : Array[Usage] = []
+  let locals : Array[UsageSpan] = []
   let mut range_min : Usage? = None
   let mut has_report_ids = false
   let stack : Array[GlobalState] = []
@@ -275,7 +346,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
     } else if item.type_code == 2 {
       let usage = usage_value(item, global.page)
       match item.tag {
-        0 => locals.push(usage)
+        0 => locals.push({ page: usage.page, min: usage.id, max: usage.id, })
         1 => {
           if range_min is Some(_) {
             return Err(
@@ -296,20 +367,12 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
                 ),
               )
           }
-          if minimum.page != usage.page ||
-            minimum.id > usage.id ||
-            usage.id - minimum.id >= 1024 {
+          if minimum.page != usage.page || minimum.id > usage.id {
             return Err(
-              diagnostic(
-                item.offset,
-                "usage_range",
-                "Invalid or oversized usage range",
-              ),
+              diagnostic(item.offset, "usage_range", "Invalid usage range"),
             )
           }
-          for id = minimum.id; id <= usage.id; id = id + 1 {
-            locals.push({ page: usage.page, id, })
-          }
+          locals.push({ page: usage.page, min: minimum.id, max: usage.id, })
           range_min = None
         }
         _ =>
@@ -323,7 +386,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
       }
       if locals.length() > 1024 {
         return Err(
-          diagnostic(item.offset, "usage_limit", "Too many local usages"),
+          diagnostic(item.offset, "usage_limit", "More than 1024 Usage spans"),
         )
       }
     } else {
@@ -350,7 +413,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             descriptor_offset: item.offset,
             end_offset: -1,
             collection_type: value.to_int(),
-            usage: locals.get(0),
+            usage: usage_at(locals, 0, false),
             parent_index: collection_stack.last(),
           })
           collection_stack.push(index)
@@ -491,7 +554,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             unit: global.unit,
             unit_exponent: global.unit_exponent,
             collection_index: collection_stack.last(),
-            usages: locals.copy(),
+            usage_spans: locals.copy(),
           })
           offsets[cursor] = offset + global.size * global.count
         }

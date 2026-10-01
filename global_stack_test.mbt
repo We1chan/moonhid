@@ -8,7 +8,7 @@ test "Push Pop restores every global without restoring local usages" {
   assert_eq((button.report_id, button.bit_size, button.count), (1, 1, 1))
   assert_eq(button.logical_min, 0L)
   assert_eq(button.logical_max, 1L)
-  assert_eq(button.usages, [{ page: 9, id: 1, }])
+  assert_eq(button.usage_spans, [{ page: 9, min: 1, max: 1, }])
 }
 
 ///|

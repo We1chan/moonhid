@@ -49,15 +49,19 @@ od -An -v -tx1 /sys/class/hidraw/hidraw0/device/report_descriptor
 ## 兼容性修复进度
 
 零长度数据已按 0 解释，超宽 Variable 字段使用原始字节，Constant 字段保留布局。
-B、C、D、F 现已编译成功，并断言完整报告列表和字段 size / count / flags。
-Report Count 现由每报告 65536 位预算约束；G 仍返回 `usage_range`（102）。
+A–G 七份描述符现已全部编译成功，并断言完整报告列表和字段 size / count / flags。
+Report Count 现由每报告 65536 位预算约束；G 的 32768 个 System Control Usage
+保留为一个区间，编译时不展开。
 
 | 样例 | 当前报告（方向 / ID / 载荷位数） | 字段数 |
 | --- | --- | ---: |
+| A | Input / 0 / 256 | 1 |
 | B | Input / 2 / 56；Feature / 2 / 32768；Input / 63 / 128；Input / 68 / 14008；Input / 91 / 768 | 15 |
 | C | Input / 224 / 32；Feature / 224 / 32768 | 2 |
 | D | Input / 1 / 72；Output / 1 / 8；Input / 82 / 8；Feature / 9 / 24；Input / 63 / 512；Feature / 63 / 32768 | 19 |
+| E | Input / 0 / 8 | 2 |
 | F | Feature / 1 / 16；Input / 2 / 16024；Feature / 2 / 1144 | 4 |
+| G | Input / 1 / 64；Output / 1 / 8；Input / 2 / 16；Input / 3 / 16；Input / 7 / 120；Input / 5 / 56；Input / 6 / 520；Output / 6 / 520 | 15 |
 
 ## 独立工具对照
 

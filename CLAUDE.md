@@ -38,14 +38,14 @@ python3 scripts/serve-web.py # serves web/ on 127.0.0.1:8765 (MOONHID_PORT to ch
 
 1. `hex.mbt` `parse_hex`: strict hex text to `Bytes`. Diagnostic offsets here are UTF-16 indices into the text.
 2. `items.mbt` `parse_items`: tokenizes short and long items. `values.mbt` reads little-endian item payloads.
-3. `layout.mbt` `compile_descriptor`: the HID state machine. It tracks `GlobalState` with a Push/Pop stack, local usages that are cleared after every Main item, a collection stack, and one bit cursor per `(Main tag, report_id)`, so Input, Output and Feature reports for each ID get independent offsets. It produces a `Layout` of `Field`s (Constant/padding fields included) and a `Collection` tree. Any semantics it doesn't support are rejected with an explicit diagnostic code, never silently ignored.
+3. `layout.mbt` `compile_descriptor`: the HID state machine. It tracks `GlobalState` with a Push/Pop stack, local Usage spans that are cleared after every Main item, a collection stack, and one bit cursor per `(Main tag, report_id)`, so Input, Output and Feature reports for each ID get independent offsets. It produces a `Layout` of `Field`s (Constant/padding fields included) and a `Collection` tree. Any semantics it doesn't support are rejected with an explicit diagnostic code, never silently ignored.
 4. `decode.mbt` `report_length` / `decode_report`: validates the exact wire length and extracts values with `bits.mbt` `extract_bits` (LSB-first). Decoding skips Constant fields, maps array values via `value - logical_min`, and keeps out-of-range values, flagging them with `in_logical_range` and `is_null`.
 5. `units.mbt` handles Unit/Physical metadata. `json.mbt` produces JSON schema v2.
 
 Cross-cutting invariants:
 - `Field.bit_offset` is a **payload** offset that excludes the Report ID byte. The decoder adds the 8-bit prefix when `layout.has_report_ids`.
 - Diagnostic `code` strings are a contract. Blackbox tests, `scripts/test-web.mjs` and the web UI all match on them.
-- Size limits (descriptor 65536 B, 4096 fields, 1..32 bits/integer or opaque Variable fields, at most 65536 values/field within 65536 bits/report, 1024 usages, 4096 collections, stack depth 64) are enforced in `compile_descriptor`. `report_length` re-checks them because callers can build `Layout` values by hand.
+- Size limits (descriptor 65536 B, 4096 fields, 1..32 bits/integer or opaque Variable fields, at most 65536 values/field within 65536 bits/report, 1024 Usage spans, 4096 collections, stack depth 64) are enforced in `compile_descriptor`. `report_length` re-checks them because callers can build `Layout` values by hand.
 - JSON v2 (`docs/json-v2.md`) is versioned. An incompatible change to fields or semantics must bump `schema_version`. Encode `Int64` with `number64` (`Json::number`), because the default `ToJson` emits strings.
 
 **Other packages:**

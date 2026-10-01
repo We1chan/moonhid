@@ -47,6 +47,15 @@ fn usage_json(usage : Usage?) -> Json {
 }
 
 ///|
+fn usage_span_json(span : UsageSpan) -> Json {
+  {
+    "page": span.page.to_json(),
+    "min": span.min.to_json(),
+    "max": span.max.to_json(),
+  }
+}
+
+///|
 fn unit_json(raw : Int64?) -> Json {
   match raw {
     Some(raw) =>
@@ -131,7 +140,8 @@ pub fn layout_to_json(layout : Layout) -> Json {
           "unit": unit_json(f.unit),
           "unit_exponent": optional_int(f.unit_exponent),
           "collection_index": optional_int(f.collection_index),
-          "usages": Json::array(f.usages.map(u => usage_json(Some(u)))),
+          "usage_spans": Json::array(f.usage_spans.map(usage_span_json)),
+          "usage_count": usage_count(f.usage_spans).to_json(),
         }
       }),
     ),

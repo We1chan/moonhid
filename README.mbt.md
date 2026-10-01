@@ -18,7 +18,7 @@ MoonHID 的目标是将这些二进制定义转换为可检查、可复用的数
 
 这是正在开发的初始版本，尚未发布到 mooncakes.io。核心库为纯 MoonBit，
 已实现十六进制输入、短项/长项分词、布局编译、Collection 层级、Physical/Unit 元数据和报告解码。
-仓库提供合成的鼠标、键盘和手柄样例，运行时不依赖 USB 权限、真实设备或网络服务。
+仓库提供合成的鼠标、键盘和手柄样例，以及 [七份真实设备描述符回归](docs/real-devices.md)，运行时不依赖 USB 权限、真实设备或网络服务。
 浏览器检查器直接运行 MoonBit 编译的 JS 模块，提供字段布局、解码值与版本化 JSON 导出。
 真实设备兼容性验证和正式发布见 [开发路线](ROADMAP.md)。
 
@@ -95,6 +95,7 @@ test "README: decode one relative axis" {
 | `parse_hex` | 严格解析连续或 ASCII 空白分隔的十六进制字节对 |
 | `parse_items` | 保留 item 类型、tag、原始数据和字节位置 |
 | `unsigned_value` / `signed_value` | 小端短项数值，完整保留 32 位范围 |
+| `field_usage` | 按序查询 Usage；Variable 越界重复最后一项，Array 越界返回 None |
 | `compile_descriptor` | 计算 Main 字段、集合树、元数据、报告 ID 与位偏移 |
 | `decode_unit` / `effective_physical_range` | 展开单位维度，并应用 HID 物理范围缺省规则 |
 | `descriptor_to_json` / `layout_to_json` / `report_to_json` | 导出版本化描述符与布局、解码组件 |
@@ -113,7 +114,7 @@ test "README: decode one relative axis" {
 - 零长度短项的数据按 0 解释；零长度 Collection 表示 Physical，零长度 Main flags 表示 0。
   Report ID 0 和 Report Count 0 仍拒绝；Report Size 0 不能用于定义字段。
 - 变量字段按声明顺序对应 Usage，数量不足时重复最后一个 Usage。
-  数组值按 `value - logical_min` 索引 Usage 列表；未映射的值保留原值。
+  Usage 按区间保留，不展开大范围；数组值按 `value - logical_min` 索引 Usage 序列；未映射的值保留原值。
 - 保留填充字段的布局，解码输出省略 Constant 字段；超宽值存入 `opaque_values`，不进行整数或 Usage 索引解释；保留超出逻辑范围的值，
   通过 `in_logical_range` 和 `is_null` 区分异常值与声明的 Null State。
 - 字段位偏移从报告载荷的第 0 位计算，不含 Report ID 字节；解码输入必须包含
@@ -124,7 +125,7 @@ test "README: decode one relative axis" {
   不是完整 HID Usage Tables 数据库。
 - 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，整数每值 1..32 位，超过 32 位的 Data Variable 字段按原始字节解码，
   Constant 字段也允许超宽；Data Array 位宽仍限 1..32。
-  每报告最多 65536 位，字段元素数量由报告总位数约束（最多 65536 个值），Usage 列表最多 1024 项，
+  每报告最多 65536 位，字段元素数量由报告总位数约束（最多 65536 个值），Usage 最多 1024 个区间，单区间可覆盖同一 page 的全部 65536 个 ID，
   Collection 最多 4096 项，Collection 与 Global 栈深度最多 64。Global Push/Pop 要求平衡。
   Unit Exponent 支持 -8..7 的四位编码及常见符号扩展编码；保留 Unit 的系统与保留位。
   Physical 缺少任一端点或两端均为 0 时，有效范围采用 Logical 范围，原声明仍可查询。
