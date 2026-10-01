@@ -1,17 +1,17 @@
-# MoonHID JSON schema v1
+# MoonHID JSON schema v2
 
-本页保留历史格式；当前导出已使用 [JSON v2](json-v2.md)，v1 已被取代。
+v2 增加超宽字段原始字节解码；历史格式见 [JSON v1](json-v1.md)。
 
 `descriptor_to_json(Bytes)` 返回 `Result[Json, Diagnostic]`，成功值是版本化描述符文档。
 `layout_to_json`、`report_to_json` 和 `diagnostic_to_json` 返回其中的组件。
-版本字段为整数 `schema_version: 1`；不兼容的字段或语义变更会增加版本号。
+版本字段为整数 `schema_version: 2`；不兼容的字段或语义变更会增加版本号。
 对象键顺序不作为契约，数组顺序按描述符声明和报告元素顺序保留。
 
 ## 描述符文档
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
-| `schema_version` | integer | 当前为 1 |
+| `schema_version` | integer | 当前为 2 |
 | `descriptor_hex` | string | 小写、空格分隔的字节对 |
 | `byte_length` | integer | 描述符长度 |
 | `items` | array | `offset`, `type_code`, `tag`, `data_hex`, `is_long` |
@@ -49,12 +49,18 @@ Unit 对象含 `raw`、`system`、`length`、`mass`、`time`、`temperature`、`
 
 ## 解码组件
 
-`report_to_json` 返回 `{ "kind": ..., "report_id": ..., "values": [...] }`。
+`report_to_json` 返回 `{ "kind": ..., "report_id": ..., "values": [...], "opaque_values": [...] }`。
 每个值含 `field_index`、`element_index`、`bit_offset`、`value`、`usage`、`is_array`、
 `in_logical_range`、`is_null`。`field_index` 引用完整 `layout.fields`，不随方向筛选而重新编号。
 Constant 字段不产生解码值。未映射的数组 Usage 为 `null`，整数值仍保留。
 
-布局编译支持的整数范围为有符号或无符号 32 位；所有 HID 数值序列化为 JSON **number**，
+超过 32 位的 Data Variable 元素放入 `opaque_values`，每个值含
+`field_index`、`element_index`、`bit_offset`、`bit_size`、`hex`。
+`hex` 为小写空格分隔字节；按 LSB 位序打包，与源载荷是否字节对齐无关，
+最后一个字节的未使用高位补 0。字段偏移仍不包含 Report ID。
+Constant 字段不产生整数或原始字节值；Data Array 位宽仍限制 1..32 位。
+
+整数范围为有符号或无符号 32 位；所有 HID 数值序列化为 JSON **number**，
 包括 `4294967295`，可由 JavaScript 精确表示。内部计算使用 Int64，但不使用其默认字符串 JSON 编码。
 这些保证适用于编译器生成的有效布局与解码结果，序列化 API 不校验调用者手工构造的布局。
 
@@ -62,12 +68,12 @@ Constant 字段不产生解码值。未映射的数组 Usage 为 `null`，整数
 
 浏览器 ES 模块导出三个函数：
 
-- `inspect_descriptor(hex)` → `{ "ok": true, "schema_version": 1, "descriptor": ... }`
-- `decode_wire(descriptor_hex, kind, report_hex)` → `{ "ok": true, "schema_version": 1, "wire_hex": ..., "decoded": ... }`
+- `inspect_descriptor(hex)` → `{ "ok": true, "schema_version": 2, "descriptor": ... }`
+- `decode_wire(descriptor_hex, kind, report_hex)` → `{ "ok": true, "schema_version": 2, "wire_hex": ..., "decoded": ... }`
 - `examples_json()` → 鼠标、键盘、手柄样例数组，含 `name`, `descriptor_hex`, `input_hex`, `expected_values`, `output_hex`。
 
 所有参数及返回值都是原生 JavaScript 字符串；返回值再用 `JSON.parse` 读取。
-失败格式为 `{ "ok": false, "schema_version": 1, "stage": ..., "error": { "offset": ..., "code": ..., "message": ... } }`。
+失败格式为 `{ "ok": false, "schema_version": 2, "stage": ..., "error": { "offset": ..., "code": ..., "message": ... } }`。
 `stage` 是 `descriptor_hex`、`descriptor`、`report_hex` 或 `report`。
 十六进制阶段的 offset 是原始文本 UTF-16 索引，二进制阶段是零起始字节偏移。
 `report_length` 的 offset 为实际收到的字节数，EOF 错误可指向输入末尾。
@@ -76,8 +82,8 @@ Constant 字段不产生解码值。未映射的数组 Usage 为 `null`，整数
 
 ```json
 {
-  "schema_version": 1,
-  "descriptor": { "schema_version": 1, "descriptor_hex": "...", "byte_length": 0, "items": [], "layout": {} },
+  "schema_version": 2,
+  "descriptor": { "schema_version": 2, "descriptor_hex": "...", "byte_length": 0, "items": [], "layout": {} },
   "selected_report": { "kind": "input", "report_id": 0 },
   "wire_hex": null,
   "decoded": null

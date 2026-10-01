@@ -39,6 +39,7 @@ fn real_device_g() -> String {
 ///|
 test "real device A: report structure" {
   let layout = compile(real_device_a())
+  assert_eq(real_report_summary(layout), [(@moonhid.Input, 0, 256)])
   assert_eq(layout.fields.length(), 1)
   assert_false(layout.has_report_ids)
   assert_eq(layout.collections.length(), 1)
@@ -53,6 +54,7 @@ test "real device A: report structure" {
 ///|
 test "real device E: report structure" {
   let layout = compile(real_device_e())
+  assert_eq(real_report_summary(layout), [(@moonhid.Input, 0, 8)])
   assert_eq(layout.fields.length(), 2)
   assert_false(layout.has_report_ids)
   assert_eq(layout.collections.length(), 1)
@@ -72,44 +74,74 @@ test "real device B: known compatibility diagnostic" {
   }
   assert_true(
     @moonhid.compile_descriptor(bytes)
-    is Err({ code: "report_size", offset: 56, .. }),
+    is Err({ code: "report_count", offset: 111, .. }),
   )
 }
 
 ///|
-test "real device C: known compatibility diagnostic" {
-  let bytes = match @moonhid.parse_hex(real_device_c()) {
-    Ok(bytes) => bytes
-    Err(_) => fail("invalid fixture hex")
-  }
-  assert_true(
-    @moonhid.compile_descriptor(bytes)
-    is Err({ code: "report_size", offset: 28, .. }),
-  )
+test "real device C: report structure" {
+  let layout = compile(real_device_c())
+  assert_eq(layout.fields.length(), 2)
+  assert_eq(real_report_summary(layout), [
+    (@moonhid.Input, 224, 32),
+    (@moonhid.Feature, 224, 32768),
+  ])
+  assert_eq(layout.fields.map(f => (f.bit_size, f.count, f.flags)), [
+    (8, 4, 34),
+    (16384, 2, 1),
+  ])
 }
 
 ///|
-test "real device D: known compatibility diagnostic" {
-  let bytes = match @moonhid.parse_hex(real_device_d()) {
-    Ok(bytes) => bytes
-    Err(_) => fail("invalid fixture hex")
-  }
-  assert_true(
-    @moonhid.compile_descriptor(bytes)
-    is Err({ code: "report_size", offset: 181, .. }),
-  )
+test "real device D: report structure" {
+  let layout = compile(real_device_d())
+  assert_eq(layout.fields.length(), 19)
+  assert_eq(real_report_summary(layout), [
+    (@moonhid.Input, 1, 72),
+    (@moonhid.Output, 1, 8),
+    (@moonhid.Input, 82, 8),
+    (@moonhid.Feature, 9, 24),
+    (@moonhid.Input, 63, 512),
+    (@moonhid.Feature, 63, 32768),
+  ])
+  assert_eq(layout.fields.map(f => (f.bit_size, f.count, f.flags)), [
+    (1, 8, 2),
+    (8, 1, 1),
+    (1, 5, 2),
+    (3, 1, 1),
+    (8, 6, 0),
+    (1, 1, 2),
+    (7, 1, 2),
+    (1, 1, 2),
+    (1, 1, 2),
+    (1, 1, 2),
+    (1, 1, 2),
+    (1, 1, 2),
+    (1, 1, 1),
+    (1, 1, 1),
+    (1, 1, 1),
+    (8, 1, 2),
+    (8, 2, 1),
+    (8, 64, 34),
+    (16384, 2, 1),
+  ])
 }
 
 ///|
-test "real device F: known compatibility diagnostic" {
-  let bytes = match @moonhid.parse_hex(real_device_f()) {
-    Ok(bytes) => bytes
-    Err(_) => fail("invalid fixture hex")
-  }
-  assert_true(
-    @moonhid.compile_descriptor(bytes)
-    is Err({ code: "report_size", offset: 34, .. }),
-  )
+test "real device F: report structure" {
+  let layout = compile(real_device_f())
+  assert_eq(layout.fields.length(), 4)
+  assert_eq(real_report_summary(layout), [
+    (@moonhid.Feature, 1, 16),
+    (@moonhid.Input, 2, 16024),
+    (@moonhid.Feature, 2, 1144),
+  ])
+  assert_eq(layout.fields.map(f => (f.bit_size, f.count, f.flags)), [
+    (8, 1, 2),
+    (8, 1, 2),
+    (16024, 1, 34),
+    (1144, 1, 2),
+  ])
 }
 
 ///|
@@ -122,4 +154,24 @@ test "real device G: known compatibility diagnostic" {
     @moonhid.compile_descriptor(bytes)
     is Err({ code: "usage_range", offset: 102, .. }),
   )
+}
+
+///|
+fn real_report_summary(
+  layout : @moonhid.Layout,
+) -> Array[(@moonhid.ReportKind, Int, Int)] {
+  let result : Array[(@moonhid.ReportKind, Int, Int)] = []
+  for field in layout.fields {
+    if result.any(r => r.0 == field.kind && r.1 == field.report_id) {
+      continue
+    }
+    let mut bits = 0
+    for f in layout.fields {
+      if f.kind == field.kind && f.report_id == field.report_id {
+        bits = bits + f.bit_size * f.count
+      }
+    }
+    result.push((field.kind, field.report_id, bits))
+  }
+  result
 }
