@@ -20,6 +20,8 @@ pub fn effective_physical_range(Field) -> (Int64, Int64)
 
 pub fn extract_bits(Bytes, Int, Int, signed? : Bool) -> Result[Int64, Diagnostic]
 
+pub fn extract_bytes(Bytes, Int, Int) -> Result[Bytes, Diagnostic]
+
 pub fn format_hex(Bytes) -> String
 
 pub fn layout_to_json(Layout) -> Json
@@ -56,6 +58,7 @@ pub(all) struct DecodedReport {
   kind : ReportKind
   report_id : Int
   values : Array[DecodedValue]
+  opaque_values : Array[OpaqueValue]
 } derive(Eq, @debug.Debug)
 pub fn DecodedReport::equal(Self, Self) -> Bool
 pub fn DecodedReport::not_equal(Self, Self) -> Bool
@@ -124,6 +127,17 @@ pub(all) struct Layout {
 pub fn Layout::equal(Self, Self) -> Bool
 pub fn Layout::not_equal(Self, Self) -> Bool
 pub fn Layout::to_repr(Self) -> @debug.Repr
+
+pub(all) struct OpaqueValue {
+  field_index : Int
+  element_index : Int
+  bit_offset : Int
+  bit_size : Int
+  bytes : Bytes
+} derive(Eq, @debug.Debug)
+pub fn OpaqueValue::equal(Self, Self) -> Bool
+pub fn OpaqueValue::not_equal(Self, Self) -> Bool
+pub fn OpaqueValue::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ReportKind {
   Input

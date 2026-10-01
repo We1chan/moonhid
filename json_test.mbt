@@ -16,7 +16,7 @@ test "versioned export round trips numbers metadata and report lengths" {
   assert_true(
     parsed
     is {
-      "schema_version": 1,
+      "schema_version": 2,
       "layout": {
         "has_report_ids": true,
         "reports": [

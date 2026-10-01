@@ -106,7 +106,7 @@ fn usage_value(item : Item, page : Int) -> Usage {
 
 ///|
 /// Compiles the supported HID subset. Unknown semantics are rejected explicitly.
-/// Limits: 32 bits/value, 1024 values/Main item and 65536 bits/report.
+/// Limits: integer Array values are 1..32 bits; reports are at most 65536 bits.
 pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
   let items = match parse_items(bytes) {
     Ok(items) => items
@@ -193,12 +193,12 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
         }
         6 => global = { ..global, unit: Some(value), }
         7 => {
-          if value > 32 {
+          if value > 65536 {
             return Err(
               diagnostic(
                 item.offset,
                 "report_size",
-                "Report Size must be 0..32; zero cannot define a report",
+                "Report Size must be 0..65536; zero cannot define a report",
               ),
             )
           }
@@ -416,7 +416,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           }
           let cursor = item.tag * 256 + global.report_id
           let offset = offsets.get_or_default(cursor, 0)
-          if offset + global.size * global.count > 65536 {
+          if global.size > (65536 - offset) / global.count {
             return Err(
               diagnostic(
                 item.offset,
@@ -430,29 +430,47 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           } else {
             global.logical_max_unsigned
           }
-          let representable_min = if global.logical_min < 0 {
-            -(1L << (global.size - 1))
-          } else {
-            0L
-          }
-          let representable_max = if global.logical_min < 0 {
-            (1L << (global.size - 1)) - 1
-          } else {
-            (1L << global.size) - 1
-          }
-          if (value & 1L) == 0 &&
-            (
-              maximum < global.logical_min ||
-              global.logical_min < representable_min ||
-              maximum > representable_max
-            ) {
+          if (value & 3L) == 0 && global.size > 32 {
             return Err(
               diagnostic(
                 item.offset,
-                "logical_range",
-                "Logical range is invalid or exceeds Report Size",
+                "report_size",
+                "Data Array fields require widths 1..32",
               ),
             )
+          }
+          if (value & 1L) == 0 {
+            if maximum < global.logical_min {
+              return Err(
+                diagnostic(
+                  item.offset,
+                  "logical_range",
+                  "Logical Maximum is below Logical Minimum",
+                ),
+              )
+            }
+            if global.size <= 32 {
+              let representable_min = if global.logical_min < 0 {
+                -(1L << (global.size - 1))
+              } else {
+                0L
+              }
+              let representable_max = if global.logical_min < 0 {
+                (1L << (global.size - 1)) - 1
+              } else {
+                (1L << global.size) - 1
+              }
+              if global.logical_min < representable_min ||
+                maximum > representable_max {
+                return Err(
+                  diagnostic(
+                    item.offset,
+                    "logical_range",
+                    "Logical range exceeds Report Size",
+                  ),
+                )
+              }
+            }
           }
           fields.push({
             descriptor_offset: item.offset,
