@@ -218,12 +218,12 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           global = { ..global, report_id: value.to_int(), }
         }
         9 => {
-          if value < 1 || value > 1024 {
+          if value < 1 || value > 65536 {
             return Err(
               diagnostic(
                 item.offset,
                 "report_count",
-                "Report Count must be 1..1024",
+                "Report Count must be 1..65536",
               ),
             )
           }

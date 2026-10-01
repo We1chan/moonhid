@@ -67,15 +67,33 @@ test "real device E: report structure" {
 }
 
 ///|
-test "real device B: known compatibility diagnostic" {
-  let bytes = match @moonhid.parse_hex(real_device_b()) {
-    Ok(bytes) => bytes
-    Err(_) => fail("invalid fixture hex")
-  }
-  assert_true(
-    @moonhid.compile_descriptor(bytes)
-    is Err({ code: "report_count", offset: 111, .. }),
-  )
+test "real device B: report structure" {
+  let layout = compile(real_device_b())
+  assert_eq(layout.fields.length(), 15)
+  assert_eq(real_report_summary(layout), [
+    (@moonhid.Input, 2, 56),
+    (@moonhid.Feature, 2, 32768),
+    (@moonhid.Input, 63, 128),
+    (@moonhid.Input, 68, 14008),
+    (@moonhid.Input, 91, 768),
+  ])
+  assert_eq(layout.fields.map(f => (f.bit_size, f.count, f.flags)), [
+    (1, 3, 2),
+    (5, 1, 1),
+    (8, 2, 6),
+    (8, 4, 1),
+    (16384, 2, 1),
+    (8, 16, 34),
+    (8, 1751, 0),
+    (8, 8, 3),
+    (16, 1, 2),
+    (8, 1, 2),
+    (8, 4, 3),
+    (8, 1, 2),
+    (8, 32, 3),
+    (8, 32, 2),
+    (8, 16, 3),
+  ])
 }
 
 ///|

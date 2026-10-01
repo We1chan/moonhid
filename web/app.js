@@ -33,7 +33,7 @@ const diagnosticText = {
   text_limit: '十六进制文本过长', truncated_item: 'Item 数据被截断', value_size: 'Item 数据长度不受支持',
   unsupported_item: '不支持长 Item 或保留 Item', unsupported_main: '未知的 Main Item', unsupported_global: '不支持的 Global Item',
   unsupported_local: '不支持的 Local Item', usage_page: 'Usage Page 超过 16 位', usage_range: 'Usage 范围无效', usage_limit: 'Usage 数量超出上限',
-  logical_range: 'Logical 范围无效或超出 Report Size', report_size: 'Report Size 无效（Data Array 限 1..32 位）', report_count: 'Report Count 超出 1..1024',
+  logical_range: 'Logical 范围无效或超出 Report Size', report_size: 'Report Size 无效（Data Array 限 1..32 位）', report_count: 'Report Count 超出 1..65536',
   report_id: 'Report ID 必须是 1..255', mixed_report_ids: '有的报告带 Report ID，有的没有', global_stack: 'Push / Pop 不配对',
   collection: 'Collection 不配对或嵌套过深', dangling_local: 'Local Item 之后缺少 Main Item', missing_dimensions: 'Main Item 之前缺少 Report Size 或 Report Count',
   main_flags: '不支持的 Main 标志', buffered_bytes: '不支持 Buffered Bytes', unit_exponent: 'Unit Exponent 超出 -8..7', unit_range: 'Unit 超过 32 位', field_limit: '字段数量超出上限',

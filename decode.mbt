@@ -67,7 +67,7 @@ pub fn report_length(
       field.bit_size > 65536 ||
       ((field.flags & 3) == 0 && field.bit_size > 32) ||
       field.count < 1 ||
-      field.count > 1024 ||
+      field.count > 65536 ||
       field.bit_offset != bits {
       return Err(
         diagnostic(

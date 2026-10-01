@@ -45,7 +45,7 @@ python3 scripts/serve-web.py # serves web/ on 127.0.0.1:8765 (MOONHID_PORT to ch
 Cross-cutting invariants:
 - `Field.bit_offset` is a **payload** offset that excludes the Report ID byte. The decoder adds the 8-bit prefix when `layout.has_report_ids`.
 - Diagnostic `code` strings are a contract. Blackbox tests, `scripts/test-web.mjs` and the web UI all match on them.
-- Size limits (descriptor 65536 B, 4096 fields, 1..32 bits/integer or opaque Variable fields, 1024 values/field, 65536 bits/report, 1024 usages, 4096 collections, stack depth 64) are enforced in `compile_descriptor`. `report_length` re-checks them because callers can build `Layout` values by hand.
+- Size limits (descriptor 65536 B, 4096 fields, 1..32 bits/integer or opaque Variable fields, at most 65536 values/field within 65536 bits/report, 1024 usages, 4096 collections, stack depth 64) are enforced in `compile_descriptor`. `report_length` re-checks them because callers can build `Layout` values by hand.
 - JSON v2 (`docs/json-v2.md`) is versioned. An incompatible change to fields or semantics must bump `schema_version`. Encode `Int64` with `number64` (`Json::number`), because the default `ToJson` emits strings.
 
 **Other packages:**
