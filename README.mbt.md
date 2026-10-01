@@ -37,6 +37,26 @@ moon run cmd/main
 `05 ff 02 fe` 表示按钮 1 和 3 按下，X/Y/滚轮变化分别为 `-1 / 2 / -2`；
 手柄样例带 Report ID `7`，两个 16 位轴分别为 `-32768 / 32767`。
 
+## 文件命令行工具
+
+CLI 提供 native 与 Node.js 后端，文件按 UTF-8 十六进制文本读取：
+
+```sh
+moon run cmd/moonhid --target native -- inspect descriptor.hex
+moon run cmd/moonhid --target native -- decode --kind input descriptor.hex report.hex
+moon run cmd/moonhid --target js -- inspect descriptor.hex
+```
+
+`inspect` 输出完整描述符 JSON v2；`decode` 输出带 `schema_version: 2` 的
+`wire_hex` / `decoded` 组件。报告文件应包含所需的 Report ID 前缀。
+方向可以是 input、output、feature；成功退出 0，输入/文件/诊断错误退出 1，参数错误退出 2。
+错误写入 stderr，格式为 `code @offset: message`；成功时 stdout 只含 JSON。
+
+文件读取采用 [moonbitlang/x](https://github.com/moonbitlang/x) 0.5.5（Apache-2.0）。
+该 fs 包具有四后端实现，但本 CLI 的进程参数与 stderr 适配限定为 native/Node JS；
+核心解析库与浏览器桥接不导入 fs/sys，继续支持四后端。
+`node scripts/test-cli.mjs` 会运行两个真实 CLI 进程，检查 Unicode/空格路径和退出码。
+
 ## 浏览器检查器
 
 安装 MoonBit、Node.js 22+ 和 Python 3 后：

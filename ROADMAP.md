@@ -10,7 +10,7 @@
 - 常用 Main / Global / Local 项、零长度数据、区间 Usage、Report ID 与 Global Push/Pop。
 - Input / Output / Feature 独立布局、跨字节字段、整数解码、数组 Usage、Null State。
 - 鼠标、键盘和手柄合成样例，键盘 LED 输出报告测试。
-- 四后端 CI：检查、构建、测试和运行示例。
+- 四后端 CI：检查、构建、测试和运行示例；native/Node JS 文件 CLI 支持 inspect/decode。
 - Collection 层级树和字段所属集合，保留 Physical 范围与 Unit 元数据。
 - JSON schema v2：超过 32 位的字段保留原始字节；描述符、原始 items、报告布局、物理/单位信息与解码值，保留数字 Usage。
 - 交互式浏览器页面：粘贴十六进制、展开 item、检查字段位布局、选择 ID 与报告方向。
