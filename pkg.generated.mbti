@@ -10,6 +10,10 @@ pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
 pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
 
+pub fn signed_value(Bytes) -> Result[Int64, Diagnostic]
+
+pub fn unsigned_value(Bytes) -> Result[Int64, Diagnostic]
+
 // Errors
 
 // Types and methods
