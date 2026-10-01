@@ -11,6 +11,7 @@
 - 增加可选 WebHID Input 实时模式与 collections 差异提示（已模拟验证，真实输入待验收）。
 - 增加 native/Node JS 文件 CLI，支持 inspect/decode 与 0/1/2 退出码。
 - 七份真实描述符全部通过结构断言；hid-tools 对照和 headless Chrome 检查可复现并纳入 CI。
+- 增加固定种子的随机/结构化/真实描述符突变测试，验证资源边界和解码性质。
 
 ## API / JSON 迁移
 

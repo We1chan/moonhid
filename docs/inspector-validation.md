@@ -96,6 +96,9 @@ JS CI 现在也运行该 DOM 测试和独立 hid-tools 对照。
 可设置 `MOONHID_SCREENSHOTS=/tmp/moonhid-ui-checks` 保存三种视口的浅色/深色截图，
 或用 `CHROME_BIN` 指定 Chromium 可执行文件。测试服务仅监听随机的 loopback 端口，
 Chrome 使用独立临时 profile，结束后清理自己启动的进程和 profile。
+关闭时仅向本次 Chrome 的独立进程组发信号，等待退出后删除 profile，目录清理采用有限重试。
+2026-10-02 的 CI 曾在所有 DOM 断言通过后因 `ENOTEMPTY` 失败：父进程退出时子进程仍在写入，
+现已修正关闭范围与清理顺序，避免将成功验收变成偶发的收尾失败。
 
 ## WebHID 模拟验收
 

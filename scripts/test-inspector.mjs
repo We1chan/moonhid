@@ -20,6 +20,28 @@ let chrome;
 let socket;
 const errors = [];
 
+async function stopProcess(child, ownGroup = false) {
+  if (!child?.pid) return;
+  const exited = child.exitCode !== null || child.signalCode !== null;
+  const done = exited ? Promise.resolve(true) : once(child, 'exit').then(() => true);
+  const signal = name => {
+    try {
+      if (ownGroup) process.kill(-child.pid, name);
+      else child.kill(name);
+    } catch (error) { if (error.code !== 'ESRCH') throw error; }
+  };
+  const wait = async () => {
+    let timer;
+    try { return await Promise.race([done, new Promise(resolve => { timer = setTimeout(() => resolve(false), 3000); })]); }
+    finally { clearTimeout(timer); }
+  };
+  signal('SIGTERM');
+  if (!await wait()) {
+    signal('SIGKILL');
+    if (!await wait()) throw new Error(`Test process did not exit: ${child.pid}`);
+  }
+}
+
 try {
   await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Inspector server startup timed out')), 15000);
@@ -27,7 +49,7 @@ try {
     server.once('error', reject);
     server.once('exit', code => reject(new Error(`Inspector server exited: ${code}`)));
   });
-  chrome = spawn(chromeBin, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', ...(process.platform === 'linux' ? ['--no-sandbox'] : [])], { stdio: ['ignore', 'ignore', 'pipe'] });
+  chrome = spawn(chromeBin, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', ...(process.platform === 'linux' ? ['--no-sandbox'] : [])], { detached: process.platform !== 'win32', stdio: ['ignore', 'ignore', 'pipe'] });
   const endpoint = await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Chrome startup timed out')), 15000);
     let log = '';
@@ -166,8 +188,9 @@ try {
   console.log('Inspector DOM: A–G, opaque/large Usage, widths/themes, diagnostics and simulated WebHID lifecycle passed.');
 } finally {
   socket?.close();
-  for (const child of [chrome, server]) {
-    if (child && child.exitCode === null) { child.kill('SIGTERM'); await Promise.race([once(child, 'exit'), new Promise(resolve => setTimeout(resolve, 3000))]); }
-  }
-  await rm(profile, { recursive: true, force: true });
+  // The isolated Chrome process group includes its profile-writing children.
+  // A bounded retry also covers the final filesystem writes during shutdown.
+  await stopProcess(chrome, process.platform !== 'win32');
+  await stopProcess(server);
+  await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }

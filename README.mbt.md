@@ -172,8 +172,8 @@ test "README: decode one relative axis" {
   Collection 最多 4096 项，Collection 与 Global 栈深度最多 64。Global Push/Pop 要求平衡。
   Unit Exponent 支持 -8..7 的四位编码及常见符号扩展编码；保留 Unit 的系统与保留位。
   Physical 缺少任一端点或两端均为 0 时，有效范围采用 Logical 范围，原声明仍可查询。
-- 当前没有设备读写、驱动安装或 Boot Protocol 切换功能；合成样例测试不能代表
-  已兼容所有 HID 设备。
+- 核心库处理离线字节；网页可选 WebHID 只接收 Input，不发送 Output/Feature。
+  不提供驱动安装或 Boot Protocol 切换；合成样例测试不能代表已兼容所有 HID 设备。
 
 错误通过 `Result[..., Diagnostic]` 返回。二进制输入的 `offset` 是字节偏移，
 十六进制文本的 `offset` 是 UTF-16 索引。`parse_hex` 不接受 `0x` 前缀、逗号或
@@ -198,6 +198,8 @@ moon fmt --check
 
 CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
 Physical/Unit、完整 uint32 和错误路径。独立 hid-tools 对照与 headless Chrome DOM 检查也纳入 JS CI，验证真实描述符布局与界面。
+四后端还运行固定种子的随机字节、结构化有效描述符与真实描述符突变；
+语料、资源边界及解码性质见 [模糊测试验收](docs/fuzz-validation.md)。
 浏览器人工和自动验收记录见
 [检查器验收](docs/inspector-validation.md)。
 
