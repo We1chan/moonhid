@@ -1,0 +1,16 @@
+import {
+  "We1chan/moonhid" @hid,
+  "moonbitlang/core/env",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/sys",
+}
+
+pkgtype(kind: "executable")
+
+supported_targets = "+native+js"
+
+options(
+  "native-stub": [ "stderr_native.c" ],
+  targets: { "io_native.mbt": [ "native" ], "io_js.mbt": [ "js" ] },
+)
