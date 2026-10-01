@@ -40,4 +40,12 @@ assert.deepEqual([layout.fields[0].unit.system, layout.fields[0].unit.length], [
 const unsigned = '15 00 27 ff ff ff ff 75 20 95 01 81 02';
 assert.equal(inspect(unsigned).descriptor.layout.fields[0].logical_max, 4294967295);
 assert.equal(decode(unsigned, 'input', 'ff ff ff ff').decoded.values[0].value, 4294967295);
+const zero = 'a0 04 14 24 34 44 54 64 75 01 95 01 08 80 c0';
+assert.equal(inspect(zero).descriptor.layout.collections[0].collection_type, 0);
+assert.equal(decode(zero, 'input', '00').decoded.values[0].value, 0);
+assert.equal(inspect('84').error.code, 'report_id');
+assert.equal(inspect('94').error.code, 'report_count');
+assert.equal(inspect('74 95 01 80').error.code, 'missing_dimensions');
+assert.equal(inspect('75 08 95 01 82 00 01').error.code, 'buffered_bytes');
+assert.equal(inspect('75 08 95 01 82 00 02').error.code, 'main_flags');
 console.log('Browser bridge: three fixtures, LED output, multi-ID/Feature, metadata, uint32 and error paths passed.');

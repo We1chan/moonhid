@@ -109,6 +109,8 @@ test "README: decode one relative axis" {
 - 支持 Input / Output / Feature、Usage / Usage 范围 / 32 位扩展 Usage、
   Logical / Physical 范围、Unit / Unit Exponent、Report Size / Count / ID、Global Push / Pop，
   并保留 Collection 的类型、Usage、父索引与字段所属集合。
+- 零长度短项的数据按 0 解释；零长度 Collection 表示 Physical，零长度 Main flags 表示 0。
+  Report ID 0 和 Report Count 0 仍拒绝；Report Size 0 不能用于定义字段。
 - 变量字段按声明顺序对应 Usage，数量不足时重复最后一个 Usage。
   数组值按 `value - logical_min` 索引 Usage 列表；未映射的值保留原值。
 - 保留填充字段的布局，解码输出省略 Constant 字段；保留超出逻辑范围的值，
@@ -116,7 +118,7 @@ test "README: decode one relative axis" {
 - 字段位偏移从报告载荷的第 0 位计算，不含 Report ID 字节；解码输入必须包含
   描述符要求的 ID 前缀，并且长度必须精确匹配，不能带额外传输层前缀或尾部字节。
 - 长项仅支持原始分词，布局编译会拒绝；保留字、Delimiter、Designator、String
-  本地项及 Buffered Bytes 目前也会明确报错。Physical 范围和 Unit 全局项允许存在，
+  本地项目前也会明确报错；Buffered Bytes 单独返回 `buffered_bytes`。Physical 范围和 Unit 全局项允许存在，
   解码返回原始整数，不进行物理单位换算。核心保留数字 Usage；页面只补充常见 Usage 名称，
   不是完整 HID Usage Tables 数据库。
 - 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，每值 1..32 位，
