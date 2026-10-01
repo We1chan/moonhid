@@ -3,71 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#173d39">
-  <meta name="description" content="粘贴 HID 描述符和原始报告，查看集合、字段位布局与解码值。纯 MoonBit 核心，本地运行。">
-  <title>MoonHID · HID 报告检查器</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23173d39'/%3E%3Cpath d='M16 46V18l16 18 16-18v28' fill='none' stroke='%23d5f4b0' stroke-width='6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#10141b">
+  <meta name="description" content="HID 协议分析工作台：检查描述符、载荷位布局和原始报告。">
+  <title>MoonHID · HID 协议分析工作台</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="MoonHID 首页"><span class="brand-icon" aria-hidden="true">M</span>MoonHID<span class="brand-sub">/ INSPECTOR</span></a>
-    <div class="topbar-right"><span class="local-badge"><i></i>本地解析</span><a href="https://github.com/We1chan/moonhid" target="_blank" rel="noreferrer">GitHub ↗</a></div>
+  <header class="appbar">
+    <a class="brand" href="./" aria-label="MoonHID 首页"><span class="brand-icon" aria-hidden="true">MH</span>MoonHID</a>
+    <div class="app-title"><h1>HID 协议分析工作台</h1><span>DESCRIPTOR / WIRE / FIELDS</span></div>
+    <div class="examples" aria-label="设备样例"><span class="toolbar-label">样例</span><div id="fixture-buttons"><button disabled>加载中…</button></div></div>
+    <div class="app-links"><span class="local-badge">LOCAL</span><a href="https://github.com/We1chan/moonhid" target="_blank" rel="noreferrer">GitHub ↗</a></div>
   </header>
-  <main>
-    <section class="intro">
-      <div><p class="eyebrow">READ THE BITS. UNDERSTAND THE DEVICE.</p><h1>让设备报告，变得可读。</h1><p class="subtitle">粘贴 HID 描述符与原始报告，检查位布局，再看每个值代表什么。</p></div>
-      <div class="examples" aria-label="设备样例"><span class="small-label">从一个样例开始</span><div id="fixture-buttons"><button disabled>正在加载…</button></div></div>
-    </section>
-    <div id="boot-error" role="alert" class="notice error" hidden>解析器未加载。请先运行 <code>node scripts/build-web.mjs</code>，通过本地 HTTP 服务打开页面。</div>
-    <noscript><p class="notice error">请启用 JavaScript 以使用检查器。</p></noscript>
-    <div class="workspace">
-      <aside class="input-column">
-        <section class="card descriptor-card">
-          <div class="section-title"><h2><span class="step">01</span><label for="descriptor">报告描述符</label></h2><span id="descriptor-size" class="mono muted">HEX</span></div>
+  <div id="boot-error" role="alert" class="notice error" hidden>解析器未加载。请先运行 <code>node scripts/build-web.mjs</code>，通过本地 HTTP 服务打开页面。</div>
+  <noscript><p class="notice error">请启用 JavaScript 以使用检查器。</p></noscript>
+  <main class="workbench">
+    <aside class="input-column" aria-label="协议输入">
+      <section class="panel descriptor-panel">
+        <div class="section-title"><h2><span class="panel-index">01</span><label for="descriptor">报告描述符</label></h2><span id="descriptor-size" class="mono muted">HEX</span></div>
+        <div class="input-body">
+          <div class="editor-caption"><span>HEX INPUT</span><span>小端字节序</span></div>
           <textarea id="descriptor" spellcheck="false" autocapitalize="off" aria-describedby="descriptor-help" placeholder="05 01 09 02 a1 01 …"></textarea>
-          <p id="descriptor-help" class="hint">连续或空白分隔的字节对，不带 0x 前缀。</p>
-          <button id="inspect" class="primary" disabled>解析描述符 <span aria-hidden="true">↗</span></button>
+          <p id="descriptor-help" class="hint">字节对连续或空白分隔，例如 05 01；不带 0x。</p>
+          <button id="inspect" class="primary" disabled>编译描述符 <span aria-hidden="true">↵</span></button>
           <div id="descriptor-status" class="status" role="status" aria-live="polite">正在加载解析器…</div>
           <button id="descriptor-error-position" class="text-button" hidden>定位输入错误</button>
-        </section>
-        <section class="card">
-          <div class="section-title"><h2><span class="step">02</span><label for="report">原始报告</label></h2><span id="wire-size" class="mono muted">HEX</span></div>
-          <div class="selectors"><label>报告方向<select id="kind" disabled></select></label><label>Report ID<select id="report-id" disabled></select></label></div>
+        </div>
+      </section>
+      <section class="panel report-panel">
+        <div class="section-title"><h2><span class="panel-index">02</span><label for="report">原始报告</label></h2><span id="wire-size" class="mono muted">HEX</span></div>
+        <div class="input-body">
+          <div class="selectors"><div><label for="kind">报告方向</label><select id="kind" disabled></select></div><div><label for="report-id">Report ID</label><select id="report-id" disabled></select></div></div>
           <textarea id="report" class="report-input" spellcheck="false" autocapitalize="off" aria-describedby="report-help" placeholder="05 ff 02 fe"></textarea>
-          <p id="report-help" class="hint">带 ID 的报告需包含首字节。长度必须精确匹配。</p>
+          <p id="report-help" class="hint">包含 ID 前缀；输入长度须匹配选定布局。</p>
           <button id="sample-report" class="text-button" hidden>载入当前方向的样例报告</button>
           <button id="decode" class="secondary" disabled>解码报告 <span aria-hidden="true">→</span></button>
-          <div id="report-status" class="status" role="status" aria-live="polite">先解析描述符。</div>
+          <div id="report-status" class="status" role="status" aria-live="polite">先编译描述符。</div>
           <button id="report-error-position" class="text-button" hidden>定位输入错误</button>
-        </section>
-        <div class="local-note"><span aria-hidden="true">◈</span><p>数据在此页面处理。无需连接设备，也无需 USB 权限。</p></div>
-      </aside>
-      <div class="result-column">
-        <section class="card overview-card">
-          <div class="section-title"><h2>布局概览</h2><button id="export" class="export-button" disabled>↓ 导出 JSON</button></div>
-          <div id="summary" class="summary"><p class="empty">解析描述符后，布局将显示在这里。</p></div>
-          <div class="layout-caption"><span id="layout-label">载荷位布局</span><span class="legend"><i class="legend-data"></i>数据 <i class="legend-padding"></i>填充</span></div>
-          <div id="bit-layout" class="bit-layout"></div>
-          <p id="bit-help" class="hint">点击区块，检查字段及其来源。位偏移从载荷开始，不含 ID 字节。</p>
-        </section>
-        <section class="card decoded-card">
-          <div class="section-title"><h2>报告解码</h2><span id="decoded-count" class="count-badge">等待报告</span></div>
-          <div id="decoded" class="table-scroll"><p class="empty">解析并解码报告后，查看按钮、轴与数组值。</p></div>
-          <p class="hint table-note">Constant 字段保留在布局中，不出现在解码值列表。超出逻辑范围的值会保留并标记。</p>
-        </section>
-      </div>
+        </div>
+      </section>
+      <div class="local-note"><span class="mono">OFFLINE</span><p>数据在本页处理，无需连接设备。</p></div>
+    </aside>
+    <div class="analysis-column">
+      <section class="panel layout-panel">
+        <div class="section-title"><h2>载荷布局</h2><button id="export" class="export-button" disabled>导出 JSON ↓</button></div>
+        <div id="summary" class="summary"><p class="empty">编译描述符后显示布局。</p></div>
+        <div class="layout-caption"><span id="layout-label">报告载荷位布局</span><span class="legend"><i class="legend-data"></i>数据 <i class="legend-padding"></i>填充</span></div>
+        <div id="bit-layout" class="bit-layout"></div>
+        <div class="wire-heading"><span>WIRE BYTES <span class="muted">报告原始字节</span></span><span id="wire-caption" class="muted">等待解码</span></div>
+        <div id="wire-bytes" class="wire-bytes"><p class="empty">成功解码后，可检查每个字节的二进制位。</p></div>
+        <p id="bit-help" class="hint">点击布局或表格字段，检查器同步显示元数据；高亮对应报告位。</p>
+      </section>
+      <section class="panel table-panel">
+        <div class="table-toolbar"><div class="tabs" role="tablist" aria-label="报告数据"><button id="values-tab" role="tab" aria-selected="true" aria-controls="values-panel">解码值 <span id="decoded-count" class="count-badge">等待报告</span></button><button id="fields-tab" role="tab" aria-selected="false" aria-controls="fields-panel" tabindex="-1">Main 字段 <span id="field-count" class="count-badge">0 fields</span></button></div></div>
+        <div id="values-panel" role="tabpanel" aria-labelledby="values-tab"><div id="decoded" class="table-scroll"><p class="empty">解码报告后，查看各元素的 Usage 和整数值。</p></div><p class="hint table-note">位偏移从载荷开始，不含 ID 字节。Constant 不产生解码值。</p></div>
+        <div id="fields-panel" role="tabpanel" aria-labelledby="fields-tab" hidden><div id="fields" class="table-scroll"><p class="empty">选择报告方向与 ID，查看对应字段。</p></div><p class="hint table-note">字段索引对应完整描述符；来源链接定位到原始 item。</p></div>
+      </section>
+      <section class="panel items-panel"><details id="items-panel"><summary><span>描述符 ITEMS</span><span id="item-count" class="mono muted">0 items</span></summary><div id="items" class="table-scroll"><p class="empty">暂无数据。</p></div></details></section>
     </div>
-    <section class="card fields-card">
-      <div class="section-title"><h2>字段与元数据</h2><span id="field-count" class="mono muted">0 fields</span></div>
-      <div class="fields-grid"><div id="fields" class="table-scroll"><p class="empty">选择报告方向与 ID，查看对应字段。</p></div><div id="field-detail" class="field-detail"><p class="empty">选择一个字段，查看集合、物理范围与单位。</p></div></div>
-    </section>
-    <div class="structure-grid">
-      <section class="card"><div class="section-title"><h2>Collection 层级</h2><span id="collection-count" class="mono muted">0 collections</span></div><div id="collections" class="collection-tree"><p class="empty">暂无集合。</p></div></section>
-      <section class="card"><details id="items-panel"><summary><span>原始 Items</span><span id="item-count" class="mono muted">0 items</span></summary><div id="items" class="table-scroll"><p class="empty">暂无数据。</p></div></details><p class="hint">布局或字段中的「来源」链接，可定位到描述符对应 item。</p></section>
-    </div>
-    <footer><span>MoonHID <span class="mono">v0.1 · JSON schema 1</span></span><span>合成样例用于协议检查；当前不进行设备读写。</span></footer>
+    <aside class="inspector-column" aria-label="字段检查器">
+      <section class="panel metadata-panel"><div class="section-title"><h2>字段检查器</h2><span class="inspector-symbol" aria-hidden="true">[ ]</span></div><div id="field-detail" class="field-detail"><p class="empty">选择字段，检查标志、范围与单位。</p></div></section>
+      <section class="panel collection-panel"><div class="section-title"><h2>Collection 树</h2><span id="collection-count" class="mono muted">0 collections</span></div><div id="collections" class="collection-tree"><p class="empty">暂无集合。</p></div></section>
+    </aside>
   </main>
+  <footer class="statusbar"><span>MoonHID <span class="mono">v0.1 / JSON schema 1</span></span><span>LSB FIRST <span class="statusbar-divider">|</span> 样例为合成数据 <span class="statusbar-divider">|</span> 离线报告分析</span></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

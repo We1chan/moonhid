@@ -62,6 +62,8 @@ function clearDecoded(message = '报告已修改，请重新解码。') {
   $('report-error-position').hidden = true;
   $('decoded-count').textContent = '等待报告';
   $('wire-size').textContent = 'HEX';
+  $('wire-caption').textContent = '等待解码';
+  $('wire-bytes').replaceChildren(el('p', '成功解码后显示原始字节。', 'empty'));
   $('decoded').replaceChildren(el('p', message, 'empty'));
   status('report-status', message);
 }
@@ -171,6 +173,7 @@ function decode() {
   $('decoded-count').textContent = `${decoded.values.length} values`;
   status('report-status', `解码完成 · ${decoded.values.length} 个值${invalid ? ` / ${invalid} 个越界值` : ''}${nulls ? ` / ${nulls} 个 Null State` : ''}`, invalid ? 'warning' : 'success');
   renderDecoded();
+  renderWireBytes();
 }
 function renderSummary() {
   const statistics = [[descriptor.byte_length, '描述符字节'], [descriptor.layout.fields.length, 'Main 字段'], [descriptor.layout.collections.length, 'Collections'], [descriptor.layout.reports.length, '报告布局']];
@@ -195,6 +198,54 @@ function renderBitLayout() {
   }
   if (fields.length > 128) segments.push(el('span', `另有 ${fields.length - 128} 个字段，完整数据见下方字段表与 JSON。`, 'bit-overflow'));
   $('bit-layout').replaceChildren(...segments);
+}
+
+function renderWireBytes() {
+  if (!decoded || !wireHex) return;
+  const bytes = wireHex.split(' ');
+  const prefixBits = descriptor.layout.has_report_ids ? 8 : 0;
+  const fields = currentFields();
+  const selected = descriptor.layout.fields[selectedField];
+  const selectedEnd = selected.bit_offset + selected.bit_size * selected.count;
+  $('wire-caption').textContent = `${bytes.length} bytes · MSB → LSB`;
+  const cells = bytes.slice(0, 64).map((byte, byteIndex) => {
+    const isId = prefixBits !== 0 && byteIndex === 0;
+    const payloadStart = byteIndex * 8 - prefixBits;
+    const owners = fields.filter(({ field }) => field.bit_offset < payloadStart + 8 && field.bit_offset + field.bit_size * field.count > payloadStart);
+    const target = owners.find(({ field }) => !(field.flags & 1)) ?? owners[0];
+    const node = el(isId || !target ? 'div' : 'button', null, `wire-byte${isId ? ' id-byte' : ''}`);
+    node.dataset.byteIndex = byteIndex;
+    node.title = isId ? `Report ID 前缀：${decoded.report_id}` : `载荷位 ${payloadStart}..${payloadStart + 7} / 字段 ${owners.map(o => `#${o.index}`).join(', ') || '末尾空位'}`;
+    node.setAttribute('aria-label', `报告字节 ${byteIndex}: ${byte}${isId ? '，Report ID' : ''}`);
+    if (target && !isId) node.addEventListener('click', () => selectField(target.index));
+    node.append(el('span', isId ? 'ID PREFIX' : `+${hex(byteIndex, 4)}`, 'byte-offset'), el('span', byte.toUpperCase(), 'byte-hex'));
+    const bits = el('span', null, 'byte-bits');
+    const value = Number.parseInt(byte, 16);
+    let hasSelection = false;
+    for (let bit = 7; bit >= 0; bit--) {
+      const payloadBit = payloadStart + bit;
+      const owner = isId ? null : owners.find(({ field }) => payloadBit >= field.bit_offset && payloadBit < field.bit_offset + field.bit_size * field.count);
+      const active = !isId && payloadBit >= selected.bit_offset && payloadBit < selectedEnd;
+      const span = el('span', (value >> bit) & 1, `wire-bit${active ? ' active' : ''}${owner?.field.flags & 1 ? ' padding' : ''}${isId ? ' id-bit' : ''}`);
+      span.title = isId ? `ID 位 ${bit}` : `载荷位 ${payloadBit}${owner ? ` · 字段 #${owner.index}` : ' · 末尾空位'}`;
+      if (active) hasSelection = true;
+      bits.append(span);
+    }
+    node.classList.toggle('has-selection', hasSelection);
+    node.append(bits);
+    return node;
+  });
+  if (bytes.length > 64) cells.push(el('p', `预览前 64 字节；完整 ${bytes.length} 字节保留在输入与 JSON 中。`, 'wire-overflow'));
+  $('wire-bytes').replaceChildren(...cells);
+}
+
+function activateDataTab(name) {
+  for (const tab of ['values', 'fields']) {
+    const active = tab === name;
+    $(`${tab}-tab`).setAttribute('aria-selected', String(active));
+    $(`${tab}-tab`).tabIndex = active ? 0 : -1;
+    $(`${tab}-panel`).hidden = !active;
+  }
 }
 // Long valid descriptors stay usable: tables render one page, never every value.
 function tableView(containerId, headers, rows, renderRow) {
@@ -282,6 +333,7 @@ function selectField(index, rerenderBits = true) {
   heading.append(document.createTextNode(' '), sourceButton(field.descriptor_offset));
   $('field-detail').replaceChildren(heading, detail, el('p', 'Physical 缺少端点或两端均为 0 时，使用 Logical 范围。这里保留单位元数据，解码值仍为原始整数。', 'detail-note'));
   if (rerenderBits) renderBitLayout();
+  renderWireBytes();
   highlightField();
 }
 function highlightField() {
@@ -305,8 +357,8 @@ function renderItems(focusOffset = null) {
   $('item-count').textContent = `${descriptor.items.length} items`;
   const items = focusOffset === null ? descriptor.items : descriptor.items.filter(item => item.offset === focusOffset);
   tableView('items', ['偏移', '类型', 'Item', 'Payload'], items, item => {
-    const row = el('tr'); row.dataset.itemOffset = item.offset;
-    if (item.offset === focusOffset) row.className = 'highlight';
+    const row = el('tr', null, `item-${['main', 'global', 'local', 'reserved'][item.type_code]}`); row.dataset.itemOffset = item.offset;
+    if (item.offset === focusOffset) row.classList.add('highlight');
     const names = [mainTags, globalTags, localTags];
     row.append(el('td', `@${item.offset}`, 'mono'), el('td', ['Main', 'Global', 'Local', 'Reserved'][item.type_code]), el('td', names[item.type_code]?.[item.tag] ?? `Tag ${item.tag}`), el('td', item.data_hex || '—', 'mono')); return row;
   });
@@ -363,6 +415,17 @@ $('sample-report').addEventListener('click', () => { $('report').value = sampleF
 $('export').addEventListener('click', exportJson);
 $('descriptor-error-position').addEventListener('click', () => locateInput('descriptor', descriptorError));
 $('report-error-position').addEventListener('click', () => locateInput('report', reportError));
+for (const tab of ['values', 'fields']) {
+  $(`${tab}-tab`).addEventListener('click', () => activateDataTab(tab));
+  $(`${tab}-tab`).addEventListener('keydown', event => {
+    if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const target = event.key === 'Home' ? 'values' : event.key === 'End' ? 'fields' : tab === 'values' ? 'fields' : 'values';
+      activateDataTab(target);
+      $(`${target}-tab`).focus();
+    }
+  });
+}
 
 try {
   core = await import('./moonhid-core.js');
