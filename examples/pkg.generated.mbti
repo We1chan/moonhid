@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "We1chan/moonhid/examples"
+
+// Values
+pub fn all() -> Array[Fixture]
+
+pub fn gamepad() -> Fixture
+
+pub fn keyboard() -> Fixture
+
+pub fn mouse() -> Fixture
+
+// Errors
+
+// Types and methods
+pub(all) struct Fixture {
+  name : String
+  descriptor_hex : String
+  input_hex : String
+  expected_values : Array[Int64]
+}
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,3 @@
+import {
+  "We1chan/moonhid" @hid,
+} for "test"

@@ -1,5 +1,6 @@
-// import {
-//   "We1chan/moonhid" @lib,
-// }
+import {
+  "We1chan/moonhid" @hid,
+  "We1chan/moonhid/examples",
+}
 
 pkgtype(kind: "executable")
