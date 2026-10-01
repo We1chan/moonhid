@@ -54,4 +54,8 @@ assert.equal(raw.schema_version, 2);
 assert.deepEqual(raw.decoded.values, []);
 assert.deepEqual(raw.decoded.opaque_values, [{ field_index: 1, element_index: 0, bit_offset: 3, bit_size: 33, hex: 'ff ff ff ff 01' }]);
 assert.equal(inspect('75 21 95 01 81 00').error.code, 'report_size');
+const count1751 = inspect('15 00 25 ff 75 08 96 d7 06 81 02');
+assert.equal(count1751.descriptor.layout.fields[0].count, 1751);
+assert.equal(count1751.descriptor.layout.reports[0].payload_bits, 14008);
+assert.equal(inspect('75 02 97 00 00 01 00 81 02').error.code, 'report_limit');
 console.log('Browser bridge: three fixtures, LED output, multi-ID/Feature, metadata, uint32 and error paths passed.');

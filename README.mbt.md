@@ -124,7 +124,7 @@ test "README: decode one relative axis" {
   不是完整 HID Usage Tables 数据库。
 - 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，整数每值 1..32 位，超过 32 位的 Data Variable 字段按原始字节解码，
   Constant 字段也允许超宽；Data Array 位宽仍限 1..32。
-  每字段最多 1024 个值，每报告最多 65536 位，Usage 列表最多 1024 项，
+  每报告最多 65536 位，字段元素数量由报告总位数约束（最多 65536 个值），Usage 列表最多 1024 项，
   Collection 最多 4096 项，Collection 与 Global 栈深度最多 64。Global Push/Pop 要求平衡。
   Unit Exponent 支持 -8..7 的四位编码及常见符号扩展编码；保留 Unit 的系统与保留位。
   Physical 缺少任一端点或两端均为 0 时，有效范围采用 Logical 范围，原声明仍可查询。
