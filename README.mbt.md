@@ -16,7 +16,8 @@ MoonHID 的目标是将这些二进制定义转换为可检查、可复用的数
 
 ## 当前状态
 
-这是正在开发的初始版本，尚未发布到 mooncakes.io。核心库为纯 MoonBit，
+0.2.0 的源码与 JSON v2 已准备，尚未发布到 mooncakes.io。发布步骤见
+[0.2.0 发布说明](docs/release-0.2.0.md)。核心库为纯 MoonBit，
 已实现十六进制输入、短项/长项分词、布局编译、Collection 层级、Physical/Unit 元数据和报告解码。
 仓库提供合成的鼠标、键盘和手柄样例，以及 [七份真实设备描述符回归](docs/real-devices.md)，运行时不依赖 USB 权限、真实设备或网络服务。
 浏览器检查器直接运行 MoonBit 编译的 JS 模块，提供字段布局、解码值与版本化 JSON 导出。
