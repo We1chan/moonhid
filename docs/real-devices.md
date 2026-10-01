@@ -46,6 +46,11 @@ od -An -v -tx1 /sys/class/hidraw/hidraw0/device/report_descriptor
 根据自己的设备将 `hidraw0` 换成正确条目。读取权限由系统决定；
 无需向设备发送报告或切换协议。
 
+## 兼容性修复进度
+
+零长度数据已按 0 解释。F 的当前错误从 `item_size`（33）推进到
+`report_size`（34），其余初始结果不变。
+
 ## 独立工具对照
 
 待协议兼容性修复后，使用外部独立解析器逐个比较报告和字段。
