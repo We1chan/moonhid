@@ -1,0 +1,55 @@
+{
+  "tool": "hid-tools",
+  "version": "0.12",
+  "devices": [
+    {
+      "device": "A",
+      "reports": 1,
+      "main_fields": 1,
+      "hid_tools_fields": 1,
+      "differences": []
+    },
+    {
+      "device": "B",
+      "reports": 5,
+      "main_fields": 15,
+      "hid_tools_fields": 64,
+      "differences": []
+    },
+    {
+      "device": "C",
+      "reports": 2,
+      "main_fields": 2,
+      "hid_tools_fields": 5,
+      "differences": []
+    },
+    {
+      "device": "D",
+      "reports": 6,
+      "main_fields": 19,
+      "hid_tools_fields": 93,
+      "differences": []
+    },
+    {
+      "device": "E",
+      "reports": 1,
+      "main_fields": 2,
+      "hid_tools_fields": 4,
+      "differences": []
+    },
+    {
+      "device": "F",
+      "reports": 3,
+      "main_fields": 4,
+      "hid_tools_fields": 4,
+      "differences": []
+    },
+    {
+      "device": "G",
+      "reports": 8,
+      "main_fields": 15,
+      "hid_tools_fields": 150,
+      "differences": []
+    }
+  ]
+}

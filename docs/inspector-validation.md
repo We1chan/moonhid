@@ -76,3 +76,23 @@ Physical / Unit 验收描述符（报告 `ff`）：
   报告改为 `00 zz` 后导出的 `wire_hex` 与 `decoded` 为 `null`。
 - 600 个字段（1802 个 item）：解析和渲染约 73 ms；选中最后一个字段时 Items 翻到对应页。
 - 三种视口均无水平溢出，浅色与深色主题均已截图检查；控制台没有 warning 或 error。
+
+## 真实描述符与 JSON v2 复验
+
+2026-10-02，Apple Silicon macOS，Google Chrome 154.0.8037.58，Node 24.19.0，Python 3.13.15。
+本次使用仓库内可复现的 `node scripts/test-inspector.mjs` 通过 DevTools Protocol 控制
+独立 headless Chrome；没有在有界面的 Chrome 手动验收，也没有捕获真实输入报告。
+JS CI 现在也运行该 DOM 测试和独立 hid-tools 对照。
+
+- A–G 全部成功解析；1440 × 900、1100 × 900、390 × 844 均没有页面水平溢出。
+- B 的 Input ID 68 展示 1751 个元素，首屏 200 行，最后一页 151 行。
+- F 的 Input ID 2 使用构造报告（ID `02` 加 2003 个 `a5` 字节）：显示前 16 字节，
+  提示「共 2003 字节」与「原始字节字段，不解码为整数」；位布局最多 256 字节。
+  导出的 schema v2 JSON 保留完整 2003 字节原始值。
+- G 的 System Control 显示一个 `0x00 … 0x7FFF（32768 个）` 区间；
+  构造报告 `03 ff 7f` 解码为 32767，Usage 为 `0x0001:0x7fff`。
+- 浅色、深色截图均复查；`05 q1` 返回 invalid_hex 并禁用导出；页面控制台没有 warning/error。
+
+可设置 `MOONHID_SCREENSHOTS=/tmp/moonhid-ui-checks` 保存三种视口的浅色/深色截图，
+或用 `CHROME_BIN` 指定 Chromium 可执行文件。测试服务仅监听随机的 loopback 端口，
+Chrome 使用独立临时 profile，结束后清理自己启动的进程和 profile。
