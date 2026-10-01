@@ -24,6 +24,22 @@ pub extend Usage with @debug.Debug::{to_repr}
 pub extend Usage with Eq::{equal, not_equal}
 
 ///|
+/// Collections are stored in descriptor order. Parent indices form a tree.
+pub(all) struct Collection {
+  descriptor_offset : Int
+  end_offset : Int
+  collection_type : Int
+  usage : Usage?
+  parent_index : Int?
+} derive(Debug, Eq)
+
+///|
+pub extend Collection with @debug.Debug::{to_repr}
+
+///|
+pub extend Collection with Eq::{equal, not_equal}
+
+///|
 /// bit_offset excludes an optional Report ID prefix byte. Padding is retained.
 pub(all) struct Field {
   descriptor_offset : Int
@@ -35,6 +51,11 @@ pub(all) struct Field {
   flags : Int
   logical_min : Int64
   logical_max : Int64
+  physical_min : Int64?
+  physical_max : Int64?
+  unit : Int64?
+  unit_exponent : Int?
+  collection_index : Int?
   usages : Array[Usage]
 } derive(Debug, Eq)
 
@@ -47,6 +68,7 @@ pub extend Field with Eq::{equal, not_equal}
 ///|
 pub(all) struct Layout {
   fields : Array[Field]
+  collections : Array[Collection]
   has_report_ids : Bool
 } derive(Debug, Eq)
 
@@ -62,6 +84,11 @@ priv struct GlobalState {
   logical_min : Int64
   logical_max_unsigned : Int64
   logical_max_signed : Int64
+  physical_min : Int64?
+  physical_max_unsigned : Int64?
+  physical_max_signed : Int64?
+  unit : Int64?
+  unit_exponent : Int?
   size : Int
   count : Int
   report_id : Int
@@ -86,19 +113,25 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
     Err(error) => return Err(error)
   }
   let fields : Array[Field] = []
+  let collections : Array[Collection] = []
+  let collection_stack : Array[Int] = []
   let offsets : Map[Int, Int] = Map([])
   let mut global : GlobalState = {
     page: 0,
     logical_min: 0,
     logical_max_unsigned: 0,
     logical_max_signed: 0,
+    physical_min: None,
+    physical_max_unsigned: None,
+    physical_max_signed: None,
+    unit: None,
+    unit_exponent: None,
     size: 0,
     count: 0,
     report_id: 0,
   }
   let locals : Array[Usage] = []
   let mut range_min : Usage? = None
-  let mut depth = 0
   let mut has_report_ids = false
   let stack : Array[GlobalState] = []
   for item in items {
@@ -142,7 +175,32 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             logical_max_unsigned: value,
             logical_max_signed: item_signed(item),
           }
-        3 | 4 | 5 | 6 => () // Physical units are not applied to raw integer reports.
+        3 => global = { ..global, physical_min: Some(item_signed(item)), }
+        4 =>
+          global = {
+            ..global,
+            physical_max_unsigned: Some(value),
+            physical_max_signed: Some(item_signed(item)),
+          }
+        5 => {
+          let exponent = if value <= 15 {
+            signed_nibble(value.to_int())
+          } else {
+            let signed = item_signed(item)
+            if signed < -8 || signed > 7 {
+              return Err(
+                diagnostic(
+                  item.offset,
+                  "unit_exponent",
+                  "Unit Exponent must encode -8..7",
+                ),
+              )
+            }
+            signed.to_int()
+          }
+          global = { ..global, unit_exponent: Some(exponent), }
+        }
+        6 => global = { ..global, unit: Some(value), }
         7 => {
           if value < 1 || value > 32 {
             return Err(
@@ -290,24 +348,41 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
       }
       match item.tag {
         10 => {
-          if item.data.length() != 1 || depth >= 64 {
+          if item.data.length() != 1 ||
+            collection_stack.length() >= 64 ||
+            collections.length() >= 4096 {
             return Err(
               diagnostic(
                 item.offset,
                 "collection",
-                "Invalid collection or depth exceeds 64",
+                "Invalid collection, depth exceeds 64 or more than 4096 collections",
               ),
             )
           }
-          depth = depth + 1
+          let index = collections.length()
+          collections.push({
+            descriptor_offset: item.offset,
+            end_offset: -1,
+            collection_type: value.to_int(),
+            usage: locals.get(0),
+            parent_index: collection_stack.last(),
+          })
+          collection_stack.push(index)
         }
         12 => {
-          if !item.data.is_empty() || depth == 0 {
+          if !item.data.is_empty() || collection_stack.is_empty() {
             return Err(
               diagnostic(item.offset, "collection", "Unmatched End Collection"),
             )
           }
-          depth = depth - 1
+          match collection_stack.pop() {
+            Some(index) =>
+              collections[index] = {
+                ..collections[index],
+                end_offset: item.offset,
+              }
+            None => () // The empty stack is checked above.
+          }
         }
         8 | 9 | 11 => {
           if item.data.is_empty() || value > 255L {
@@ -394,6 +469,15 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             flags: value.to_int(),
             logical_min: global.logical_min,
             logical_max: maximum,
+            physical_min: global.physical_min,
+            physical_max: if global.physical_min is Some(minimum) && minimum < 0 {
+              global.physical_max_signed
+            } else {
+              global.physical_max_unsigned
+            },
+            unit: global.unit,
+            unit_exponent: global.unit_exponent,
+            collection_index: collection_stack.last(),
             usages: locals.copy(),
           })
           offsets[cursor] = offset + global.size * global.count
@@ -406,7 +490,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
       locals.clear() // HID local state applies only to the next Main item.
     }
   }
-  if depth != 0 {
+  if !collection_stack.is_empty() {
     return Err(
       diagnostic(bytes.length(), "collection", "Collection is not closed"),
     )
@@ -439,6 +523,6 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
   if fields.is_empty() {
     Err(diagnostic(0, "empty_layout", "Descriptor contains no report fields"))
   } else {
-    Ok({ fields, has_report_ids, })
+    Ok({ fields, collections, has_report_ids, })
   }
 }

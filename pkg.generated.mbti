@@ -10,13 +10,29 @@ pub fn compile_descriptor(Bytes) -> Result[Layout, Diagnostic]
 
 pub fn decode_report(Layout, ReportKind, Bytes) -> Result[DecodedReport, Diagnostic]
 
+pub fn decode_unit(Int64) -> Result[UnitDimensions, Diagnostic]
+
+pub fn descriptor_to_json(Bytes) -> Result[Json, Diagnostic]
+
+pub fn diagnostic_to_json(Diagnostic) -> Json
+
+pub fn effective_physical_range(Field) -> (Int64, Int64)
+
 pub fn extract_bits(Bytes, Int, Int, signed? : Bool) -> Result[Int64, Diagnostic]
+
+pub fn format_hex(Bytes) -> String
+
+pub fn layout_to_json(Layout) -> Json
 
 pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
 pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
 
+pub fn report_kind_name(ReportKind) -> String
+
 pub fn report_length(Layout, ReportKind, Int) -> Result[Int, Diagnostic]
+
+pub fn report_to_json(DecodedReport) -> Json
 
 pub fn signed_value(Bytes) -> Result[Int64, Diagnostic]
 
@@ -25,6 +41,17 @@ pub fn unsigned_value(Bytes) -> Result[Int64, Diagnostic]
 // Errors
 
 // Types and methods
+pub(all) struct Collection {
+  descriptor_offset : Int
+  end_offset : Int
+  collection_type : Int
+  usage : Usage?
+  parent_index : Int?
+} derive(Eq, @debug.Debug)
+pub fn Collection::equal(Self, Self) -> Bool
+pub fn Collection::not_equal(Self, Self) -> Bool
+pub fn Collection::to_repr(Self) -> @debug.Repr
+
 pub(all) struct DecodedReport {
   kind : ReportKind
   report_id : Int
@@ -67,6 +94,11 @@ pub(all) struct Field {
   flags : Int
   logical_min : Int64
   logical_max : Int64
+  physical_min : Int64?
+  physical_max : Int64?
+  unit : Int64?
+  unit_exponent : Int?
+  collection_index : Int?
   usages : Array[Usage]
 } derive(Eq, @debug.Debug)
 pub fn Field::equal(Self, Self) -> Bool
@@ -86,6 +118,7 @@ pub fn Item::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Layout {
   fields : Array[Field]
+  collections : Array[Collection]
   has_report_ids : Bool
 } derive(Eq, @debug.Debug)
 pub fn Layout::equal(Self, Self) -> Bool
@@ -100,6 +133,21 @@ pub(all) enum ReportKind {
 pub fn ReportKind::equal(Self, Self) -> Bool
 pub fn ReportKind::not_equal(Self, Self) -> Bool
 pub fn ReportKind::to_repr(Self) -> @debug.Repr
+
+pub(all) struct UnitDimensions {
+  raw : Int64
+  system : Int
+  length : Int
+  mass : Int
+  time : Int
+  temperature : Int
+  current : Int
+  luminous_intensity : Int
+  reserved : Int
+} derive(Eq, @debug.Debug)
+pub fn UnitDimensions::equal(Self, Self) -> Bool
+pub fn UnitDimensions::not_equal(Self, Self) -> Bool
+pub fn UnitDimensions::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Usage {
   page : Int
