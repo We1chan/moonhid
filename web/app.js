@@ -32,7 +32,7 @@ const diagnosticText = {
   invalid_hex: '这里不是十六进制数字', odd_hex: '最后一个字节只有一位数字', split_byte: '空白把一个字节拆开了',
   text_limit: '十六进制文本过长', truncated_item: 'Item 数据被截断', value_size: 'Item 数据长度不受支持',
   unsupported_item: '不支持长 Item 或保留 Item', unsupported_main: '未知的 Main Item', unsupported_global: '不支持的 Global Item',
-  unsupported_local: '不支持的 Local Item', usage_page: 'Usage Page 超过 16 位', usage_range: 'Usage 范围无效', usage_limit: 'Usage 区间数量超过 1024',
+  unsupported_local: '不支持的 Local Item', local_range: 'String / Designator 范围无效', local_limit: '本地元数据区间超过 1024', delimiter: 'Delimiter 嵌套、未配对或集合过多', usage_page: 'Usage Page 超过 16 位', usage_range: 'Usage 范围无效', usage_limit: 'Usage 区间数量超过 1024',
   logical_range: 'Logical 范围无效或超出 Report Size', report_size: 'Report Size 无效（Data Array 限 1..32 位）', report_count: 'Report Count 超出 1..65536',
   report_id: 'Report ID 必须是 1..255', mixed_report_ids: '有的报告带 Report ID，有的没有', global_stack: 'Push / Pop 不配对',
   collection: 'Collection 不配对或嵌套过深', dangling_local: 'Local Item 之后缺少 Main Item', missing_dimensions: 'Main Item 之前缺少 Report Size 或 Report Count',
@@ -706,6 +706,9 @@ function renderDetail() {
     ['单位', field.unit ? [unitText(field.unit, field.unit_exponent ?? 0), h('span', { class: 'sub' }, `${systemName(field.unit.system)} · 0x${hex(field.unit.raw)}`)] : '未声明'],
     ['Unit Exp.', field.unit_exponent === null ? '未声明（按 0）' : `10${superscript(field.unit_exponent)}`],
     ['Collection', field.collection_index === null ? '不在 Collection 内' : h('span', { class: 'crumbs' }, collectionPath(field.collection_index).map(name => h('span', null, name)))],
+    ['备选 Usage', field.alternate_usages.length ? field.alternate_usages.map((group, i) => `集合 ${i + 2}：${group.map(spanName).join(' / ') || '空'}`).join('；') : '未声明'],
+    ['String', field.string_spans.map(s => s.min === s.max ? s.min : `${s.min} … ${s.max}`).join(' / ') || '未声明'],
+    ['Designator', field.designator_spans.map(s => s.min === s.max ? s.min : `${s.min} … ${s.max}`).join(' / ') || '未声明'],
     ['来源', item ? h('button', { type: 'button', class: 'link mono', onclick: () => focusItem(item.index, true) }, `@${item.offset} ${item.name}`) : `@${field.descriptor_offset}`],
   ];
   const usages = field.usage_spans;

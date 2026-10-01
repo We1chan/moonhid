@@ -119,8 +119,11 @@ test "README: decode one relative axis" {
   通过 `in_logical_range` 和 `is_null` 区分异常值与声明的 Null State。
 - 字段位偏移从报告载荷的第 0 位计算，不含 Report ID 字节；解码输入必须包含
   描述符要求的 ID 前缀，并且长度必须精确匹配，不能带额外传输层前缀或尾部字节。
-- 长项仅支持原始分词，布局编译会拒绝；保留字、Delimiter、Designator、String
-  本地项目前也会明确报错；Buffered Bytes 单独返回 `buffered_bytes`。Physical 范围和 Unit 全局项允许存在，
+- String / Designator 索引和区间保存为字段与 Collection 元数据，随后清空本地状态；
+  Delimiter 按 Linux 的公共 Usage + 第一个集合规则解码，后续集合保存在 `alternate_usages`。
+  嵌套、无开启的关闭和未闭合返回 `delimiter`；索引范围错误返回 `local_range`，
+  每类索引最多 1024 段（`local_limit`），优选与备选 Usage 合计最多 1024 段（`usage_limit`）。
+  长项仅支持原始分词，布局编译会拒绝；保留字也明确报错；Buffered Bytes 返回 `buffered_bytes`。Physical 范围和 Unit 全局项允许存在，
   解码返回原始整数，不进行物理单位换算。核心保留数字 Usage；页面只补充常见 Usage 名称，
   不是完整 HID Usage Tables 数据库。
 - 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，整数每值 1..32 位，超过 32 位的 Data Variable 字段按原始字节解码，

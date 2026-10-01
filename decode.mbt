@@ -88,6 +88,9 @@ pub fn report_length(
     }
     bits = bits + field.bit_size * field.count
     if !valid_usage_spans(field.usage_spans) ||
+      !valid_index_spans(field.string_spans) ||
+      !valid_index_spans(field.designator_spans) ||
+      !valid_alternate_usages(field.usage_spans, field.alternate_usages) ||
       field.flags < 0 ||
       field.flags > 255 {
       return Err(

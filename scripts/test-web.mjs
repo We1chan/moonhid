@@ -63,4 +63,13 @@ assert.deepEqual(inspect(usageSpan).descriptor.layout.fields[0].usage_spans, [{ 
 assert.equal(inspect(usageSpan).descriptor.layout.fields[0].usage_count, 32768);
 assert.deepEqual(decode(usageSpan, 'input', 'ff 7f').decoded.values[0].usage, { page: 1, id: 32767 });
 assert.equal(inspect('09 01 '.repeat(1025)).error.code, 'usage_limit');
+const local = inspect('7b ff ff ff ff 39 03 75 08 95 01 81 02').descriptor.layout.fields[0];
+assert.deepEqual(local.string_spans, [{ min: 4294967295, max: 4294967295 }]);
+assert.deepEqual(local.designator_spans, [{ min: 3, max: 3 }]);
+const delimiter = inspect('05 09 a9 01 09 01 a8 a9 01 09 02 a8 75 01 95 01 81 02').descriptor.layout.fields[0];
+assert.deepEqual(delimiter.usage_spans, [{ page: 9, min: 1, max: 1 }]);
+assert.deepEqual(delimiter.alternate_usages, [[{ page: 9, min: 2, max: 2 }]]);
+assert.equal(inspect('a9 00').error.code, 'delimiter');
+assert.equal(inspect('99 02').error.code, 'local_range');
+assert.equal(inspect('79 01 '.repeat(1025)).error.code, 'local_limit');
 console.log('Browser bridge: three fixtures, LED output, multi-ID/Feature, metadata, uint32 and error paths passed.');

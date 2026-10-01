@@ -27,7 +27,7 @@ Item 的 `type_code` 是 HID 原始值：Main=0、Global=1、Local=2、Reserved=
 长项可通过 `parse_items` 检查，但 `descriptor_to_json` 会拒绝布局编译不支持的语义。
 
 Collection 对象含 `descriptor_offset`、`end_offset`（对应 End Collection 的字节位置）、
-`collection_type`、`usage`、`parent_index`。根集合的 `parent_index` 为 `null`。
+`collection_type`、`usage`、`parent_index`、`string_spans`、`designator_spans`、`alternate_usages`。根集合的 `parent_index` 为 `null`。
 Usage 为 `{ "page": integer, "id": integer }`；缺少 Usage 时为 `null`。
 所有索引从 0 开始；数组长度、位宽等限制见 README。
 
@@ -50,6 +50,18 @@ Unit 对象含 `raw`、`system`、`length`、`mass`、`time`、`temperature`、`
 `luminous_intensity`、`reserved`。维度为有符号四位指数，`system` 和 `reserved` 为无符号四位值。
 保留不认识的系统值和保留位，避免默认为某种单位。此版本不执行物理单位转换。
 报告字段位偏移是 **载荷偏移**，不包含首字节 ID；从最低位开始提取。
+
+`string_spans` 与 `designator_spans` 是 `{min,max}` 数组，端点为无符号 32 位 JSON number，
+每类最多 1024 段；单项使用 min=max。字段和 Collection 均保留这些本地元数据，
+Main item 之后清空，不读取设备字符串或物理描述符。
+
+`alternate_usages` 为 UsageSpan 数组的数组，每个内部数组对应第二个及以后的 delimiter 集合。
+采用 [Linux hid-core](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-core.c)
+的分支规则：delimiter 前的公共 Usage 和第一个集合进入 `usage_spans`；
+后续集合保留为元数据，解码不使用它们。第一个集合中可有多个 Usage，
+它们都参与映射；这是首个集合的语义，并非只取每个集合的第一个 Usage。
+优选和备选区间数量合计不超过 1024；备选组内的范围保持紧凑。
+所有本地状态在 Main item 后重置；不允许 Usage 范围跨越 delimiter 边界。
 
 ## 解码组件
 
