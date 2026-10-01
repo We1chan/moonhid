@@ -96,3 +96,19 @@ JS CI 现在也运行该 DOM 测试和独立 hid-tools 对照。
 可设置 `MOONHID_SCREENSHOTS=/tmp/moonhid-ui-checks` 保存三种视口的浅色/深色截图，
 或用 `CHROME_BIN` 指定 Chromium 可执行文件。测试服务仅监听随机的 loopback 端口，
 Chrome 使用独立临时 profile，结束后清理自己启动的进程和 profile。
+
+## WebHID 模拟验收
+
+2026-10-02。`node scripts/test-webhid.mjs` 验证非零/零 Report ID、DataView 子视图、
+8192 字节载荷上限、顶层 collections 的嵌套字段不重复计数、字段差异提示、
+断开/热拔插停止事件监听，以及 pending open 取消后关闭连接。
+
+`node scripts/test-inspector.mjs` 在独立 headless Chrome 页中注入模拟 `navigator.hid`，
+实际点击连接与断开按钮。模拟报告的底层 buffer 为 `63 ff 58`，只暴露中间一个字节，
+Report ID 为 3：报告编辑器得到 `03 ff`，MoonBit 解码得到 -1，collections 对照无差异。
+断开后再发模拟事件不会覆盖 `03 00`；模拟拔出后显示「设备已拔出」。
+页面默认离线，只在用户点击连接后申请设备访问，描述符/报告数据不上传。
+
+这些是适配器与 DOM 证据，没有请求真实 HID 权限，没有验证真实设备的实时输入。
+手工验收应使用允许访问的手柄或厂商自定义 Collection，记录浏览器版本、权限选择、
+描述符、实际报告与断开结果；受保护键鼠 Collection 不可据此承诺可读。
