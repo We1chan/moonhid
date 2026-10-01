@@ -8,6 +8,8 @@ import {
 // Values
 pub fn compile_descriptor(Bytes) -> Result[Layout, Diagnostic]
 
+pub fn extract_bits(Bytes, Int, Int, signed? : Bool) -> Result[Int64, Diagnostic]
+
 pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
 pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
