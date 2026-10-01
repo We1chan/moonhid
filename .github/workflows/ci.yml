@@ -29,6 +29,8 @@ jobs:
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - name: Record toolchain
         run: moon version --all
+      - name: Initialize Mooncakes dependency index
+        run: moon update
       - name: Check
         run: moon check --target ${{ matrix.target }} --deny-warn
       - name: Build
