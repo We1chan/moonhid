@@ -19,7 +19,7 @@ repository = "https://github.com/We1chan/moonhid"
 
 license = "Apache-2.0"
 
-keywords = ["hid", "usb", "descriptor", "keyboard", "gamepad", "moonbit"]
+keywords = [ "hid", "usb", "descriptor", "keyboard", "gamepad", "moonbit" ]
 
 preferred_target = "wasm"
 
