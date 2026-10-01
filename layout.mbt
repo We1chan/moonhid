@@ -99,6 +99,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
   let mut range_min : Usage? = None
   let mut depth = 0
   let mut has_report_ids = false
+  let stack : Array[GlobalState] = []
   for item in items {
     if item.is_long || item.type_code == 3 {
       return Err(
@@ -111,7 +112,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
     }
     let value = item_unsigned(item)
     if item.type_code == 1 {
-      if item.data.is_empty() {
+      if item.data.is_empty() && item.tag != 10 && item.tag != 11 {
         return Err(
           diagnostic(
             item.offset,
@@ -177,6 +178,40 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             )
           }
           global = { ..global, count: value.to_int(), }
+        }
+        10 => {
+          if !item.data.is_empty() || stack.length() >= 64 {
+            return Err(
+              diagnostic(
+                item.offset,
+                "global_stack",
+                "Push payload or global stack depth exceeds 64",
+              ),
+            )
+          }
+          stack.push(global)
+        }
+        11 => {
+          if !item.data.is_empty() {
+            return Err(
+              diagnostic(
+                item.offset,
+                "global_stack",
+                "Pop cannot have a payload",
+              ),
+            )
+          }
+          global = match stack.pop() {
+            Some(saved) => saved
+            None =>
+              return Err(
+                diagnostic(
+                  item.offset,
+                  "global_stack",
+                  "Global stack underflow",
+                ),
+              )
+          }
         }
         _ =>
           return Err(
@@ -352,6 +387,15 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
   if depth != 0 {
     return Err(
       diagnostic(bytes.length(), "collection", "Collection is not closed"),
+    )
+  }
+  if !stack.is_empty() {
+    return Err(
+      diagnostic(
+        bytes.length(),
+        "global_stack",
+        "Global Push is not balanced by Pop",
+      ),
     )
   }
   if range_min is Some(_) || !locals.is_empty() {
