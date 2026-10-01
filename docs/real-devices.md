@@ -65,5 +65,34 @@ Report Count 现由每报告 65536 位预算约束；G 的 32768 个 System Cont
 
 ## 独立工具对照
 
-待协议兼容性修复后，使用外部独立解析器逐个比较报告和字段。
-目前尚未执行独立工具对照，也没有捕获真实输入报告。
+2026-10-02 在本机运行外部 [hid-tools](https://gitlab.freedesktop.org/libevdev/hid-tools)
+0.12（Python 3.13.15）。工具按其 GPL 许可作为独立依赖安装和运行，
+仓库没有复制其实现。复验命令：
+
+```sh
+node scripts/build-web.mjs
+uv run --with hid-tools==0.12 python scripts/compare-hid-tools.py
+```
+
+没有 uv 时，可以在自己的 Python 虚拟环境安装 `hid-tools==0.12`，
+再运行同一脚本。JS CI 也执行对照，结果见 [记录 JSON](hid-tools-comparison.json)。
+
+| 样例 | 报告数 | MoonHID Main 字段数 | hid-tools 字段数 | 规范化后差异 |
+| --- | ---: | ---: | ---: | --- |
+| A | 1 | 1 | 1 | 无 |
+| B | 5 | 15 | 64 | 无 |
+| C | 2 | 2 | 5 | 无 |
+| D | 6 | 19 | 93 | 无 |
+| E | 1 | 2 | 4 | 无 |
+| F | 3 | 4 | 4 | 无 |
+| G | 8 | 15 | 150 | 无 |
+
+共比较 26 个报告和 58 个 Main 字段。逐报告比较 kind / ID / 总载荷位数；
+逐字段比较偏移、覆盖位数、size / count、flags、Logical 范围和数字 Usage。
+字段数量不同是表示方式差异：MoonHID 保留每个 Main item，hid-tools 将 Variable / Constant
+元素拆成多项，也会把未声明 Usage 的填充合并。对照脚本按原 Main 字段边界规范化这些项；
+hid-tools 的 report bitsize/start 包含 ID 时减去 8 位，未编号 ID -1 对应 MoonHID 的 0。
+Data Array 的 size / count 与完整 Usage 序列直接比较。
+
+当前仅对以上七份保存的描述符建立一致性证据；没有实际读写设备，
+也不把两个解析器的一致结果当作完整 HID 协议认证。
