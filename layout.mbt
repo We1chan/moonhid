@@ -98,6 +98,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
   let locals : Array[Usage] = []
   let mut range_min : Usage? = None
   let mut depth = 0
+  let mut has_report_ids = false
   for item in items {
     if item.is_long || item.type_code == 3 {
       return Err(
@@ -151,6 +152,19 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             )
           }
           global = { ..global, size: value.to_int(), }
+        }
+        8 => {
+          if item.data.length() != 1 || value < 1 || value > 255 {
+            return Err(
+              diagnostic(
+                item.offset,
+                "report_id",
+                "Report ID must be a single byte in 1..255",
+              ),
+            )
+          }
+          has_report_ids = true
+          global = { ..global, report_id: value.to_int(), }
         }
         9 => {
           if value < 1 || value > 1024 {
@@ -349,9 +363,16 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
       ),
     )
   }
+  if has_report_ids && fields.any(field => field.report_id == 0) {
+    return Err(
+      diagnostic(
+        0, "mixed_report_ids", "Unnumbered fields cannot be mixed with numbered reports",
+      ),
+    )
+  }
   if fields.is_empty() {
     Err(diagnostic(0, "empty_layout", "Descriptor contains no report fields"))
   } else {
-    Ok({ fields, has_report_ids: false, })
+    Ok({ fields, has_report_ids, })
   }
 }
