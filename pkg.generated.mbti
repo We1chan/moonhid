@@ -50,6 +50,9 @@ pub(all) struct Collection {
   end_offset : Int
   collection_type : Int
   usage : Usage?
+  string_spans : Array[IndexSpan]
+  designator_spans : Array[IndexSpan]
+  alternate_usages : Array[Array[UsageSpan]]
   parent_index : Int?
 } derive(Eq, @debug.Debug)
 pub fn Collection::equal(Self, Self) -> Bool
@@ -105,10 +108,21 @@ pub(all) struct Field {
   unit_exponent : Int?
   collection_index : Int?
   usage_spans : Array[UsageSpan]
+  string_spans : Array[IndexSpan]
+  designator_spans : Array[IndexSpan]
+  alternate_usages : Array[Array[UsageSpan]]
 } derive(Eq, @debug.Debug)
 pub fn Field::equal(Self, Self) -> Bool
 pub fn Field::not_equal(Self, Self) -> Bool
 pub fn Field::to_repr(Self) -> @debug.Repr
+
+pub(all) struct IndexSpan {
+  min : Int64
+  max : Int64
+} derive(Eq, @debug.Debug)
+pub fn IndexSpan::equal(Self, Self) -> Bool
+pub fn IndexSpan::not_equal(Self, Self) -> Bool
+pub fn IndexSpan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Item {
   offset : Int

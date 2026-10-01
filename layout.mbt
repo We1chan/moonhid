@@ -38,6 +38,36 @@ pub extend UsageSpan with @debug.Debug::{to_repr}
 pub extend UsageSpan with Eq::{equal, not_equal}
 
 ///|
+/// Inclusive unsigned short-item indices for String or Designator metadata.
+pub(all) struct IndexSpan {
+  min : Int64
+  max : Int64
+} derive(Debug, Eq)
+
+///|
+pub extend IndexSpan with @debug.Debug::{to_repr}
+
+///|
+pub extend IndexSpan with Eq::{equal, not_equal}
+
+///|
+fn valid_index_spans(spans : Array[IndexSpan]) -> Bool {
+  spans.length() <= 1024 &&
+  spans.all(s => s.min >= 0L && s.min <= s.max && s.max <= 4294967295L)
+}
+
+///|
+fn valid_alternate_usages(
+  primary : Array[UsageSpan],
+  alternatives : Array[Array[UsageSpan]],
+) -> Bool {
+  alternatives.length() <= 1024 &&
+  alternatives.all(valid_usage_spans) &&
+  alternatives.fold(init=primary.length(), (n, group) => n + group.length()) <=
+  1024
+}
+
+///|
 fn valid_usage_spans(spans : Array[UsageSpan]) -> Bool {
   spans.length() <= 1024 &&
   spans.all(s => {
@@ -101,6 +131,9 @@ pub(all) struct Collection {
   end_offset : Int
   collection_type : Int
   usage : Usage?
+  string_spans : Array[IndexSpan]
+  designator_spans : Array[IndexSpan]
+  alternate_usages : Array[Array[UsageSpan]]
   parent_index : Int?
 } derive(Debug, Eq)
 
@@ -128,6 +161,9 @@ pub(all) struct Field {
   unit_exponent : Int?
   collection_index : Int?
   usage_spans : Array[UsageSpan]
+  string_spans : Array[IndexSpan]
+  designator_spans : Array[IndexSpan]
+  alternate_usages : Array[Array[UsageSpan]]
 } derive(Debug, Eq)
 
 ///|
@@ -203,6 +239,13 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
   }
   let locals : Array[UsageSpan] = []
   let mut range_min : Usage? = None
+  let alternate_usages : Array[Array[UsageSpan]] = []
+  let mut delimiter_open = false
+  let mut delimiter_branch = 0
+  let strings : Array[IndexSpan] = []
+  let designators : Array[IndexSpan] = []
+  let mut string_min : Int64? = None
+  let mut designator_min : Int64? = None
   let mut has_report_ids = false
   let stack : Array[GlobalState] = []
   for item in items {
@@ -345,8 +388,14 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
       }
     } else if item.type_code == 2 {
       let usage = usage_value(item, global.page)
+      let usage_locals = if delimiter_branch > 1 {
+        alternate_usages[delimiter_branch - 2]
+      } else {
+        locals
+      }
       match item.tag {
-        0 => locals.push({ page: usage.page, min: usage.id, max: usage.id, })
+        0 =>
+          usage_locals.push({ page: usage.page, min: usage.id, max: usage.id, })
         1 => {
           if range_min is Some(_) {
             return Err(
@@ -372,8 +421,116 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
               diagnostic(item.offset, "usage_range", "Invalid usage range"),
             )
           }
-          locals.push({ page: usage.page, min: minimum.id, max: usage.id, })
+          usage_locals.push({
+            page: usage.page,
+            min: minimum.id,
+            max: usage.id,
+          })
           range_min = None
+        }
+        3 => designators.push({ min: value, max: value, })
+        4 => {
+          if designator_min is Some(_) {
+            return Err(
+              diagnostic(
+                item.offset,
+                "local_range",
+                "Nested Designator Minimum",
+              ),
+            )
+          }
+          designator_min = Some(value)
+        }
+        5 => {
+          let minimum = match designator_min {
+            Some(n) => n
+            None =>
+              return Err(
+                diagnostic(
+                  item.offset,
+                  "local_range",
+                  "Designator Maximum has no minimum",
+                ),
+              )
+          }
+          if minimum > value {
+            return Err(
+              diagnostic(
+                item.offset,
+                "local_range",
+                "Reversed Designator range",
+              ),
+            )
+          }
+          designators.push({ min: minimum, max: value, })
+          designator_min = None
+        }
+        7 => strings.push({ min: value, max: value, })
+        8 => {
+          if string_min is Some(_) {
+            return Err(
+              diagnostic(item.offset, "local_range", "Nested String Minimum"),
+            )
+          }
+          string_min = Some(value)
+        }
+        9 => {
+          let minimum = match string_min {
+            Some(n) => n
+            None =>
+              return Err(
+                diagnostic(
+                  item.offset,
+                  "local_range",
+                  "String Maximum has no minimum",
+                ),
+              )
+          }
+          if minimum > value {
+            return Err(
+              diagnostic(item.offset, "local_range", "Reversed String range"),
+            )
+          }
+          strings.push({ min: minimum, max: value, })
+          string_min = None
+        }
+        10 => {
+          if range_min is Some(_) {
+            return Err(
+              diagnostic(
+                item.offset,
+                "usage_range",
+                "Usage range crosses a Delimiter",
+              ),
+            )
+          }
+          if value != 0L {
+            if delimiter_open || delimiter_branch >= 1024 {
+              return Err(
+                diagnostic(
+                  item.offset,
+                  "delimiter",
+                  "Nested Delimiter or more than 1024 sets",
+                ),
+              )
+            }
+            delimiter_open = true
+            delimiter_branch = delimiter_branch + 1
+            if delimiter_branch > 1 {
+              alternate_usages.push([])
+            }
+          } else {
+            if !delimiter_open {
+              return Err(
+                diagnostic(
+                  item.offset,
+                  "delimiter",
+                  "Delimiter close has no opening",
+                ),
+              )
+            }
+            delimiter_open = false
+          }
         }
         _ =>
           return Err(
@@ -384,15 +541,42 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             ),
           )
       }
-      if locals.length() > 1024 {
+      if strings.length() > 1024 || designators.length() > 1024 {
+        return Err(
+          diagnostic(
+            item.offset,
+            "local_limit",
+            "More than 1024 String or Designator spans",
+          ),
+        )
+      }
+      if !valid_alternate_usages(locals, alternate_usages) {
         return Err(
           diagnostic(item.offset, "usage_limit", "More than 1024 Usage spans"),
         )
       }
     } else {
+      if delimiter_open {
+        return Err(
+          diagnostic(
+            item.offset,
+            "delimiter",
+            "Delimiter is not closed before a Main item",
+          ),
+        )
+      }
       if range_min is Some(_) {
         return Err(
           diagnostic(item.offset, "usage_range", "Unclosed usage range"),
+        )
+      }
+      if string_min is Some(_) || designator_min is Some(_) {
+        return Err(
+          diagnostic(
+            item.offset,
+            "local_range",
+            "Unclosed String or Designator range",
+          ),
         )
       }
       match item.tag {
@@ -414,6 +598,9 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             end_offset: -1,
             collection_type: value.to_int(),
             usage: usage_at(locals, 0, false),
+            string_spans: strings.copy(),
+            designator_spans: designators.copy(),
+            alternate_usages: alternate_usages.map(group => group.copy()),
             parent_index: collection_stack.last(),
           })
           collection_stack.push(index)
@@ -555,6 +742,9 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             unit_exponent: global.unit_exponent,
             collection_index: collection_stack.last(),
             usage_spans: locals.copy(),
+            string_spans: strings.copy(),
+            designator_spans: designators.copy(),
+            alternate_usages: alternate_usages.map(group => group.copy()),
           })
           offsets[cursor] = offset + global.size * global.count
         }
@@ -564,7 +754,16 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           )
       }
       locals.clear() // HID local state applies only to the next Main item.
+      strings.clear()
+      designators.clear()
+      alternate_usages.clear()
+      delimiter_branch = 0
     }
+  }
+  if delimiter_open {
+    return Err(
+      diagnostic(bytes.length(), "delimiter", "Delimiter is not closed"),
+    )
   }
   if !collection_stack.is_empty() {
     return Err(
@@ -580,7 +779,13 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
       ),
     )
   }
-  if range_min is Some(_) || !locals.is_empty() {
+  if range_min is Some(_) ||
+    !locals.is_empty() ||
+    string_min is Some(_) ||
+    designator_min is Some(_) ||
+    !strings.is_empty() ||
+    !designators.is_empty() ||
+    delimiter_branch > 0 {
     return Err(
       diagnostic(
         bytes.length(),
