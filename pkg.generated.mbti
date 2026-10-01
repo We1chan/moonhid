@@ -8,6 +8,8 @@ import {
 // Values
 pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
+pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
+
 // Errors
 
 // Types and methods
@@ -19,6 +21,17 @@ pub(all) struct Diagnostic {
 pub fn Diagnostic::equal(Self, Self) -> Bool
 pub fn Diagnostic::not_equal(Self, Self) -> Bool
 pub fn Diagnostic::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Item {
+  offset : Int
+  type_code : Int
+  tag : Int
+  data : Bytes
+  is_long : Bool
+} derive(Eq, @debug.Debug)
+pub fn Item::equal(Self, Self) -> Bool
+pub fn Item::not_equal(Self, Self) -> Bool
+pub fn Item::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
