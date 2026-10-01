@@ -108,7 +108,7 @@ test "real device F: known compatibility diagnostic" {
   }
   assert_true(
     @moonhid.compile_descriptor(bytes)
-    is Err({ code: "item_size", offset: 33, .. }),
+    is Err({ code: "report_size", offset: 34, .. }),
   )
 }
 

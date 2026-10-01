@@ -146,15 +146,6 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
     }
     let value = item_unsigned(item)
     if item.type_code == 1 {
-      if item.data.is_empty() && item.tag != 10 && item.tag != 11 {
-        return Err(
-          diagnostic(
-            item.offset,
-            "item_size",
-            "Global value requires a payload",
-          ),
-        )
-      }
       match item.tag {
         0 => {
           if value > 65535 {
@@ -202,12 +193,12 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
         }
         6 => global = { ..global, unit: Some(value), }
         7 => {
-          if value < 1 || value > 32 {
+          if value > 32 {
             return Err(
               diagnostic(
                 item.offset,
                 "report_size",
-                "Report Size must be 1..32",
+                "Report Size must be 0..32; zero cannot define a report",
               ),
             )
           }
@@ -282,11 +273,6 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           )
       }
     } else if item.type_code == 2 {
-      if item.data.is_empty() {
-        return Err(
-          diagnostic(item.offset, "item_size", "Local value requires a payload"),
-        )
-      }
       let usage = usage_value(item, global.page)
       match item.tag {
         0 => locals.push(usage)
@@ -348,7 +334,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
       }
       match item.tag {
         10 => {
-          if item.data.length() != 1 ||
+          if item.data.length() > 1 ||
             collection_stack.length() >= 64 ||
             collections.length() >= 4096 {
             return Err(
@@ -385,12 +371,21 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           }
         }
         8 | 9 | 11 => {
-          if item.data.is_empty() || value > 255L {
+          if (value & 256L) != 0 {
+            return Err(
+              diagnostic(
+                item.offset,
+                "buffered_bytes",
+                "Buffered Bytes are not supported",
+              ),
+            )
+          }
+          if value > 255L {
             return Err(
               diagnostic(
                 item.offset,
                 "main_flags",
-                "Empty flags or buffered bytes are not supported",
+                "Reserved Main flags are not supported",
               ),
             )
           }
