@@ -36,6 +36,9 @@ pub fn report_length(
   kind : ReportKind,
   report_id : Int,
 ) -> Result[Int, Diagnostic] {
+  if layout.fields.length() > 4096 {
+    return Err(diagnostic(0, "invalid_layout", "Layout exceeds 4096 fields"))
+  }
   let mut bits = 0
   let mut found = false
   for field in layout.fields {

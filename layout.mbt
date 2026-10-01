@@ -86,6 +86,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
     Err(error) => return Err(error)
   }
   let fields : Array[Field] = []
+  let offsets : Map[Int, Int] = Map([])
   let mut global : GlobalState = {
     page: 0,
     logical_min: 0,
@@ -334,12 +335,17 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           } else {
             Feature
           }
-          let mut offset = 0
-          for field in fields {
-            if field.kind == kind && field.report_id == global.report_id {
-              offset = field.bit_offset + field.bit_size * field.count
-            }
+          if fields.length() >= 4096 {
+            return Err(
+              diagnostic(
+                item.offset,
+                "field_limit",
+                "Descriptor exceeds 4096 Main report items",
+              ),
+            )
           }
+          let cursor = item.tag * 256 + global.report_id
+          let offset = offsets.get_or_default(cursor, 0)
           if offset + global.size * global.count > 65536 {
             return Err(
               diagnostic(
@@ -354,12 +360,27 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           } else {
             global.logical_max_unsigned
           }
-          if (value & 1L) == 0 && maximum < global.logical_min {
+          let representable_min = if global.logical_min < 0 {
+            -(1L << (global.size - 1))
+          } else {
+            0L
+          }
+          let representable_max = if global.logical_min < 0 {
+            (1L << (global.size - 1)) - 1
+          } else {
+            (1L << global.size) - 1
+          }
+          if (value & 1L) == 0 &&
+            (
+              maximum < global.logical_min ||
+              global.logical_min < representable_min ||
+              maximum > representable_max
+            ) {
             return Err(
               diagnostic(
                 item.offset,
                 "logical_range",
-                "Logical Maximum is below Minimum",
+                "Logical range is invalid or exceeds Report Size",
               ),
             )
           }
@@ -375,6 +396,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
             logical_max: maximum,
             usages: locals.copy(),
           })
+          offsets[cursor] = offset + global.size * global.count
         }
         _ =>
           return Err(
