@@ -87,7 +87,9 @@ pub fn report_length(
       )
     }
     bits = bits + field.bit_size * field.count
-    if field.usages.length() > 1024 || field.flags < 0 || field.flags > 255 {
+    if !valid_usage_spans(field.usage_spans) ||
+      field.flags < 0 ||
+      field.flags > 255 {
       return Err(
         diagnostic(
           field.descriptor_offset,
@@ -187,15 +189,13 @@ pub fn decode_report(
         let index = value - field.logical_min
         if in_logical_range &&
           index >= 0 &&
-          index < field.usages.length().to_int64() {
-          field.usages.get(index.to_int())
+          index < usage_count(field.usage_spans).to_int64() {
+          field_usage(field, index.to_int())
         } else {
           None
         }
-      } else if element_index < field.usages.length() {
-        field.usages.get(element_index)
       } else {
-        field.usages.last()
+        field_usage(field, element_index)
       }
       values.push({
         field_index,

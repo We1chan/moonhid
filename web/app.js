@@ -32,7 +32,7 @@ const diagnosticText = {
   invalid_hex: '这里不是十六进制数字', odd_hex: '最后一个字节只有一位数字', split_byte: '空白把一个字节拆开了',
   text_limit: '十六进制文本过长', truncated_item: 'Item 数据被截断', value_size: 'Item 数据长度不受支持',
   unsupported_item: '不支持长 Item 或保留 Item', unsupported_main: '未知的 Main Item', unsupported_global: '不支持的 Global Item',
-  unsupported_local: '不支持的 Local Item', usage_page: 'Usage Page 超过 16 位', usage_range: 'Usage 范围无效', usage_limit: 'Usage 数量超出上限',
+  unsupported_local: '不支持的 Local Item', usage_page: 'Usage Page 超过 16 位', usage_range: 'Usage 范围无效', usage_limit: 'Usage 区间数量超过 1024',
   logical_range: 'Logical 范围无效或超出 Report Size', report_size: 'Report Size 无效（Data Array 限 1..32 位）', report_count: 'Report Count 超出 1..65536',
   report_id: 'Report ID 必须是 1..255', mixed_report_ids: '有的报告带 Report ID，有的没有', global_stack: 'Push / Pop 不配对',
   collection: 'Collection 不配对或嵌套过深', dangling_local: 'Local Item 之后缺少 Main Item', missing_dimensions: 'Main Item 之前缺少 Report Size 或 Report Count',
@@ -121,19 +121,30 @@ function usageShort(usage) {
   return usageName(usage);
 }
 const usageCode = usage => usage ? `${hex(usage.page, 4)}:${hex(usage.id, 4)}` : '';
+function usageAt(field, index, repeatLast = false) {
+  if (index < 0) return null;
+  for (const span of field.usage_spans) {
+    const count = span.max - span.min + 1;
+    if (index < count) return { page: span.page, id: span.min + index };
+    index -= count;
+  }
+  const last = field.usage_spans.at(-1);
+  return repeatLast && last ? { page: last.page, id: last.max } : null;
+}
+function spanName(span) {
+  return span.min === span.max ? usageName({ page: span.page, id: span.min })
+    : `${pageName(span.page)} 0x${hex(span.min).toUpperCase()} … 0x${hex(span.max).toUpperCase()}（${span.max - span.min + 1} 个）`;
+}
 function elementUsage(field, element) {
-  if (field.flags & 1 || !(field.flags & 2) || !field.usages.length) return null;
-  return field.usages[Math.min(element, field.usages.length - 1)];
+  if (field.flags & 1 || !(field.flags & 2)) return null;
+  return usageAt(field, element, true);
 }
 function fieldSummary(field) {
   if (field.flags & 1) return `填充 · ${field.bit_size * field.count} bit`;
-  const names = [...new Set(field.usages.map(usageName))];
-  if (!(field.flags & 2)) {
-    if (!names.length) return '数组 · 未声明 Usage';
-    return names.length === 1 ? `数组 · ${names[0]}` : `数组 · ${names[0]} … ${names.at(-1)}（${field.usages.length} 个 Usage）`;
-  }
-  if (!names.length) return '未声明 Usage';
-  return names.length <= 4 ? names.join(' / ') : `${names.slice(0, 3).join(' / ')} … ${names.at(-1)}`;
+  const names = field.usage_spans.map(spanName);
+  const prefix = field.flags & 2 ? '' : '数组 · ';
+  if (!names.length) return `${prefix}未声明 Usage`;
+  return prefix + (names.length <= 4 ? names.join(' / ') : `${names.slice(0, 3).join(' / ')} … ${names.at(-1)}`);
 }
 
 // ---------- Units and flags ----------
@@ -697,16 +708,16 @@ function renderDetail() {
     ['Collection', field.collection_index === null ? '不在 Collection 内' : h('span', { class: 'crumbs' }, collectionPath(field.collection_index).map(name => h('span', null, name)))],
     ['来源', item ? h('button', { type: 'button', class: 'link mono', onclick: () => focusItem(item.index, true) }, `@${item.offset} ${item.name}`) : `@${field.descriptor_offset}`],
   ];
-  const usages = field.usages;
+  const usages = field.usage_spans;
   box.replaceChildren(
     h('div', { class: `detail-title ${pad ? '' : colorClass(index)}` },
       h('span', { class: `swatch${pad ? ' pad' : ''}` }), h('strong', null, `字段 #${index}`),
       h('span', { class: 'tag' }, `${kindNames[field.kind]} · ${field.report_id ? `ID ${field.report_id}` : '无 ID'}`)),
     h('p', { class: 'detail-summary' }, fieldSummary(field)),
     h('dl', { class: 'facts' }, facts.flatMap(([label, value]) => [h('dt', null, label), h('dd', null, value)])),
-    pad ? null : h('div', { class: 'usages-head' }, h('span', null, 'Usage'), h('span', null, usages.length)),
+    pad ? null : h('div', { class: 'usages-head' }, h('span', null, 'Usage'), h('span', null, `${field.usage_count} 个 / ${usages.length} 段`)),
     pad ? null : h('div', { class: 'usage-chips' }, usages.length
-      ? [...usages.slice(0, 48).map(u => h('span', { class: 'usage-chip', title: usageCode(u) }, usageName(u))), usages.length > 48 ? h('span', { class: 'usage-chip dim' }, `另有 ${usages.length - 48} 个`) : null]
+      ? [...usages.slice(0, 48).map(u => h('span', { class: 'usage-chip', title: `${hex(u.page, 4)}:${hex(u.min, 4)}–${hex(u.max, 4)}` }, spanName(u))), usages.length > 48 ? h('span', { class: 'usage-chip dim' }, `另有 ${usages.length - 48} 段`) : null]
       : h('span', { class: 'dim' }, '未声明')),
     h('p', { class: 'detail-note' }, field.bit_size > 32 ? '原始字节字段，不解码为整数；最后一个字节的未用高位补 0。' : '解码值保留原始整数；Physical 与单位只作为元数据显示，不做换算。'));
 }

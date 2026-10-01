@@ -7,7 +7,7 @@
 ## 已实现的起点
 
 - 十六进制与二进制输入、诊断位置、短项与长项分词。
-- 常用 Main / Global / Local 项、Usage 范围、Report ID 与 Global Push/Pop。
+- 常用 Main / Global / Local 项、零长度数据、区间 Usage、Report ID 与 Global Push/Pop。
 - Input / Output / Feature 独立布局、跨字节字段、整数解码、数组 Usage、Null State。
 - 鼠标、键盘和手柄合成样例，键盘 LED 输出报告测试。
 - 四后端 CI：检查、构建、测试和运行示例。
@@ -21,7 +21,7 @@
 
 - 明确 Delimiter、长项和 Buffered Bytes 的实现优先级，不静默忽略语义。
 - 增加非字节对齐手柄、带多个 ID 的复合设备、Feature 报告和异常描述符样例。
-- 用公开且许可明确的真实描述符和独立解析工具进行差异检查，并记录来源与结果。
+- 七份本机真实描述符已公开并通过结构回归；下一步用独立工具进行差异检查。
 - 压力测试与结构化模糊测试，固定可接受的时间与内存边界。
 
 ## 发布与参赛验收

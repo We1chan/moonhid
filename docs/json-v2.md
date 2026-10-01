@@ -1,6 +1,6 @@
 # MoonHID JSON schema v2
 
-v2 增加超宽字段原始字节解码；历史格式见 [JSON v1](json-v1.md)。
+v2 增加超宽字段原始字节解码和区间 Usage；历史格式见 [JSON v1](json-v1.md)。
 
 `descriptor_to_json(Bytes)` 返回 `Result[Json, Diagnostic]`，成功值是版本化描述符文档。
 `layout_to_json`、`report_to_json` 和 `diagnostic_to_json` 返回其中的组件。
@@ -31,8 +31,12 @@ Collection 对象含 `descriptor_offset`、`end_offset`（对应 End Collection 
 Usage 为 `{ "page": integer, "id": integer }`；缺少 Usage 时为 `null`。
 所有索引从 0 开始；数组长度、位宽等限制见 README。
 
+Usage 区间为 `{ "page": integer, "min": integer, "max": integer }`，端点包含在内，
+`usage_count` 是区间长度之和。单项 Usage 使用 min=max；区间按声明顺序保留，
+最多 1024 段。解码值中的 `usage` 仍为 `{page,id}` 或 null。
+
 字段含 `descriptor_offset`、`kind`、`report_id`、`bit_offset`、`bit_size`、`count`、
-`flags`、`logical_min`、`logical_max`、`usages` 以及以下元数据：
+`flags`、`logical_min`、`logical_max`、`usage_spans`、`usage_count` 以及以下元数据：
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
