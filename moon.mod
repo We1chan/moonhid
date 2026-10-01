@@ -24,3 +24,7 @@ keywords = [ "hid", "usb", "descriptor", "keyboard", "gamepad", "moonbit" ]
 preferred_target = "wasm"
 
 description = "Pure MoonBit HID report descriptor parsing, layout compilation and offline report decoding."
+
+import {
+  "moonbitlang/x@0.5.5",
+}

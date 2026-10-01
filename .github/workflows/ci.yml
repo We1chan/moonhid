@@ -42,11 +42,15 @@ jobs:
         run: |
           node scripts/build-web.mjs
           node scripts/test-web.mjs
+      - name: Verify file CLI
+        if: matrix.target == 'js' || matrix.target == 'native'
+        run: node scripts/test-cli.mjs ${{ matrix.target }}
       - name: Verify formatting and public API
         if: matrix.target == 'wasm'
         run: |
           moon fmt --check
           moon info
+          moon info --target native
           git diff --exit-code -- '*.mbti'
       - uses: actions/setup-python@v5
         if: matrix.target == 'js'
