@@ -44,6 +44,7 @@ jobs:
         run: |
           node scripts/build-web.mjs
           node scripts/test-web.mjs
+          node scripts/test-webhid.mjs
       - name: Verify file CLI
         if: matrix.target == 'js' || matrix.target == 'native'
         run: node scripts/test-cli.mjs ${{ matrix.target }}

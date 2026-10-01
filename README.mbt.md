@@ -88,6 +88,25 @@ Input / Output / Feature 与 Report ID，填入完整报告后自动解码，`Ct
 「导出 JSON」保存当前描述符及已成功解码的报告，格式见 [JSON v2](docs/json-v2.md)。
 生成的 `web/moonhid-core.js` 不提交，始终从仓库中的 MoonBit 源码构建。
 
+## WebHID 实时输入
+
+在 Chromium 中使用 HTTPS 或 `http://127.0.0.1` 打开检查器，先粘贴并解析描述符，
+再点「连接 HID」选择设备。WebHID 不提供原始描述符，需要按
+[读取方法](docs/real-devices.md#自行读取描述符) 自行获取。
+Chrome 会屏蔽键盘和鼠标的受保护 Collection；手柄与厂商自定义 Collection 是否可用由浏览器决定。
+
+页面只接收 Input 报告，非零 `reportId` 补回数据前缀后交给 MoonBit 解码。
+每帧显示最新报告，计数包含收到的全部事件；不同 ID 自动切换到对应 Input 布局。
+点「断开」或拔出设备会停止监听，之后可继续离线编辑。页面不发送 Output/Feature 报告。
+
+「与浏览器 collections 对照」比较方向/ID/载荷位数，以及 Main 字段的 size、count、flags、
+Logical 和 Usage。WebHID 顶层 reports 已包含嵌套集合字段，避免重复计数。
+缺少报告可能来自浏览器保护规则或粘贴的描述符不匹配，不应直接视为 MoonHID 解析错误。
+WebHID 不暴露完整原始项，String/Designator/Delimiter 等元数据不参与此对照。
+
+当前自动测试使用模拟 HIDDevice，覆盖前缀、DataView 子视图、连接/断开、热拔插和连接中取消；
+真实手柄/厂商设备的权限与实时输入尚需手工验收，不能用模拟测试代替。
+
 ## API 示例
 
 以下代码也参与自动测试：

@@ -172,6 +172,13 @@ h2, h3 { margin: 0; }
 .status .raw { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
 .status .link { margin-left: 8px; }
 .report-entry .status { margin: 8px 0 0; }
+.live-panel { margin: 16px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.live-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13px; }
+.live-actions strong { margin-right: auto; }
+.live-panel .status { margin: 8px 0; }
+.live-panel summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.live-panel li, .live-panel p { font-size: 12px; overflow-wrap: anywhere; }
+.live-panel ul { padding-left: 18px; max-height: 180px; overflow: auto; }
 .link { border: 0; padding: 0; background: none; color: var(--accent); font-weight: 500; white-space: nowrap; }
 .link:hover { text-decoration: underline; text-underline-offset: 3px; }
 

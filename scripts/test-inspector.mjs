@@ -127,8 +127,43 @@ try {
   await setText('descriptor', '05 q1');
   assert.match(await text('descriptor-status'), /invalid_hex/);
   assert.equal(await evaluate('document.getElementById("export").disabled'), true);
+  // A separate page uses a simulated device. This never requests real HID access.
+  await call('Page.addScriptToEvaluateOnNewDocument', { source: `
+    const item = { reportSize: 8, reportCount: 1, isConstant: false, isArray: false,
+      isAbsolute: false, isLinear: true, hasPreferredState: true, hasNull: false,
+      isVolatile: false, isBufferedBytes: false, wrap: false, isRange: false,
+      usages: [0x10030], logicalMinimum: -127, logicalMaximum: 127 };
+    const device = new EventTarget();
+    Object.assign(device, { opened: false, productName: '模拟 HID',
+      collections: [{ inputReports: [{ reportId: 3, items: [item] }], children: [] }],
+      open: async () => { device.opened = true; }, close: async () => { device.opened = false; },
+      emit: () => device.dispatchEvent(Object.assign(new Event('inputreport'), {
+        device, reportId: 3, data: new DataView(new Uint8Array([99, 255, 88]).buffer, 1, 1)
+      })) });
+    const hid = new EventTarget();
+    hid.requestDevice = async () => [device];
+    window.__mockDevice = device; window.__mockHID = hid;
+    Object.defineProperty(navigator, 'hid', { configurable: true, value: hid });
+  ` });
+  await call('Page.navigate', { url: `http://127.0.0.1:${port}/` });
+  await evaluate(`new Promise((resolve, reject) => { const start = Date.now(); const check = () => { if (window.__mockDevice && document.querySelector('[data-fixture="mouse"]')) resolve(true); else if (Date.now() - start > 10000) reject(new Error('Mock page loading timed out')); else setTimeout(check, 20); }; check(); })`);
+  await setText('descriptor', '05 01 09 30 15 81 25 7f 75 08 95 01 85 03 81 06');
+  assert.equal(await evaluate('document.getElementById("hid-connect").disabled'), false);
+  await evaluate(`document.getElementById('hid-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('hid-status'), /模拟 HID/);
+  assert.match(await text('hid-diff'), /0 项差异/);
+  await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+  assert.equal(await evaluate('document.getElementById("report").value'), '03 ff');
+  assert.match(await text('values'), /-1/);
+  await evaluate(`document.getElementById('hid-disconnect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  await setText('report', '03 00');
+  await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(resolve))`);
+  assert.equal(await evaluate('document.getElementById("report").value'), '03 00');
+  await evaluate(`document.getElementById('hid-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  await evaluate(`window.__mockDevice.opened = false; window.__mockHID.dispatchEvent(Object.assign(new Event('disconnect'), { device: window.__mockDevice }));`);
+  assert.match(await text('hid-status'), /设备已拔出/);
   assert.deepEqual(errors, []);
-  console.log('Inspector DOM: A–G, opaque bytes, 256-byte bitmap cap, large Usage, three widths, two themes and diagnostics passed.');
+  console.log('Inspector DOM: A–G, opaque/large Usage, widths/themes, diagnostics and simulated WebHID lifecycle passed.');
 } finally {
   socket?.close();
   for (const child of [chrome, server]) {
