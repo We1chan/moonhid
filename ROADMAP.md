@@ -19,7 +19,7 @@
 
 ## 下一阶段：协议覆盖与验证
 
-- 明确 Delimiter、长项和 Buffered Bytes 的实现优先级，不静默忽略语义。
+- String/Designator 与 Delimiter 备选 Usage 已保留；长项和 Buffered Bytes 继续明确拒绝。
 - 增加非字节对齐手柄、带多个 ID 的复合设备、Feature 报告和异常描述符样例。
 - 七份本机真实描述符已公开并通过结构回归；下一步用独立工具进行差异检查。
 - 压力测试与结构化模糊测试，固定可接受的时间与内存边界。

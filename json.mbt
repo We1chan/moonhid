@@ -56,6 +56,11 @@ fn usage_span_json(span : UsageSpan) -> Json {
 }
 
 ///|
+fn index_span_json(span : IndexSpan) -> Json {
+  { "min": number64(span.min), "max": number64(span.max) }
+}
+
+///|
 fn unit_json(raw : Int64?) -> Json {
   match raw {
     Some(raw) =>
@@ -118,6 +123,13 @@ pub fn layout_to_json(layout : Layout) -> Json {
         "collection_type": c.collection_type.to_json(),
         "usage": usage_json(c.usage),
         "parent_index": optional_int(c.parent_index),
+        "string_spans": Json::array(c.string_spans.map(index_span_json)),
+        "designator_spans": Json::array(c.designator_spans.map(index_span_json)),
+        "alternate_usages": Json::array(
+          c.alternate_usages.map(group => {
+            Json::array(group.map(usage_span_json))
+          }),
+        ),
       }),
     ),
     "fields": Json::array(
@@ -142,6 +154,15 @@ pub fn layout_to_json(layout : Layout) -> Json {
           "collection_index": optional_int(f.collection_index),
           "usage_spans": Json::array(f.usage_spans.map(usage_span_json)),
           "usage_count": usage_count(f.usage_spans).to_json(),
+          "string_spans": Json::array(f.string_spans.map(index_span_json)),
+          "designator_spans": Json::array(
+            f.designator_spans.map(index_span_json),
+          ),
+          "alternate_usages": Json::array(
+            f.alternate_usages.map(group => {
+              Json::array(group.map(usage_span_json))
+            }),
+          ),
         }
       }),
     ),
