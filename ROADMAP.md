@@ -19,9 +19,11 @@
 - 浏览器 JS 模块由 MoonBit 源码构建，Node 桥接测试纳入 CI，提供 macOS 双击启动入口。
 - 固定种子的随机字节、结构化有效描述符与七份真实描述符突变，四后端检查资源边界和解码性质。
 - 0.2.0 已发布到 mooncakes.io，并完成独立项目的四后端安装验收。
+- 仓库新增描述符 lint 核心、JSON v2 `lints` 和 native/Node CLI `lint`，有规则依据及正反例；尚未发布到 mooncakes.io。
 
 ## 下一阶段：协议覆盖与验证
 
+- 网页展示中文 lint 检查结果并跳到对应 item；随后增加报告编码、往返性质测试与固件回归示例。
 - String/Designator 与 Delimiter 备选 Usage 已保留；长项和 Buffered Bytes 继续明确拒绝。
 - 增加非字节对齐手柄、带多个 ID 的复合设备、Feature 报告和异常描述符样例。
 - 七份本机真实描述符已公开、通过结构回归和 hid-tools 0.12 独立布局对照。

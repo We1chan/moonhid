@@ -1,8 +1,8 @@
 # 描述符 lint 核心
 
 `lint_descriptor(Bytes) -> Result[Array[Lint], Diagnostic]` 检查已经能编译的描述符。
-这是仓库新增的 API，尚未包含在已发布的 0.2.0 中；JSON、CLI 和网页接入分别留给 T12b、T12c。
-本阶段没有新增 JSON 字段或改变 `schema_version`。
+这是仓库新增的 API，尚未包含在已发布的 0.2.0 中；T12b 已接入 JSON、bridge 和 CLI，
+网页检查面板留给 T12c。JSON v2 新增 `lints` 字段，不改变 `schema_version`，兼容策略见 [JSON v2](json-v2.md)。
 
 先调用 `compile_descriptor`，失败时原样返回它的 `Diagnostic`，包括 code、offset 和 message。
 成功时返回提示数组，不修改编译布局、解码或原描述符。Warning 表示需要审阅的映射或结构风险，
@@ -11,7 +11,7 @@ Info 表示编码、重复 Usage 或填充方面的建议；两者都不能代�
 每条提示包含 `offset`、`code`、`level`、英文 `message` 和可选 `field_index`。
 `offset` 从描述符第 0 字节起计，指向 item 前缀；`field_index` 是同一描述符编译后
 `Layout.fields` 的零起始索引。集合提示没有字段索引。
-结果按 offset、再按 code 排序；同一 Maximum item 只提示一次，并指向第一个受影响的数据字段。
+结果按 offset、再按 code 的字典序排序；同一 Maximum item 只提示一次，并指向第一个受影响的数据字段。
 code 和下表定义的级别/触发语义是契约；message 用于解释，消费方不应解析它。
 
 ## 规则与依据
@@ -63,6 +63,21 @@ Report ID 冲突按 `(kind, id)` 检查，允许 Input / Output / Feature 复用
 - 布局与本地项语义复用已有编译器；另一次 `parse_items` 和很小的 Global 状态遍历只保存
   Logical/Physical Maximum 的原始 item，并实现 Push/Pop。没有为 lint 扩展公开 `Field`，
   没有复制整个编译状态机。取舍是多一次有界分词，换取 API 不暴露额外内部编码状态。
+  JSON 导出通过内部 `lint_compiled` 复用已经编译的布局和 items，不重复编译。
+
+## 文件 CLI
+
+```sh
+moon run cmd/moonhid --target native -- lint descriptor.hex
+moon run cmd/moonhid --target js -- lint descriptor.hex
+```
+
+每条提示向 stdout 输出一行 `warning usage_count @18: ...` 或 `info logical_max_sign @8: ...`。
+没有提示时 stdout 为空。有 Warning 时退出 3，仅 Info 或无提示时退出 0；
+文件/十六进制/编译错误向 stderr 输出 Diagnostic 并退出 1，参数错误退出 2。
+`inspect` 仍输出 JSON、成功退出 0，即使 JSON 中有 Warning。
+固件 CI 可以直接检查构建后的可执行文件退出码，将 Warning 视为需要审阅的结果；
+不要将进程状态 3 与文件或描述符编译失败混为一谈。
 
 ## 回归验证
 

@@ -3,8 +3,11 @@
 v2 增加超宽字段原始字节解码和区间 Usage；历史格式见 [JSON v1](json-v1.md)。
 
 `descriptor_to_json(Bytes)` 返回 `Result[Json, Diagnostic]`，成功值是版本化描述符文档。
-`layout_to_json`、`report_to_json` 和 `diagnostic_to_json` 返回其中的组件。
-版本字段为整数 `schema_version: 2`；不兼容的字段或语义变更会增加版本号。
+`layout_to_json`、`report_to_json`、`diagnostic_to_json` 和 `lint_to_json` 返回其中的组件。
+版本字段为整数 `schema_version: 2`。
+兼容策略：新增字段不提升版本号，消费方必须忽略不认识的字段；删除字段、字段改名、
+或改变既有字段的语义才提升 `schema_version`。因此新文档可增加信息，同时保持已有字段的类型与含义。
+该策略从本轮 lint 字段开始明确记录；旧的 v2 描述符可能没有 `lints`，读取时应按空数组处理。
 对象键顺序不作为契约，数组顺序按描述符声明和报告元素顺序保留。
 
 ## 描述符文档
@@ -15,6 +18,7 @@ v2 增加超宽字段原始字节解码和区间 Usage；历史格式见 [JSON v
 | `descriptor_hex` | string | 小写、空格分隔的字节对 |
 | `byte_length` | integer | 描述符长度 |
 | `items` | array | `offset`, `type_code`, `tag`, `data_hex`, `is_long` |
+| `lints` | array | 静态检查结果，空数组表示无提示；既有 v2 文件可缺省 |
 | `layout.has_report_ids` | boolean | 是否使用 ID 前缀 |
 | `layout.reports` | array | `kind`, `report_id`, `payload_bits`, `wire_bytes` |
 | `layout.collections` | array | Collection 元数据，顺序即其索引 |
@@ -25,6 +29,12 @@ v2 增加超宽字段原始字节解码和区间 Usage；历史格式见 [JSON v
 `reports` 按每个方向/ID 在描述符中第一次出现的顺序列出。
 Item 的 `type_code` 是 HID 原始值：Main=0、Global=1、Local=2、Reserved=3。
 长项可通过 `parse_items` 检查，但 `descriptor_to_json` 会拒绝布局编译不支持的语义。
+
+`lints` 的每个对象含 `offset`（integer）、`code`（string）、`level`（`"warning"` 或 `"info"`）、
+`message`（英文 string）和 `field_index`（integer 或 null）。offset 指向描述符 item 的前缀字节，
+field_index 引用同一文档的完整 `layout.fields`。集合提示的 field_index 为 null。
+数组按 offset、再按 code 字典序排序；code/level 的触发语义见 [lint 规则](lint.md)，不要解析 message。
+Warning 不使编译、JSON 导出或 bridge 的 `ok` 变为失败。
 
 Collection 对象含 `descriptor_offset`、`end_offset`（对应 End Collection 的字节位置）、
 `collection_type`、`usage`、`parent_index`、`string_spans`、`designator_spans`、`alternate_usages`。根集合的 `parent_index` 为 `null`。
@@ -89,6 +99,8 @@ Constant 字段不产生整数或原始字节值；Data Array 位宽仍限制 1.
 - `examples_json()` → 鼠标、键盘、手柄样例数组，含 `name`, `descriptor_hex`, `input_hex`, `expected_values`, `output_hex`。
 
 所有参数及返回值都是原生 JavaScript 字符串；返回值再用 `JSON.parse` 读取。
+`inspect_descriptor` 返回的 `descriptor.lints` 与核心导出一致；当前网页尚未展示检查面板，
+导出的描述符 JSON 已包含这些提示。
 失败格式为 `{ "ok": false, "schema_version": 2, "stage": ..., "error": { "offset": ..., "code": ..., "message": ... } }`。
 `stage` 是 `descriptor_hex`、`descriptor`、`report_hex` 或 `report`。
 十六进制阶段的 offset 是原始文本 UTF-16 索引，二进制阶段是零起始字节偏移。
@@ -99,7 +111,7 @@ Constant 字段不产生整数或原始字节值；Data Array 位宽仍限制 1.
 ```json
 {
   "schema_version": 2,
-  "descriptor": { "schema_version": 2, "descriptor_hex": "...", "byte_length": 0, "items": [], "layout": {} },
+  "descriptor": { "schema_version": 2, "descriptor_hex": "...", "byte_length": 0, "items": [], "lints": [], "layout": {} },
   "selected_report": { "kind": "input", "report_id": 0 },
   "wire_hex": null,
   "decoded": null
