@@ -9,6 +9,7 @@ for (const fixture of fixtures) {
   const result = inspect(fixture.descriptor_hex);
   assert.equal(result.ok, true);
   assert.equal(result.schema_version, 2);
+  assert.deepEqual(result.descriptor.lints, []);
   assert.equal(result.descriptor.layout.collections[0].parent_index, null);
   const report = decode(fixture.descriptor_hex, 'input', fixture.input_hex);
   assert.equal(report.ok, true);
@@ -72,4 +73,34 @@ assert.deepEqual(delimiter.alternate_usages, [[{ page: 9, min: 2, max: 2 }]]);
 assert.equal(inspect('a9 00').error.code, 'delimiter');
 assert.equal(inspect('99 02').error.code, 'local_range');
 assert.equal(inspect('79 01 '.repeat(1025)).error.code, 'local_limit');
-console.log('Browser bridge: three fixtures, LED output, multi-ID/Feature, metadata, uint32 and error paths passed.');
+
+// Assert the JSON contract for every lint code, including optional field_index
+// and stable item offsets. Warnings must not become bridge failure responses.
+const app = body => `05 01 09 05 a1 01 ${body} c0`;
+const globals = '05 01 15 00 25 01 75 08 95 01';
+for (const [hex, code, level, offset, fieldIndex] of [
+  [app('15 00 25 ff 75 08 95 01 09 30 81 02'), 'logical_max_sign', 'info', 8, 0],
+  [app('15 00 25 01 75 08 95 01 35 00 45 ff 09 30 81 02'), 'physical_max_sign', 'info', 16, 0],
+  [app('15 00 25 0f 75 04 95 01 09 39 81 42'), 'null_without_room', 'warning', 16, 0],
+  [app('05 09 19 01 29 03 15 00 25 01 75 02 95 02 81 02'), 'usage_count', 'warning', 20, 0],
+  [app('05 09 19 01 29 03 15 00 25 01 75 02 95 04 81 02'), 'usage_count', 'info', 20, 0],
+  [app('15 00 25 01 75 08 95 01 81 02'), 'missing_usage', 'warning', 14, 0],
+  [app('15 00 25 01 75 03 95 01 09 30 81 02'), 'unaligned_report', 'info', 16, 0],
+  ['05 01 09 30 15 81 25 7f 75 08 95 01 81 06', 'field_outside_application', 'warning', 12, 0],
+  ['05 01 a1 01 15 00 25 01 75 08 95 01 09 30 81 02 c0', 'collection_without_usage', 'warning', 2, null],
+  [`${globals} 09 05 a1 01 09 30 81 02 c0 09 02 a1 01 09 31 81 02 c0`, 'multiple_applications_without_report_id', 'warning', 21, null],
+  [`${globals} 09 05 a1 01 85 01 09 30 81 02 c0 09 02 a1 01 85 01 09 31 81 02 c0`, 'report_id_shared_across_applications', 'warning', 29, 1],
+]) {
+  const result = inspect(hex);
+  assert.equal(result.ok, true);
+  assert.equal(result.schema_version, 2);
+  assert.equal(result.descriptor.schema_version, 2);
+  const matches = result.descriptor.lints.filter(l => l.code === code);
+  assert.equal(matches.length, 1, code);
+  const entry = matches[0];
+  assert.deepEqual([entry.level, entry.offset, entry.field_index], [level, offset, fieldIndex], code);
+  assert.equal(typeof entry.message, 'string');
+  assert.ok(entry.message.length > 0);
+  assert.ok(result.descriptor.items.some(item => item.offset === entry.offset));
+}
+console.log('Browser bridge: fixtures, reports, metadata, uint32, ten lint codes/JSON v2 and error paths passed.');
