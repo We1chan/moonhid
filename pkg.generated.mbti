@@ -30,6 +30,8 @@ pub fn layout_to_json(Layout) -> Json
 
 pub fn lint_descriptor(Bytes) -> Result[Array[Lint], Diagnostic]
 
+pub fn lint_to_json(Lint) -> Json
+
 pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
 pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]

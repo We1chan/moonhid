@@ -10,7 +10,8 @@ fn failure(stage : String, error : @hid.Diagnostic) -> String {
 }
 
 ///|
-/// Native JavaScript strings in, versioned JSON strings out.
+/// Native JavaScript strings in, versioned JSON strings out. Successful
+/// inspection includes descriptor.lints; Warnings do not make ok=false.
 pub fn inspect_descriptor(descriptor_hex : String) -> String {
   let bytes = match @hid.parse_hex(descriptor_hex) {
     Ok(bytes) => bytes
