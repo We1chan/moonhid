@@ -219,3 +219,28 @@ fn real_report_summary(
   }
   result
 }
+
+///|
+test "real devices A-G: lint code level offset and field index regressions" {
+  let actual = [
+    real_device_a(),
+    real_device_b(),
+    real_device_c(),
+    real_device_d(),
+    real_device_e(),
+    real_device_f(),
+    real_device_g(),
+  ].map(text => lint(text).map(l => (l.code, l.level, l.offset, l.field_index)))
+  assert_eq(actual, [
+    [("missing_usage", @moonhid.Warning, 17, Some(0))],
+    [("usage_count", @moonhid.Warning, 114, Some(6))],
+    [],
+    [],
+    [],
+    [],
+    [
+      ("usage_count", @moonhid.Warning, 236, Some(13)),
+      ("usage_count", @moonhid.Warning, 240, Some(14)),
+    ],
+  ])
+}

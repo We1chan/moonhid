@@ -155,6 +155,7 @@ test "README: decode one relative axis" {
 | `unsigned_value` / `signed_value` | 小端短项数值，完整保留 32 位范围 |
 | `field_usage` | 按序查询 Usage；Variable 越界重复最后一项，Array 越界返回 None |
 | `compile_descriptor` | 计算 Main 字段、集合树、元数据、报告 ID 与位偏移 |
+| `lint_descriptor` | 检查可编译描述符的映射与结构风险；核心 API 见 [lint 说明](docs/lint.md)，尚未发布 |
 | `decode_unit` / `effective_physical_range` | 展开单位维度，并应用 HID 物理范围缺省规则 |
 | `descriptor_to_json` / `layout_to_json` / `report_to_json` | 导出版本化描述符与布局、解码组件 |
 | `report_length` | 查询指定方向和 ID 的完整报告字节长度 |
@@ -166,6 +167,11 @@ test "README: decode one relative axis" {
 
 ## 支持范围与边界
 
+- 仓库提供独立的描述符 lint 核心（尚未包含在已发布的 0.2.0 中）；Warning / Info 不改变编译结果。
+  规则包括 `logical_max_sign`、`physical_max_sign`、`null_without_room`、`usage_count`、`missing_usage`、
+  `unaligned_report`、`field_outside_application`、`collection_without_usage`、
+  `multiple_applications_without_report_id`、`report_id_shared_across_applications`，
+  触发条件与级别是契约，见 [规则依据与限制](docs/lint.md)。JSON、CLI、网页接入仍待后续任务。
 - 支持 Input / Output / Feature、Usage / Usage 范围 / 32 位扩展 Usage、
   Logical / Physical 范围、Unit / Unit Exponent、Report Size / Count / ID、Global Push / Pop，
   并保留 Collection 的类型、Usage、父索引与字段所属集合。

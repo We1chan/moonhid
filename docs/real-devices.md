@@ -63,6 +63,23 @@ Report Count 现由每报告 65536 位预算约束；G 的 32768 个 System Cont
 | F | Feature / 1 / 16；Input / 2 / 16024；Feature / 2 / 1144 | 4 |
 | G | Input / 1 / 64；Output / 1 / 8；Input / 2 / 16；Input / 3 / 16；Input / 7 / 120；Input / 5 / 56；Input / 6 / 520；Output / 6 / 520 | 15 |
 
+## lint 结果
+
+2026-10-02 使用新增的 `lint_descriptor` 核心 API 检查同一份 A–G 字节，
+共得到 4 条 Warning、0 条 Info；三份合成 fixture 没有 Warning。
+规则、级别与规范依据见 [lint 说明](lint.md)，这里只解释这些保存样例的具体结果。
+所有提示的 code / level / offset / field_index 已在 `real_devices_test.mbt` 固定。
+offset 是描述符字节偏移，field_index 是编译布局中的零起始字段索引。
+
+| 样例 | 级别 / code | offset / field_index | 判断与可能影响 |
+| --- | --- | --- | --- |
+| A | Warning / `missing_usage` | 17 / 0 | `0xff00:0x04` 被前面的 Collection 消耗，Input 没有自己的 Usage。MoonHID 仍保留 32 字节原值，但没有 Usage 映射；Linux 的通用字段注册可能将其当作填充。专用驱动如何读取不在本次验证范围内。 |
+| B | Warning / `usage_count` | 114 / 6 | Input ID 68 的厂商 Array 只有一个 `0xff00:0x0c` Usage，逻辑域却有 256 个选择值；Count 1751 表示元素槽数。按当前映射只有值 0 有对应 Usage，其余原值仍保留。可能是以单 Usage 标注原始数据块的设计，不能仅据此认定描述符有错。 |
+| C–F | 无提示 | — | 在现有规则范围内未发现提示；不代表实机通信或所有 HID 约束均已通过。 |
+| G | Warning / `usage_count` | 236 / 13；240 / 14 | Input 与 Output ID 6 各有 65 个字节槽，一个 `0xff55:0x02` Usage 对应 256 个逻辑选择值。和 B 类似，可能是厂商原始协议的标签。实际应用应按该设备协议解释其余字节，不能推断厂商写错。 |
+
+本轮未修改真实描述符，也未读取、发送实时报告。lint 不改变先前的编译、解码或独立布局对照结果。
+
 ## 独立工具对照
 
 2026-10-02 在本机运行外部 [hid-tools](https://gitlab.freedesktop.org/libevdev/hid-tools)
