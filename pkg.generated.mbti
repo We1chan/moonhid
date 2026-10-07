@@ -28,6 +28,8 @@ pub fn format_hex(Bytes) -> String
 
 pub fn layout_to_json(Layout) -> Json
 
+pub fn lint_descriptor(Bytes) -> Result[Array[Lint], Diagnostic]
+
 pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
 pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
@@ -143,6 +145,25 @@ pub(all) struct Layout {
 pub fn Layout::equal(Self, Self) -> Bool
 pub fn Layout::not_equal(Self, Self) -> Bool
 pub fn Layout::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Lint {
+  offset : Int
+  code : String
+  level : LintLevel
+  message : String
+  field_index : Int?
+} derive(Eq, @debug.Debug)
+pub fn Lint::equal(Self, Self) -> Bool
+pub fn Lint::not_equal(Self, Self) -> Bool
+pub fn Lint::to_repr(Self) -> @debug.Repr
+
+pub(all) enum LintLevel {
+  Warning
+  Info
+} derive(Eq, @debug.Debug)
+pub fn LintLevel::equal(Self, Self) -> Bool
+pub fn LintLevel::not_equal(Self, Self) -> Bool
+pub fn LintLevel::to_repr(Self) -> @debug.Repr
 
 pub(all) struct OpaqueValue {
   field_index : Int
