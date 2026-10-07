@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MoonHID 手柄实机验证</title><link rel="stylesheet" href="styles.css"><link rel="icon" href="favicon.svg"></head>
+<body><main class="capture-page">
+  <a href="./">← 返回检查器</a><h1>手柄实机验证</h1>
+  <p>选择一个手柄，按按钮、移动摇杆，保存实际输入与解码结果。数据保留在当前页面，点击导出才写入文件。</p>
+  <p class="block-note">浏览器没有原始报告描述符。本页根据浏览器可见字段生成参考描述符，明确标记来源；不恢复原始编码、嵌套集合、物理单位或 Delimiter 元数据。</p>
+  <p><label>设备型号 / 连接方式：<input id="capture-model" placeholder="例如 Xbox，蓝牙"></label></p>
+  <p><label><input id="capture-raw" type="checkbox"> 按位宽查看原始值</label>：明确忽略浏览器逻辑范围、Array 映射和 Null 判定；适合浏览器元数据不完整时检查按钮与轴的原始数值。</p>
+  <div class="lesson-actions"><button id="capture-connect" class="btn">选择手柄</button><button id="capture-stop" class="btn" disabled>停止接收</button><button id="capture-export" class="btn" disabled>导出验证记录</button></div>
+  <p id="capture-status" role="status">需要 Chromium、HTTPS 或 localhost。仅接收选中手柄的 Input，不发送控制指令。</p>
+  <h2>参考描述符</h2><textarea id="capture-descriptor" readonly spellcheck="false" aria-label="根据浏览器字段生成的参考描述符"></textarea>
+  <h2>最近收到的报告</h2><pre id="capture-last">等待输入</pre>
+  <details><summary>完整验证记录（停止后可复制）</summary><textarea id="capture-record" readonly aria-label="完整验证记录" spellcheck="false"></textarea></details>
+  <h2>验证步骤</h2><ol><li>静置手柄后按下、松开 A。</li><li>将左摇杆移动到两端，再回中。</li><li>检查按钮和轴值是否随动作变化。</li><li>停止接收，导出最近 100 条报告；硬件拔出另行验证。</li></ol>
+</main><script type="module" src="capture.js"></script></body></html>

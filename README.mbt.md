@@ -16,8 +16,9 @@ MoonHID 的目标是将这些二进制定义转换为可检查、可复用的数
 
 ## 当前状态
 
-0.2.0 已发布到 mooncakes.io，JSON schema 为 v2；已在独立项目中完成四后端安装验收，见
-[0.2.0 发布说明](docs/release-0.2.0.md)。核心库为纯 MoonBit，
+当前仓库版本为 0.3.0，JSON schema 为 v2，新增 lint API、CLI 与中文网页提示，见
+[0.3.0 发布说明](docs/release-0.3.0.md)。0.2.0 的独立四后端安装验收仍保留在
+[历史发布说明](docs/release-0.2.0.md)。核心库为纯 MoonBit，
 已实现十六进制输入、短项/长项分词、布局编译、Collection 层级、Physical/Unit 元数据和报告解码。
 仓库提供合成的鼠标、键盘和手柄样例，以及 [七份真实设备描述符回归](docs/real-devices.md)，运行时不依赖 USB 权限、真实设备或网络服务。
 浏览器检查器直接运行 MoonBit 编译的 JS 模块，提供字段布局、解码值与版本化 JSON 导出。
@@ -75,7 +76,7 @@ moon run cmd/moonhid --target js -- inspect descriptor.hex
 `warning usage_count @18: ...`，没有提示时 stdout 为空。退出 0 表示无 Warning（可以有 Info），
 1 表示文件/输入/编译错误，2 表示参数错误，3 表示存在 Warning；详细规则见 [lint 说明](docs/lint.md)。
 `inspect` 的 JSON v2 新增 `lints` 数组，有 Warning 仍成功退出 0。
-这些功能尚未包含在 mooncakes.io 已发布的 0.2.0 中，可从仓库构建运行。
+这些功能从 0.3.0 提供；使用 0.2.0 时需要升级。
 
 固件仓库的 CI 可以构建 native 可执行文件，检查导出的描述符，并根据退出码判断是否需要审阅：
 
@@ -90,6 +91,13 @@ moon build cmd/moonhid --target native --release
 `node scripts/test-cli.mjs` 会运行两个真实 CLI 进程，检查 Unicode/空格路径和退出码。
 
 ## 浏览器检查器
+
+直接打开 [在线检查器](https://we1chan.github.io/moonhid/)。
+[Release](https://github.com/We1chan/moonhid/releases/tag/v0.3.0) 提供编译好的离线包：
+解压后只需 Node.js 22+，Windows 双击 `start-inspector.cmd`，
+其他系统运行 `node scripts/serve-offline.mjs`，不需要 MoonBit 或 Python。
+
+从源码运行：
 
 安装 MoonBit、Node.js 22+ 和 Python 3 后：
 
@@ -114,7 +122,12 @@ Input / Output / Feature 与 Report ID，填入完整报告后自动解码，`Ct
 十六进制输入错误会在编辑器中标红，并给出字符或字节偏移；首字节 Report ID 与所选报告不一致时，
 可以一键切换到对应报告。
 
-页面不加载外部脚本或 CDN，数据只在页面内处理。服务只监听 `127.0.0.1`。
+左侧中文 lint 面板区分 Warning / Info，可筛选、分页并定位 item 与字段。
+编译成功但有 Warning 时仍可解码；未产生提示不等于协议认证。
+中栏「发现问题 → 修改 → 验证」案例演示 Hat Null 范围修正和同一报告的解码变化。
+固件团队可复制 [完整 CI 示例](docs/firmware-ci.md)，检查描述符及保存的报告预期值。
+
+页面不加载外部脚本或 CDN，数据只在页面内处理。本地服务只监听 `127.0.0.1`。
 解码值表每页最多 200 行，Items 每页最多 500 项，位布局最多展示前 256 个字节，Collection 树最多列出 500 个；
 分页表格、报告输入和 JSON 保留完整数据。位布局每行一个字节、左侧为最高位，载荷按 HID 的 LSB 位序解释。
 「导出 JSON」保存当前描述符及已成功解码的报告，格式见 [JSON v2](docs/json-v2.md)。
@@ -136,8 +149,11 @@ Logical 和 Usage。WebHID 顶层 reports 已包含嵌套集合字段，避免�
 缺少报告可能来自浏览器保护规则或粘贴的描述符不匹配，不应直接视为 MoonHID 解析错误。
 WebHID 不暴露完整原始项，String/Designator/Delimiter 等元数据不参与此对照。
 
-当前自动测试使用模拟 HIDDevice，覆盖前缀、DataView 子视图、连接/断开、热拔插和连接中取消；
-真实手柄/厂商设备的权限与实时输入尚需手工验收，不能用模拟测试代替。
+[Xbox 蓝牙实测](docs/xbox-bluetooth.md) 已记录 42 条实际 Input，验证 A 状态、左轴两端和回中，
+并重放原始数据。检查器提供独立的「手柄实机验证」入口：浏览器可见字段生成参考布局，
+逻辑范围不完整时需明确选择原始位值模式；不会冒充原始设备描述符。
+自动测试仍用模拟 HIDDevice 覆盖前缀、DataView 子视图、连接/断开、热拔插和连接中取消；
+这些生命周期模拟不能代表已通过对应硬件验收。
 
 ## API 示例
 
@@ -169,7 +185,7 @@ test "README: decode one relative axis" {
 | `unsigned_value` / `signed_value` | 小端短项数值，完整保留 32 位范围 |
 | `field_usage` | 按序查询 Usage；Variable 越界重复最后一项，Array 越界返回 None |
 | `compile_descriptor` | 计算 Main 字段、集合树、元数据、报告 ID 与位偏移 |
-| `lint_descriptor` | 检查可编译描述符的映射与结构风险；核心 API 见 [lint 说明](docs/lint.md)，尚未发布 |
+| `lint_descriptor` | 检查可编译描述符的映射与结构风险；核心 API 见 [lint 说明](docs/lint.md)，从 0.3.0 提供 |
 | `decode_unit` / `effective_physical_range` | 展开单位维度，并应用 HID 物理范围缺省规则 |
 | `descriptor_to_json` / `layout_to_json` / `report_to_json` | 导出版本化描述符与布局、解码组件 |
 | `lint_to_json` | 导出含级别、item 偏移与可选字段索引的 lint 组件 |
@@ -182,11 +198,11 @@ test "README: decode one relative axis" {
 
 ## 支持范围与边界
 
-- 仓库提供独立的描述符 lint 核心（尚未包含在已发布的 0.2.0 中）；Warning / Info 不改变编译结果。
+- 仓库提供独立的描述符 lint 核心（从 0.3.0 提供）；Warning / Info 不改变编译结果。
   规则包括 `logical_max_sign`、`physical_max_sign`、`null_without_room`、`usage_count`、`missing_usage`、
   `unaligned_report`、`field_outside_application`、`collection_without_usage`、
   `multiple_applications_without_report_id`、`report_id_shared_across_applications`，
-  触发条件与级别是契约，见 [规则依据与限制](docs/lint.md)。JSON v2、bridge 与 CLI 已接入，网页面板仍待后续任务。
+  触发条件与级别是契约，见 [规则依据与限制](docs/lint.md)。JSON v2、bridge、CLI 与中文网页面板均已接入。
 - 支持 Input / Output / Feature、Usage / Usage 范围 / 32 位扩展 Usage、
   Logical / Physical 范围、Unit / Unit Exponent、Report Size / Count / ID、Global Push / Pop，
   并保留 Collection 的类型、Usage、父索引与字段所属集合。
@@ -221,7 +237,8 @@ test "README: decode one relative axis" {
 ## 开发
 
 本机验证工具链：`moon 0.1.20260920`、`moonc v0.10.14+7d59c7ec9`。
-CI 使用官方最新工具链并在日志记录完整版本，验证四种后端：
+稳定 CI 固定 `toolchain.json` 中的官方工具链，验证四种后端，
+另设最新工具链兼容任务；日志记录完整版本：
 
 ```sh
 moon check --target all --deny-warn
@@ -231,6 +248,8 @@ moon test --target native
 moon test --target js # 需要 Node.js
 node scripts/build-web.mjs
 node scripts/test-web.mjs
+node scripts/test-usability.mjs
+node scripts/firmware-ci.mjs
 moon info
 moon fmt --check
 ```
@@ -240,7 +259,8 @@ Physical/Unit、完整 uint32 和错误路径。独立 hid-tools 对照与 headl
 四后端还运行固定种子的随机字节、结构化有效描述符与真实描述符突变；
 语料、资源边界及解码性质见 [模糊测试验收](docs/fuzz-validation.md)。
 浏览器人工和自动验收记录见
-[检查器验收](docs/inspector-validation.md)。
+[检查器验收](docs/inspector-validation.md)。[性能基准](docs/performance.md) 记录实际来源
+描述符与资源上限报告的 bridge/JSON 耗时，每次 CI 保存测量结果。
 
 ## 协议与参考
 

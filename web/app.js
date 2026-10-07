@@ -1,4 +1,6 @@
 import { createHIDController, compareCollections } from './hid-live.js';
+import { lintCounts, lintText } from './lint-ui.js';
+import { nullLesson } from './lesson.js';
 
 const $ = id => document.getElementById(id);
 const MAX_TEXT = 393216;
@@ -6,6 +8,7 @@ const VALUE_PAGE = 200;
 const ITEM_PAGE = 500;
 const BITMAP_BYTES = 256;
 const COLLECTION_LIMIT = 500;
+const LINT_PAGE = 50;
 
 const kindNames = { input: 'Input', output: 'Output', feature: 'Feature' };
 const kindZh = { input: '输入', output: '输出', feature: '特性' };
@@ -99,6 +102,8 @@ const state = {
   version: 0,
   itemPage: 0,
   valuePage: 0,
+  lintPage: 0,
+  lintFilter: 'all',
 };
 
 function renderLiveState(note = null) {
@@ -418,6 +423,7 @@ function parseDescriptor() {
   state.info = annotate(result.descriptor);
   state.focus = null;
   state.itemPage = 0;
+  state.lintPage = 0;
   const reports = result.descriptor.layout.reports;
   if (state.fixture?.pending) {
     state.fixture.pending = false;
@@ -527,6 +533,7 @@ function renderAll() {
   renderLiveComparison();
   renderFixtures();
   renderDescriptorStatus();
+  renderLints();
   renderItems();
   renderReports();
   renderReportStatus();
@@ -561,7 +568,33 @@ function renderDescriptorStatus() {
   }
   if (!d) return setStatus('descriptor-status', '', h('span', { class: 'status-text' }, core ? '粘贴报告描述符的十六进制字节，或选择一个样例。' : '正在加载 MoonBit 解析器…'));
   const layout = d.layout;
-  setStatus('descriptor-status', 'ok', h('span', { class: 'status-text' }, `已解析 · ${plural(layout.fields.length, '个字段')} · ${plural(layout.reports.length, '个报告')} · ${plural(layout.collections.length, '个 Collection')}`));
+  const counts = lintCounts(d.lints ?? []);
+  setStatus('descriptor-status', counts.warning ? 'warn' : 'ok', h('span', { class: 'status-text' }, `已解析 · ${plural(layout.fields.length, '个字段')} · ${plural(layout.reports.length, '个报告')} · ${plural(layout.collections.length, '个 Collection')}${counts.warning ? ` · ${counts.warning} 条需核对` : ''}`));
+}
+function renderLints() {
+  const box = $('lints');
+  const lints = state.descriptor?.lints ?? [];
+  $('lint-meta').textContent = state.descriptor ? `${lints.length} 条` : '';
+  if (!state.descriptor) return box.replaceChildren(empty(state.descriptorError ? '修正编译错误后再进行静态检查。' : '解析描述符后显示静态检查提示。'));
+  if (!lints.length) return box.replaceChildren(empty('当前规则未产生提示；仍需核对设备协议并验证实机行为。'));
+  const counts = lintCounts(lints);
+  const filters = h('div', { class: 'lint-filters', role: 'group', 'aria-label': '筛选检查提示' },
+    [['all', '全部', lints.length], ['warning', '需核对', counts.warning], ['info', '建议', counts.info]].map(([key, name, count]) => h('button', {
+      type: 'button', 'aria-pressed': key === state.lintFilter, dataset: { lintFilter: key },
+      onclick: () => { state.lintFilter = key; state.lintPage = 0; renderLints(); },
+    }, `${name} ${count}`)));
+  const shown = lints.filter(l => state.lintFilter === 'all' || l.level === state.lintFilter);
+  const list = h('ol', { class: 'lint-list' }, shown.slice(state.lintPage * LINT_PAGE, (state.lintPage + 1) * LINT_PAGE).map(lint => {
+    const text = lintText(lint);
+    const item = state.info.itemByOffset.get(lint.offset);
+    return h('li', { class: `lint-entry ${lint.level === 'warning' ? 'warning' : 'info'}`, dataset: { lintCode: lint.code, offset: lint.offset } },
+      h('div', { class: 'lint-head' }, h('span', { class: `tag ${lint.level === 'warning' ? 'warn' : ''}` }, text.level), h('strong', null, text.title)),
+      h('p', null, text.advice),
+      h('div', { class: 'lint-location' }, h('code', null, lint.code), h('button', { type: 'button', class: 'link', disabled: item === undefined, onclick: () => focusItem(item, true) }, `定位 @${lint.offset}`),
+        lint.field_index === null ? null : h('button', { type: 'button', class: 'link', onclick: () => selectField(lint.field_index) }, `字段 #${lint.field_index}`)),
+      h('details', null, h('summary', null, '原始消息'), h('p', { class: 'raw' }, lint.message)));
+  }));
+  box.replaceChildren(filters, shown.length ? list : empty('当前筛选没有提示。'), pager(state.lintPage, shown.length, LINT_PAGE, page => { state.lintPage = page; renderLints(); box.scrollTop = 0; }) ?? '');
 }
 function pager(page, total, size, onChange) {
   if (total <= size) return null;
@@ -869,6 +902,7 @@ $('sample-report').addEventListener('click', () => {
   applySelection();
 });
 $('export').addEventListener('click', exportJson);
+for (const phase of ['before', 'after']) $('lesson-' + phase).addEventListener('click', () => loadFixture(nullLesson[phase]));
 $('hid-connect').addEventListener('click', () => hidController.connect());
 $('hid-disconnect').addEventListener('click', () => hidController.disconnect());
 window.addEventListener('pagehide', () => { void hidController.dispose(); });

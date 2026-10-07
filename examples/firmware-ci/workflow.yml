@@ -1,0 +1,27 @@
+# Copy this into a firmware repository that includes the MoonHID regression case.
+# For another device, replace the descriptor/report files and expected.json.
+name: HID regression
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch a released, reviewed MoonHID version
+        run: |
+          git clone --depth 1 --branch v0.3.0 https://github.com/We1chan/moonhid.git moonhid
+      - name: Install the recorded compiler
+        working-directory: moonhid
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moonbit.sh
+          bash /tmp/install-moonbit.sh "$(jq -r .moonbit toolchain.json)"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Copy this firmware's exported descriptor, report and expectations
+        run: mkdir -p moonhid/_build && cp -R hid-regression moonhid/_build/firmware-case
+      - run: moon update && node scripts/firmware-ci.mjs js _build/firmware-case
+        working-directory: moonhid
