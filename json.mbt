@@ -208,6 +208,23 @@ pub fn diagnostic_to_json(error : Diagnostic) -> Json {
 }
 
 ///|
+/// An unversioned component of the schema v2 descriptor's lints array.
+pub fn lint_to_json(lint : Lint) -> Json {
+  {
+    "offset": lint.offset.to_json(),
+    "code": lint.code.to_json(),
+    "level": Json::string(
+      match lint.level {
+        Warning => "warning"
+        Info => "info"
+      },
+    ),
+    "message": lint.message.to_json(),
+    "field_index": optional_int(lint.field_index),
+  }
+}
+
+///|
 /// Schema version 2. Array order follows the descriptor; absent metadata is null.
 /// All numbers are exact within JavaScript's integer range for compiled layouts.
 pub fn descriptor_to_json(bytes : Bytes) -> Result[Json, Diagnostic] {
@@ -223,6 +240,7 @@ pub fn descriptor_to_json(bytes : Bytes) -> Result[Json, Diagnostic] {
     "schema_version": 2,
     "descriptor_hex": Json::string(format_hex(bytes)),
     "byte_length": bytes.length().to_json(),
+    "lints": Json::array(lint_compiled(layout, items).map(lint_to_json)),
     "items": Json::array(
       items.map(item => {
         "offset": item.offset.to_json(),

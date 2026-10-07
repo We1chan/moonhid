@@ -80,3 +80,118 @@ test "JSON missing metadata is null and Constant layout is retained" {
     @moonhid.descriptor_to_json(b"\x75") is Err({ code: "truncated_item", .. }),
   )
 }
+
+///|
+test "JSON lints preserve levels offsets optional field indices and schema v2" {
+  let bytes = match
+    @moonhid.parse_hex("05 01 a1 01 15 00 25 03 75 02 95 01 81 42 c0") {
+    Ok(bytes) => bytes
+    Err(_) => fail("invalid test hex")
+  }
+  let exported = match @moonhid.descriptor_to_json(bytes) {
+    Ok(json) => json
+    Err(_) => fail("Warnings must not reject JSON export")
+  }
+  let parsed = @json.parse(exported.stringify())
+  assert_eq(parsed, exported)
+  assert_true(
+    parsed
+    is {
+      "schema_version": 2,
+      "lints": [
+        {
+          "offset": 2,
+          "code": "collection_without_usage",
+          "level": "warning",
+          "field_index": Null,
+          ..
+        },
+        {
+          "offset": 12,
+          "code": "missing_usage",
+          "level": "warning",
+          "field_index": 0,
+          ..
+        },
+        {
+          "offset": 12,
+          "code": "null_without_room",
+          "level": "warning",
+          "field_index": 0,
+          ..
+        },
+        {
+          "offset": 12,
+          "code": "unaligned_report",
+          "level": "info",
+          "field_index": 0,
+          ..
+        },
+      ],
+      "layout": { "reports": [{ "payload_bits": 2, "wire_bytes": 1, .. }], .. },
+      ..
+    },
+  )
+  let info = @moonhid.lint_to_json({
+    offset: 8,
+    code: "logical_max_sign",
+    level: @moonhid.Info,
+    message: "positive extent",
+    field_index: Some(0),
+  })
+  assert_true(
+    info
+    is {
+      "offset": 8,
+      "level": "info",
+      "message": "positive extent",
+      "field_index": 0,
+      ..
+    },
+  )
+}
+
+///|
+test "JSON export includes empty lints and retains the compiler Diagnostic" {
+  let clean = b"\x05\x01\x09\x05\xa1\x01\x15\x00\x25\x01\x75\x08\x95\x01\x09\x30\x81\x02\xc0"
+  assert_true(
+    @moonhid.descriptor_to_json(clean)
+    is Ok({ "schema_version": 2, "lints": [], .. }),
+  )
+  for bytes in [b"", b"\x75", b"\xc0", b"\xfe\x00\x42"] {
+    let error = match @moonhid.compile_descriptor(bytes) {
+      Err(error) => error
+      Ok(_) => fail("expected compiler error")
+    }
+    assert_eq(@moonhid.descriptor_to_json(bytes), Err(error))
+  }
+}
+
+///|
+test "JSON lints agree with the core API on all saved real descriptors" {
+  for
+    text in [
+      real_device_a(),
+      real_device_b(),
+      real_device_c(),
+      real_device_d(),
+      real_device_e(),
+      real_device_f(),
+      real_device_g(),
+    ] {
+    let bytes = match @moonhid.parse_hex(text) {
+      Ok(bytes) => bytes
+      Err(_) => fail("invalid corpus hex")
+    }
+    let core = match @moonhid.lint_descriptor(bytes) {
+      Ok(lints) => lints
+      Err(_) => fail("real descriptor rejected")
+    }
+    let json = match @moonhid.descriptor_to_json(bytes) {
+      Ok(json) => json
+      Err(_) => fail("real JSON export rejected")
+    }
+    let expected = Json::array(core.map(@moonhid.lint_to_json))
+    assert_true(json is { "lints": actual, .. } && actual == expected)
+  }
+}
