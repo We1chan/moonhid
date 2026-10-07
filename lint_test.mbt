@@ -406,7 +406,7 @@ test "lint preserves compiler results and returns ordered item offsets on seeded
               before.offset < entry.offset ||
               (
                 before.offset == entry.offset &&
-                before.code.compare(entry.code) < 0
+                before.code.lexical_compare(entry.code) < 0
               ),
             )
           }

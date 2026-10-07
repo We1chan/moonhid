@@ -310,9 +310,28 @@ fn lint_layout(layout : Layout, lints : Array[Lint]) -> Unit {
 }
 
 ///|
+// Only call with items/layout from the same successfully compiled descriptor.
+// JSON export reuses these validated inputs instead of compiling again.
+fn lint_compiled(layout : Layout, items : Array[Item]) -> Array[Lint] {
+  let lints : Array[Lint] = []
+  lint_encodings(items, layout.fields, lints)
+  lint_layout(layout, lints)
+  lints.sort_by((a, b) => {
+    let offset = a.offset.compare(b.offset)
+    if offset == 0 {
+      a.code.lexical_compare(b.code)
+    } else {
+      offset
+    }
+  })
+  lints
+}
+
+///|
 /// Compiles first and returns the identical Diagnostic on failure. Lints never
-/// change the layout. Results sort by offset, then code; repeated Maximum items
-/// and each later application/report pair produce at most one matching lint.
+/// change the layout. Results sort by offset, then code lexicographically.
+/// Each Maximum item and each later application/report pair produce at most
+/// one matching lint.
 pub fn lint_descriptor(bytes : Bytes) -> Result[Array[Lint], Diagnostic] {
   let layout = match compile_descriptor(bytes) {
     Ok(layout) => layout
@@ -322,16 +341,5 @@ pub fn lint_descriptor(bytes : Bytes) -> Result[Array[Lint], Diagnostic] {
     Ok(items) => items
     Err(error) => return Err(error)
   }
-  let lints : Array[Lint] = []
-  lint_encodings(items, layout.fields, lints)
-  lint_layout(layout, lints)
-  lints.sort_by((a, b) => {
-    let offset = a.offset.compare(b.offset)
-    if offset == 0 {
-      a.code.compare(b.code)
-    } else {
-      offset
-    }
-  })
-  Ok(lints)
+  Ok(lint_compiled(layout, items))
 }

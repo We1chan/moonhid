@@ -61,6 +61,7 @@ CLI 提供 native 与 Node.js 后端，文件按 UTF-8 十六进制文本读取�
 
 ```sh
 moon run cmd/moonhid --target native -- inspect descriptor.hex
+moon run cmd/moonhid --target native -- lint descriptor.hex
 moon run cmd/moonhid --target native -- decode --kind input descriptor.hex report.hex
 moon run cmd/moonhid --target js -- inspect descriptor.hex
 ```
@@ -68,7 +69,20 @@ moon run cmd/moonhid --target js -- inspect descriptor.hex
 `inspect` 输出完整描述符 JSON v2；`decode` 输出带 `schema_version: 2` 的
 `wire_hex` / `decoded` 组件。报告文件应包含所需的 Report ID 前缀。
 方向可以是 input、output、feature；成功退出 0，输入/文件/诊断错误退出 1，参数错误退出 2。
-错误写入 stderr，格式为 `code @offset: message`；成功时 stdout 只含 JSON。
+错误写入 stderr，格式为 `code @offset: message`；`inspect` / `decode` 成功时 stdout 只含 JSON。
+
+仓库新增的 `lint` 子命令每条向 stdout 输出一行检查结果，例如
+`warning usage_count @18: ...`，没有提示时 stdout 为空。退出 0 表示无 Warning（可以有 Info），
+1 表示文件/输入/编译错误，2 表示参数错误，3 表示存在 Warning；详细规则见 [lint 说明](docs/lint.md)。
+`inspect` 的 JSON v2 新增 `lints` 数组，有 Warning 仍成功退出 0。
+这些功能尚未包含在 mooncakes.io 已发布的 0.2.0 中，可从仓库构建运行。
+
+固件仓库的 CI 可以构建 native 可执行文件，检查导出的描述符，并根据退出码判断是否需要审阅：
+
+```sh
+moon build cmd/moonhid --target native --release
+./_build/native/release/build/cmd/moonhid/moonhid.exe lint descriptor.hex
+```
 
 文件读取采用 [moonbitlang/x](https://github.com/moonbitlang/x) 0.5.5（Apache-2.0）。
 该 fs 包具有四后端实现，但本 CLI 的进程参数与 stderr 适配限定为 native/Node JS；
@@ -158,6 +172,7 @@ test "README: decode one relative axis" {
 | `lint_descriptor` | 检查可编译描述符的映射与结构风险；核心 API 见 [lint 说明](docs/lint.md)，尚未发布 |
 | `decode_unit` / `effective_physical_range` | 展开单位维度，并应用 HID 物理范围缺省规则 |
 | `descriptor_to_json` / `layout_to_json` / `report_to_json` | 导出版本化描述符与布局、解码组件 |
+| `lint_to_json` | 导出含级别、item 偏移与可选字段索引的 lint 组件 |
 | `report_length` | 查询指定方向和 ID 的完整报告字节长度 |
 | `extract_bytes` | 按 LSB 位序提取原始字节，支持非字节对齐 |
 | `extract_bits` | 提取跨字节、带符号或无符号的位字段 |
@@ -171,7 +186,7 @@ test "README: decode one relative axis" {
   规则包括 `logical_max_sign`、`physical_max_sign`、`null_without_room`、`usage_count`、`missing_usage`、
   `unaligned_report`、`field_outside_application`、`collection_without_usage`、
   `multiple_applications_without_report_id`、`report_id_shared_across_applications`，
-  触发条件与级别是契约，见 [规则依据与限制](docs/lint.md)。JSON、CLI、网页接入仍待后续任务。
+  触发条件与级别是契约，见 [规则依据与限制](docs/lint.md)。JSON v2、bridge 与 CLI 已接入，网页面板仍待后续任务。
 - 支持 Input / Output / Feature、Usage / Usage 范围 / 32 位扩展 Usage、
   Logical / Physical 范围、Unit / Unit Exponent、Report Size / Count / ID、Global Push / Pop，
   并保留 Collection 的类型、Usage、父索引与字段所属集合。
