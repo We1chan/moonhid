@@ -146,9 +146,39 @@ try {
       }
     }
   }
+  // Successful compilation with a Warning remains usable and can be located.
+  await evaluate(`document.querySelector('.lesson-panel').open = true; document.getElementById('lesson-before').click()`);
+  assert.match(await text('descriptor-status'), /已解析.*1 条需核对/);
+  assert.match(await text('lints'), /没有为 Null 状态留出取值/);
+  if (process.env.MOONHID_SCREENSHOTS) {
+    for (const width of [1440, 390]) {
+      await call('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+      assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true);
+      const { data } = await call('Page.captureScreenshot', { format: 'png' });
+      await writeFile(join(process.env.MOONHID_SCREENSHOTS, `lint-lesson-${width}.png`), Buffer.from(data, 'base64'));
+    }
+  }
+  await evaluate(`document.querySelector('[data-lint-code="null_without_room"] .lint-location button').click()`);
+  assert.match(await text('field-detail'), /Null State/);
+  await evaluate(`document.getElementById('lesson-after').click()`);
+  assert.match(await text('lints'), /当前规则未产生提示/);
+  assert.match(await text('values'), /Null/);
+  const repeated = '05 01 09 05 a1 01 15 00 25 01 75 08 95 01 ' + '81 02 '.repeat(80) + 'c0';
+  await setText('descriptor', repeated);
+  assert.equal(await evaluate('document.querySelectorAll(".lint-entry").length'), 50);
+  await evaluate(`document.querySelector('#lints .pager button:last-child').click()`);
+  assert.equal(await evaluate('document.querySelectorAll(".lint-entry").length'), 30);
+  await evaluate(`document.querySelector('#lints .lint-entry:last-child .lint-location button').click()`);
+  assert.match(await text('field-detail'), /#79/);
+  await evaluate(`document.querySelector('[data-lint-filter="info"]').click()`);
+  assert.match(await text('lints'), /当前筛选没有提示/);
+  await setText('descriptor', '05 01 a1 01 15 00 25 01 75 08 95 01 09 30 81 02 c0');
+  await evaluate(`document.querySelector('[data-lint-filter="all"]').click(); document.querySelector('[data-lint-code="collection_without_usage"] .lint-location button').click()`);
+  assert.equal(await evaluate('document.querySelector("#items .focus").dataset.item'), '1');
   await setText('descriptor', '05 q1');
   assert.match(await text('descriptor-status'), /invalid_hex/);
   assert.equal(await evaluate('document.getElementById("export").disabled'), true);
+  assert.match(await text('lints'), /修正编译错误/);
   // A separate page uses a simulated device. This never requests real HID access.
   await call('Page.addScriptToEvaluateOnNewDocument', { source: `
     const item = { reportSize: 8, reportCount: 1, isConstant: false, isArray: false,
@@ -157,7 +187,8 @@ try {
       usages: [0x10030], logicalMinimum: -127, logicalMaximum: 127 };
     const device = new EventTarget();
     Object.assign(device, { opened: false, productName: '模拟 HID',
-      collections: [{ inputReports: [{ reportId: 3, items: [item] }], children: [] }],
+      vendorId: 123, productId: 456,
+      collections: [{ usagePage: 1, usage: 5, type: 1, inputReports: [{ reportId: 3, items: [item] }], children: [] }],
       open: async () => { device.opened = true; }, close: async () => { device.opened = false; },
       emit: () => device.dispatchEvent(Object.assign(new Event('inputreport'), {
         device, reportId: 3, data: new DataView(new Uint8Array([99, 255, 88]).buffer, 1, 1)
@@ -184,6 +215,28 @@ try {
   await evaluate(`document.getElementById('hid-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
   await evaluate(`window.__mockDevice.opened = false; window.__mockHID.dispatchEvent(Object.assign(new Event('disconnect'), { device: window.__mockDevice }));`);
   assert.match(await text('hid-status'), /设备已拔出/);
+  await call('Page.navigate', { url: `http://127.0.0.1:${port}/capture.html` });
+  await evaluate(`new Promise((resolve, reject) => { const start = Date.now(); const check = () => { if (document.querySelector('#capture-status')?.textContent.includes('请选择手柄') && window.__mockDevice) resolve(true); else if (Date.now() - start > 10000) reject(new Error('Capture page loading timed out')); else setTimeout(check, 20); }; check(); })`);
+  await evaluate(`window.__mockDevice.collections[0].inputReports[0].items[0].logicalMaximum = -128; document.getElementById('capture-connect').click(); new Promise(resolve => setTimeout(resolve, 100))`);
+  assert.match(await text('capture-status'), /逻辑范围不完整/);
+  await evaluate(`document.getElementById('capture-raw').checked = true; document.getElementById('capture-model').value = '模拟回归设备'; document.getElementById('capture-connect').click(); new Promise(resolve => setTimeout(resolve, 100))`);
+  assert.match(await text('capture-status'), /原始数值/);
+  assert.equal(await evaluate('document.getElementById("capture-raw").disabled'), true);
+  await evaluate(`for (let i = 0; i < 105; i++) window.__mockDevice.emit(); document.getElementById('capture-stop').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  const capture = JSON.parse(await evaluate('document.getElementById("capture-record").value'));
+  assert.equal(capture.raw_values_mode, true);
+  assert.equal(capture.device.declared_model, '模拟回归设备');
+  assert.equal(capture.total_received, 105);
+  assert.equal(capture.reports.length, 100);
+  assert.equal(capture.reports[0].sequence, 6);
+  assert.equal(capture.reports.at(-1).wire_hex, '03 ff');
+  assert.equal(capture.reports.at(-1).result.decoded.values[0].value, -1);
+  assert.equal(capture.browser_collections[0].inputReports[0].items[0].logicalMaximum, -128);
+  assert.equal(await evaluate('document.getElementById("capture-raw").disabled'), false);
+  if (process.env.MOONHID_SCREENSHOTS) {
+    const { data } = await call('Page.captureScreenshot', { format: 'png' });
+    await writeFile(join(process.env.MOONHID_SCREENSHOTS, 'capture.png'), Buffer.from(data, 'base64'));
+  }
   assert.deepEqual(errors, []);
   console.log('Inspector DOM: A–G, opaque/large Usage, widths/themes, diagnostics and simulated WebHID lifecycle passed.');
 } finally {
