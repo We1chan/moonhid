@@ -22,11 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install official MoonBit toolchain
-        run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moonbit.sh
-          PATH="$HOME/.moon/bin:$PATH" bash /tmp/install-moonbit.sh
-          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Install recorded MoonBit toolchain
+        uses: ./.github/actions/setup-moon
       - name: Record toolchain
         run: moon version --all
       - name: Initialize Mooncakes dependency index
@@ -45,6 +42,10 @@ jobs:
           node scripts/build-web.mjs
           node scripts/test-web.mjs
           node scripts/test-webhid.mjs
+          node scripts/test-usability.mjs
+          node scripts/firmware-ci.mjs
+          node scripts/package-inspector.mjs
+          node scripts/test-offline.mjs
       - name: Verify file CLI
         if: matrix.target == 'js' || matrix.target == 'native'
         run: node scripts/test-cli.mjs ${{ matrix.target }}
@@ -67,3 +68,27 @@ jobs:
       - name: Verify inspector DOM in headless Chrome
         if: matrix.target == 'js'
         run: node scripts/test-inspector.mjs
+      - name: Record performance baseline
+        if: matrix.target == 'js'
+        run: node --expose-gc scripts/benchmark.mjs > _build/benchmark.json
+      - uses: actions/upload-artifact@v4
+        if: matrix.target == 'js'
+        with:
+          name: inspector-and-benchmark
+          path: |
+            _build/distribution/
+            _build/benchmark.json
+
+  latest-compatible:
+    name: latest-toolchain (js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: ./.github/actions/setup-moon
+        with:
+          version: latest
+      - run: moon update && moon check --target js --deny-warn && moon test --target js
+      - run: node scripts/build-web.mjs && node scripts/test-web.mjs && node scripts/test-usability.mjs

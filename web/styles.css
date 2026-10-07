@@ -68,6 +68,9 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 0; }
+.capture-page { max-width: 960px; margin: 24px auto; padding: 0 20px; }
+.capture-page textarea { width: 100%; min-height: 140px; font-family: var(--mono); background: var(--raised); border: 1px solid var(--line); }
+.capture-page pre { max-height: 420px; overflow: auto; padding: 16px; background: var(--sunken); }
 button, textarea, select, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
@@ -181,6 +184,24 @@ h2, h3 { margin: 0; }
 .live-panel ul { padding-left: 18px; max-height: 180px; overflow: auto; }
 .link { border: 0; padding: 0; background: none; color: var(--accent); font-weight: 500; white-space: nowrap; }
 .link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Static checks and the guided synthetic case */
+.lint-panel { max-height: 260px; min-height: 40px; flex-shrink: 0; overflow-y: auto; padding: 0 16px 12px; scrollbar-width: thin; }
+.lint-panel .empty { padding: 6px 0; }
+.lint-filters, .lint-head, .lint-location, .lesson-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.lint-filters { margin: 0 0 10px; }
+.lint-filters button { border: 1px solid var(--line); border-radius: 6px; background: var(--raised); padding: 3px 8px; font-size: 12px; }
+.lint-filters button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.lint-list { list-style: none; padding: 0; margin: 0; }
+.lint-entry { padding: 10px; margin-bottom: 8px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 7px; background: var(--raised); font-size: 12px; overflow-wrap: anywhere; }
+.lint-entry.warning { border-left-color: var(--warn); }
+.lint-entry p { margin: 6px 0; color: var(--ink-2); }
+.lint-entry details { color: var(--muted); margin-top: 6px; }
+.lint-entry summary { cursor: pointer; }
+.lint-location code { font-size: 11px; }
+.lesson-panel { margin: 16px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.lesson-panel summary { cursor: pointer; font-weight: 600; }
+.lesson-panel p { color: var(--ink-2); font-size: 12px; }
 
 /* Item listing */
 .items { flex: 1; min-height: 120px; overflow-y: auto; padding: 0 8px 16px; scrollbar-width: thin; }
