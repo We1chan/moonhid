@@ -45,6 +45,8 @@
         <textarea id="descriptor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="descriptor-status" placeholder="粘贴十六进制，例如 05 01 09 02 a1 01 …"></textarea>
       </div>
       <div id="descriptor-status" class="status" role="status" aria-live="polite"><span class="status-text">正在加载 MoonBit 解析器…</span></div>
+      <div class="list-head"><h3>静态检查</h3><span id="lint-meta" class="meta"></span></div>
+      <div id="lints" class="lint-panel"></div>
       <div class="list-head">
         <h3>Items</h3>
         <span id="item-meta" class="meta"></span>
@@ -54,6 +56,12 @@
 
     <section class="pane pane-report" aria-labelledby="report-title">
       <div class="report-inner">
+        <details class="lesson-panel">
+          <summary>第一次使用？试试“发现问题 → 修正 → 验证”</summary>
+          <p>这个合成手柄样例用 4 位表示方向，并声明 Null（空闲）。修正前范围为 0–15，没有空闲取值；修正后方向范围改为 0–7，报告 0f 会被识别为空闲。</p>
+          <div class="lesson-actions"><button id="lesson-before" type="button" class="btn">1. 查看可疑配置</button><button id="lesson-after" type="button" class="btn">2. 载入修正配置</button></div>
+          <p>先在左侧静态检查中定位 @16，再比较字段的逻辑范围和解码值。提示消失只表示通过当前规则检查。</p>
+        </details>
         <section class="live-panel" aria-label="WebHID 实时输入">
           <div class="live-actions">
             <strong>WebHID 实时输入</strong>
@@ -62,6 +70,7 @@
           </div>
           <p class="block-note">先粘贴描述符，再选择设备。仅 Chromium 支持；键盘和鼠标的受保护 Collection 不可读。
             <a href="https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md#自行读取描述符" target="_blank" rel="noreferrer">如何读取描述符</a></p>
+          <p class="block-note"><a href="capture.html">没有原始描述符？记录手柄的浏览器可见结构与实际输入</a></p>
           <div id="hid-status" class="status" role="status" aria-live="polite">检查 WebHID 支持…</div>
           <details><summary>与浏览器 collections 对照</summary><div id="hid-diff"></div></details>
         </section>

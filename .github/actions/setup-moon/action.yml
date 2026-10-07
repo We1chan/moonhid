@@ -1,0 +1,19 @@
+name: Install MoonBit
+description: Install the official, recorded toolchain unless explicitly overridden
+inputs:
+  version:
+    description: Override with latest for compatibility checks
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        MOON_VERSION_OVERRIDE: ${{ inputs.version }}
+      run: |
+        version="${MOON_VERSION_OVERRIDE:-$(jq -r .moonbit toolchain.json)}"
+        curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o "$RUNNER_TEMP/install-moonbit.sh"
+        PATH="$HOME/.moon/bin:$PATH" bash "$RUNNER_TEMP/install-moonbit.sh" "$version"
+        echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+        "$HOME/.moon/bin/moon" version --all
