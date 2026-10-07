@@ -16,7 +16,7 @@ MoonHID 的目标是将这些二进制定义转换为可检查、可复用的数
 
 ## 当前状态
 
-当前仓库版本为 0.3.0，JSON schema 为 v2，新增 lint API、CLI 与中文网页提示，见
+0.3.0 已发布到 mooncakes.io，并通过独立项目的四后端安装验收。JSON schema 为 v2，新增 lint API、CLI 与中文网页提示，见
 [0.3.0 发布说明](docs/release-0.3.0.md)。0.2.0 的独立四后端安装验收仍保留在
 [历史发布说明](docs/release-0.2.0.md)。核心库为纯 MoonBit，
 已实现十六进制输入、短项/长项分词、布局编译、Collection 层级、Physical/Unit 元数据和报告解码。
