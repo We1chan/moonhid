@@ -30,3 +30,14 @@ test "three device scenarios compile and decode end to end" {
     }
   }
 }
+
+///|
+test "synthetic fixtures produce no lint Warnings" {
+  for fixture in @examples.all() {
+    let lints = match @hid.lint_descriptor(bytes(fixture.descriptor_hex)) {
+      Ok(lints) => lints
+      Err(error) => fail("\{fixture.name}: \{error.code}")
+    }
+    assert_eq(lints.filter(l => l.level == @hid.Warning), [])
+  }
+}
