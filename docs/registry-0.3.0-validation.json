@@ -1,0 +1,116 @@
+{
+  "module": "We1chan/moonhid",
+  "installed_version": "0.3.0",
+  "validated_at": "2026-10-07T09:05:26.882922+00:00",
+  "release_commit": "8148a323014bc8a47a906ad576d0093b5f516d13",
+  "pr": "https://github.com/We1chan/moonhid/pull/28",
+  "main_ci_run": 37597349559,
+  "pages_run": 37597491391,
+  "toolchain": {
+    "moonbit": "0.10.14+7d59c7ec9",
+    "moon": "0.1.20260920",
+    "node": "22",
+    "hid_tools": "0.12"
+  },
+  "environment": {
+    "platform": "Windows x64",
+    "node": "v24.14.0"
+  },
+  "installation": "independent moon new project; moon add We1chan/moonhid@0.3.0; no local dependency override",
+  "package_checks": [
+    {
+      "path": "bits.mbt",
+      "sha256": "f81f36efb6308405be3ee7518a7d03b437f0c2f1cdaa9f722aad883c64409741",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "decode.mbt",
+      "sha256": "cbbe25c47371a91082d79dde279b8d90d3c5ca3d3fafff8d14f86df396de01d3",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "hex.mbt",
+      "sha256": "5ff6b251fed1455b2918c740a0c5c3bb0085ebdb9654b0e0494e95ea7eb23deb",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "items.mbt",
+      "sha256": "953363eba634f9a1115e51056cc963d82ff1d3a69d9dc9bde4bee2c1da205b8e",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "json.mbt",
+      "sha256": "f030e55d6b8e4d35727771a329c1add57458e55844a0a6b56987c19b24ebbff8",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "layout.mbt",
+      "sha256": "e987cc98e745ad8d37b4759445c82b64674d29659b443a8a0a2b8a09997de9ba",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "lint.mbt",
+      "sha256": "dd61139fb522285bba079e69db6d6705582ba0e999635c42c89e87f239ef56ab",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "moon.mod",
+      "sha256": "b323190717d0b7b33e090969be70357058e680681f92eb2a3b07f375cf9a0d31",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "moon.pkg",
+      "sha256": "48e6a187fb7b272da459f191307517054e68ffcb00bd928b2729bb76d5e92bd5",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "pkg.generated.mbti",
+      "sha256": "a39a948cdf473a1825159fa2e09d72eaf0f193041944f3f6a7428f3e7707998f",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "units.mbt",
+      "sha256": "3d88c4b1876a7c9504e86d3dd753c8f42fa4fd309b75efef4b5ad09e5500defc",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    },
+    {
+      "path": "values.mbt",
+      "sha256": "c745a82ac3717e98d97c50257e57975994a1711349e2b84cacaca45d288c7433",
+      "matches_release_checkout_bytes": true,
+      "matches_release_commit_lf": true
+    }
+  ],
+  "tests": {
+    "wasm": {
+      "passed": 3,
+      "failed": 0
+    },
+    "wasm-gc": {
+      "passed": 3,
+      "failed": 0
+    },
+    "js": {
+      "passed": 3,
+      "failed": 0
+    },
+    "native": {
+      "passed": 3,
+      "failed": 0
+    }
+  },
+  "test_source": "registry-0.3.0-test.mbt.txt",
+  "online_inspector": "https://we1chan.github.io/moonhid/",
+  "release": "https://github.com/We1chan/moonhid/releases/tag/v0.3.0",
+  "offline_sha256": "594a47fcaec7949064ffb63bca2ce583814f6387f5ad9b637e8b906b31771c50"
+}

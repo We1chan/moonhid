@@ -1,0 +1,85 @@
+{
+  "created_at": "2026-10-07T08:58:49.391Z",
+  "commit": "8148a323014bc8a47a906ad576d0093b5f516d13",
+  "working_tree_modified": false,
+  "environment": {
+    "node": "v22.23.3",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "scope": "JS bridge + JSON serialize/parse; warmup=2; heap delta after GC is retained heap, not peak memory or total allocation",
+  "results": [
+    {
+      "name": "inspect-real-A",
+      "iterations": 30,
+      "min_ms": 0.2525200000000041,
+      "median_ms": 0.40414200000000733,
+      "max_ms": 1.1055089999999979,
+      "heap_delta_bytes": 152504
+    },
+    {
+      "name": "inspect-real-B",
+      "iterations": 30,
+      "min_ms": 0.5544330000000173,
+      "median_ms": 1.4083420000000046,
+      "max_ms": 4.979213000000001,
+      "heap_delta_bytes": 155080
+    },
+    {
+      "name": "inspect-real-C",
+      "iterations": 30,
+      "min_ms": 0.39903300000000286,
+      "median_ms": 0.49939000000000533,
+      "max_ms": 1.9358850000000132,
+      "heap_delta_bytes": 52264
+    },
+    {
+      "name": "inspect-real-D",
+      "iterations": 30,
+      "min_ms": 0.51099099999999,
+      "median_ms": 0.87766400000001,
+      "max_ms": 2.643603000000013,
+      "heap_delta_bytes": 106760
+    },
+    {
+      "name": "inspect-real-E",
+      "iterations": 30,
+      "min_ms": 0.3039459999999963,
+      "median_ms": 0.42419000000001006,
+      "max_ms": 0.6804470000000151,
+      "heap_delta_bytes": 75096
+    },
+    {
+      "name": "inspect-real-F",
+      "iterations": 30,
+      "min_ms": 0.25572700000000737,
+      "median_ms": 0.39499499999999443,
+      "max_ms": 0.9941410000000133,
+      "heap_delta_bytes": 47208
+    },
+    {
+      "name": "inspect-real-G",
+      "iterations": 30,
+      "min_ms": 0.637157000000002,
+      "median_ms": 1.738958000000025,
+      "max_ms": 4.246627999999987,
+      "heap_delta_bytes": 110664
+    },
+    {
+      "name": "inspect-4096-fields",
+      "iterations": 5,
+      "min_ms": 115.6983100000001,
+      "median_ms": 154.20490299999983,
+      "max_ms": 194.270489,
+      "heap_delta_bytes": -30720
+    },
+    {
+      "name": "decode-65536-one-bit-values",
+      "iterations": 5,
+      "min_ms": 537.723669,
+      "median_ms": 694.4676050000003,
+      "max_ms": 748.288892,
+      "heap_delta_bytes": -1052992
+    }
+  ]
+}
