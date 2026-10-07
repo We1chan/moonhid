@@ -1,0 +1,75 @@
+///|
+fn installed_layout(hex : String) -> @moonhid.Layout raise {
+  let bytes = match @moonhid.parse_hex(hex) {
+    Ok(bytes) => bytes
+    Err(_) => fail("invalid fixture")
+  }
+  match @moonhid.compile_descriptor(bytes) {
+    Ok(layout) => layout
+    Err(_) => fail("installed compiler rejected fixture")
+  }
+}
+
+///|
+test "installed 0.3.0 lint and JSON public API" {
+  let descriptor = b"\x05\x01\x09\x05\xa1\x01\x15\x00\x25\x0f\x75\x04\x95\x01\x09\x39\x81\x42\x75\x04\x81\x01\xc0"
+  let lints = match @moonhid.lint_descriptor(descriptor) {
+    Ok(lints) => lints
+    Err(_) => fail("installed lint rejected fixture")
+  }
+  assert_eq(lints.length(), 1)
+  assert_eq(
+    (lints[0].code, lints[0].level, lints[0].offset, lints[0].field_index),
+    ("null_without_room", @moonhid.Warning, 16, Some(0)),
+  )
+  assert_true(
+    @moonhid.lint_to_json(lints[0])
+    is { "code": "null_without_room", "level": "warning", "offset": 16, .. },
+  )
+  let exported = match @moonhid.descriptor_to_json(descriptor) {
+    Ok(json) => json
+    Err(_) => fail("installed JSON export rejected descriptor")
+  }
+  assert_true(
+    exported
+    is {
+      "schema_version": 2,
+      "lints": [{ "code": "null_without_room", .. }],
+      ..
+    },
+  )
+}
+
+///|
+test "installed 0.3.0 corrected Null semantics" {
+  let bytes = b"\x05\x01\x09\x05\xa1\x01\x15\x00\x25\x07\x75\x04\x95\x01\x09\x39\x81\x42\x75\x04\x81\x01\xc0"
+  assert_eq(@moonhid.lint_descriptor(bytes), Ok([]))
+  let layout = installed_layout(
+    "05 01 09 05 a1 01 15 00 25 07 75 04 95 01 09 39 81 42 75 04 81 01 c0",
+  )
+  let report = match @moonhid.decode_report(layout, @moonhid.Input, b"\x0f") {
+    Ok(report) => report
+    Err(_) => fail("installed decoder rejected report")
+  }
+  assert_eq(report.values[0].value, 15L)
+  assert_true(report.values[0].is_null)
+}
+
+///|
+test "installed 0.3.0 Xbox raw reference endpoint" {
+  let layout = installed_layout(
+    "05 01 09 05 a1 01 15 00 27 ff ff 00 00 75 10 95 05 09 30 09 31 09 33 09 34 09 32 81 02 25 01 75 01 95 10 05 09 19 01 29 10 81 02 25 0f 75 04 95 01 05 01 09 39 81 02 95 05 81 01 c0",
+  )
+  let report = match
+    @moonhid.decode_report(
+      layout,
+      @moonhid.Input,
+      b"\xff\xff\x3e\x83\xc4\x80\x76\x7b\x00\x80\x00\x00\x00\x00\x00",
+    ) {
+    Ok(report) => report
+    Err(_) => fail("installed decoder rejected captured report")
+  }
+  assert_eq(report.values[0].value, 65535L)
+  assert_true(report.values[0].in_logical_range)
+  assert_eq(report.values[1].value, 33598L)
+}
