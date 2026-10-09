@@ -118,7 +118,8 @@ python3 scripts/serve-web.py
 Input / Output / Feature 与 Report ID，填入完整报告后自动解码，`Ctrl/⌘ + Enter` 立即执行。
 每个报告的输入分别保留；键盘切换到 Output 后可点「载入样例报告」，检查 `03` 的 LED 值。
 位布局、解码值表、Items 和字段详情相互关联：选择字段会在两个十六进制编辑器中标出对应的
-描述符 item 与报告字节；点击 Global / Local item 或 Collection 会标出它们在描述符中的字节范围。
+描述符 item 与报告字节，并在解码值表中显示目标字段所在页；当前页已有该字段时保留页码。
+点击 Global / Local item 或 Collection 会标出它们在描述符中的字节范围。
 十六进制输入错误会在编辑器中标红，并给出字符或字节偏移；首字节 Report ID 与所选报告不一致时，
 可以一键切换到对应报告。
 
