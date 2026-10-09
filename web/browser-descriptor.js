@@ -6,7 +6,7 @@ export function descriptorFromCollections(collections, { rawValues = false } = {
   const bytes = [];
   function item(prefix, value, signed = false, forcedWidth = null) {
     if (!Number.isInteger(value) || value < -2147483648 || value > 4294967295) throw new RangeError('浏览器字段数值不在 HID 短项范围内');
-    if (forcedWidth === 1 && (value < 0 || value > 255)) throw new RangeError('Report ID 或 Collection 类型不在单字节范围内');
+    if (forcedWidth !== null && (value < 0 || value >= 2 ** (forcedWidth * 8))) throw new RangeError(`浏览器字段数值不在 0..${2 ** (forcedWidth * 8) - 1} 范围内`);
     const width = forcedWidth ?? (signed ? (value >= -128 && value <= 127 ? 1 : value >= -32768 && value <= 32767 ? 2 : 4)
       : value <= 127 ? 1 : value <= 32767 ? 2 : 4);
     bytes.push(prefix | (width === 4 ? 3 : width));
@@ -27,7 +27,8 @@ export function descriptorFromCollections(collections, { rawValues = false } = {
     }
   }
   for (const collection of collections) {
-    item(0x04, collection.usagePage); item(0x08, collection.usage); item(0xa0, collection.type ?? 1, false, 1);
+    // These are separate 16-bit values; a four-byte Usage would carry its own page.
+    item(0x04, collection.usagePage, false, 2); item(0x08, collection.usage, false, 2); item(0xa0, collection.type ?? 1, false, 1);
     for (const [kind, prefix] of [['input', 0x80], ['output', 0x90], ['feature', 0xb0]]) {
       for (const report of collection[kind + 'Reports'] ?? []) {
         if (report.reportId !== 0) item(0x84, report.reportId, false, 1);
