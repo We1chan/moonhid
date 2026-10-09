@@ -28,6 +28,33 @@ const reconstructed = inspect(descriptorFromCollections(collections));
 assert.equal(reconstructed.ok, true);
 assert.deepEqual(compareCollections(reconstructed.descriptor.layout, collections).differences, []);
 assert.deepEqual(JSON.parse(decode_wire(descriptorFromCollections(collections), 'input', '01 00 00 ff ff')).decoded.values.map(v => v.value), [0, 65535]);
+for (const kind of ['input', 'output', 'feature']) {
+  for (const reportId of [0, 1, 127, 128, 255]) {
+    const visible = [{ usagePage: 1, usage: 5, type: 1, [kind + 'Reports']: [{ reportId, items: [axis] }] }];
+    const reference = descriptorFromCollections(visible);
+    const result = inspect(reference);
+    assert.equal(result.ok, true, `${kind} ID ${reportId}`);
+    assert.deepEqual(compareCollections(result.descriptor.layout, visible).differences, []);
+    const wire = (reportId ? reportId.toString(16).padStart(2, '0') + ' ' : '') + '00 00 ff ff';
+    assert.deepEqual(JSON.parse(decode_wire(reference, kind, wire)).decoded.values.map(v => v.value), [0, 65535]);
+  }
+}
+for (const type of [0, 1, 128, 255]) {
+  const result = inspect(descriptorFromCollections([{ ...collections[0], type }]));
+  assert.equal(result.ok, true, `Collection type ${type}`);
+  assert.equal(result.descriptor.layout.collections[0].collection_type, type);
+}
+const zeroPage = [{ ...collections[0], inputReports: [{ reportId: 1, items: [{ ...axis, usages: [0x30, 0x10031] }] }] }];
+const zeroPageReference = inspect(descriptorFromCollections(zeroPage));
+assert.equal(zeroPageReference.ok, true);
+assert.deepEqual(compareCollections(zeroPageReference.descriptor.layout, zeroPage).differences, []);
+const zeroPageRange = [{ ...collections[0], inputReports: [{ reportId: 1, items: [{ ...axis, isRange: true, usageMinimum: 0x30, usageMaximum: 0x31 }] }] }];
+const zeroPageRangeReference = inspect(descriptorFromCollections(zeroPageRange));
+assert.equal(zeroPageRangeReference.ok, true);
+assert.deepEqual(compareCollections(zeroPageRangeReference.descriptor.layout, zeroPageRange).differences, []);
+for (const reportId of [-1, 256, 1.5]) {
+  assert.throws(() => descriptorFromCollections([{ ...collections[0], inputReports: [{ reportId, items: [axis] }] }]), /范围/);
+}
 assert.throws(() => descriptorFromCollections([{ ...collections[0], outputReports: [{ reportId: 0, items: [axis] }] }]), /混用/);
 const incomplete = [{ ...collections[0], inputReports: [{ reportId: 0, items: [{ ...axis, logicalMaximum: -1 }] }] }];
 assert.throws(() => descriptorFromCollections(incomplete), /逻辑范围不完整/);
