@@ -44,6 +44,19 @@ for (const type of [0, 1, 128, 255]) {
   assert.equal(result.ok, true, `Collection type ${type}`);
   assert.equal(result.descriptor.layout.collections[0].collection_type, type);
 }
+for (const usagePage of [0, 1, 0xff00, 0xffff]) {
+  for (const usage of [0, 0x7fff, 0x8000, 0xffff]) {
+    const result = inspect(descriptorFromCollections([{ ...collections[0], usagePage, usage }]));
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.descriptor.layout.collections[0].usage, { page: usagePage, id: usage }, `Collection ${usagePage}:${usage}`);
+  }
+}
+for (const usage of [-1, 0x10000, 1.5]) {
+  assert.throws(() => descriptorFromCollections([{ ...collections[0], usage }]), /范围/);
+}
+for (const usagePage of [-1, 0x10000, 1.5]) {
+  assert.throws(() => descriptorFromCollections([{ ...collections[0], usagePage }]), /范围/);
+}
 const zeroPage = [{ ...collections[0], inputReports: [{ reportId: 1, items: [{ ...axis, usages: [0x30, 0x10031] }] }] }];
 const zeroPageReference = inspect(descriptorFromCollections(zeroPage));
 assert.equal(zeroPageReference.ok, true);
