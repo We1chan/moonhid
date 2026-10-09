@@ -78,11 +78,13 @@ export function compareCollections(layout, collections) {
   return { comparedFields, differences };
 }
 
-export function createHIDController(hid, { onState, onReport }) {
+export function createHIDController(hid, { onState, onReport, filters = [], beforeOpen }) {
   let device = null;
   let generation = 0;
   let busy = false;
   let received = 0;
+  let closing = null;
+  let disposed = false;
   const notify = (status, error = null) => onState({ status, error, device, busy, received });
   const input = event => {
     if (event.device !== device) return;
@@ -102,33 +104,63 @@ export function createHIDController(hid, { onState, onReport }) {
     get device() { return device; },
     get busy() { return busy; },
     async connect() {
-      if (!hid || busy || device) return;
+      if (!hid || busy || device || disposed) return;
       const current = ++generation;
       busy = true; notify('connecting');
       let candidate;
+      let cancellationError = null;
       try {
-        [candidate] = await hid.requestDevice({ filters: [] });
+        [candidate] = await hid.requestDevice({ filters });
         if (current !== generation) return;
         if (!candidate) { busy = false; notify('cancelled'); return; }
+        if (beforeOpen) {
+          await beforeOpen(candidate);
+          if (current !== generation) return;
+        }
         if (!candidate.opened) await candidate.open();
-        if (current !== generation) { if (candidate.opened) await candidate.close(); return; }
+        if (current !== generation) {
+          try { if (candidate.opened) await candidate.close(); }
+          catch (error) { cancellationError = `关闭连接失败：${error.message}`; }
+          return;
+        }
         device = candidate; received = 0; busy = false;
         device.addEventListener('inputreport', input);
         notify('connected');
       } catch (error) {
         if (candidate?.opened && candidate !== device) await candidate.close().catch(() => {});
         if (current === generation) { busy = false; notify('error', error.message); }
+      } finally {
+        // Cancellation keeps the lock until the pending open and its cleanup finish.
+        if (current !== generation && !device && !closing) {
+          busy = false;
+          notify(cancellationError ? 'error' : 'disconnected', cancellationError);
+        }
       }
     },
     async disconnect() {
+      if (closing) return closing;
       generation++;
       const current = device;
-      device = null; busy = false;
+      device = null;
       if (current) current.removeEventListener('inputreport', input);
-      try { if (current?.opened) await current.close(); notify('disconnected'); }
-      catch (error) { notify('error', `关闭连接失败：${error.message}`); }
+      if (!current) {
+        // A cancelled connect still owns the lock until its finally block runs.
+        notify(busy ? 'disconnecting' : 'disconnected');
+        return;
+      }
+      busy = true;
+      closing = Promise.resolve().then(async () => {
+        let failure = null;
+        try { if (current.opened) await current.close(); }
+        catch (error) { failure = `关闭连接失败：${error.message}`; }
+        finally { closing = null; busy = false; }
+        notify(failure ? 'error' : 'disconnected', failure);
+      });
+      notify('disconnecting');
+      return closing;
     },
     async dispose() {
+      disposed = true;
       hid?.removeEventListener('disconnect', unplugged);
       await this.disconnect();
     },

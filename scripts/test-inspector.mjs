@@ -96,6 +96,32 @@ try {
   const setText = (id, value) => evaluate(`(() => { const node = document.getElementById(${JSON.stringify(id)}); node.value = ${JSON.stringify(value)}; node.dispatchEvent(new Event('input', { bubbles: true })); node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true })); })()`);
   const text = id => evaluate(`document.getElementById(${JSON.stringify(id)}).textContent`);
   const field = index => evaluate(`document.querySelector('#values button.field-ref') && [...document.querySelectorAll('#values button.field-ref')].find(b => b.textContent === '#${index}')?.click()`);
+  // Edit and click export in the same browser task, before either debounce fires.
+  const exportAfterInput = (id, value) => evaluate(`(async () => {
+    const editor = document.getElementById(${JSON.stringify(id)});
+    editor.value = ${JSON.stringify(value)};
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    const enabled = !document.getElementById('export').disabled;
+    let blob;
+    const create = URL.createObjectURL;
+    const click = HTMLAnchorElement.prototype.click;
+    URL.createObjectURL = value => { blob = value; return create(value); };
+    HTMLAnchorElement.prototype.click = () => {};
+    try { document.getElementById('export').click(); }
+    finally { URL.createObjectURL = create; HTMLAnchorElement.prototype.click = click; }
+    return { enabled, data: blob ? JSON.parse(await blob.text()) : null };
+  })()`);
+  const editedReport = await exportAfterInput('report', '00 00 00 00');
+  assert.equal(editedReport.enabled, true);
+  assert.equal(editedReport.data.wire_hex, '00 00 00 00');
+  assert.ok(editedReport.data.decoded.values.every(value => value.value === 0));
+  const invalidReport = await exportAfterInput('report', '00 zz');
+  assert.equal(invalidReport.data.wire_hex, null);
+  assert.equal(invalidReport.data.decoded, null);
+  const editedDescriptor = await exportAfterInput('descriptor', '05 q1');
+  assert.deepEqual(editedDescriptor, { enabled: false, data: null });
+  assert.equal(await evaluate('document.querySelectorAll("#values tbody tr").length'), 0);
+  await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
   for (const width of [1440, 1100, 390]) {
     await call('Emulation.setDeviceMetricsOverride', { width, height: width === 390 ? 844 : 900, deviceScaleFactor: 1, mobile: false });
     for (const [, label, descriptor] of fixtures) {
@@ -213,6 +239,20 @@ try {
   await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(resolve))`);
   assert.equal(await evaluate('document.getElementById("report").value'), '03 00');
   await evaluate(`document.getElementById('hid-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  await evaluate(`window.__mockDevice.close = async () => { await new Promise(resolve => { window.__finishClose = resolve; }); window.__mockDevice.opened = false; }; document.getElementById('hid-disconnect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('hid-status'), /正在断开/);
+  assert.equal(await evaluate('document.getElementById("hid-connect").disabled'), true);
+  assert.equal(await evaluate('document.getElementById("hid-disconnect").disabled'), true);
+  await evaluate(`document.getElementById('hid-connect').click(); window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(resolve))`);
+  assert.equal(await evaluate('document.getElementById("report").value'), '03 00');
+  await evaluate(`window.__finishClose(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('hid-status'), /已断开/);
+  assert.equal(await evaluate('document.getElementById("hid-connect").disabled'), false);
+  assert.equal(await evaluate('window.__mockDevice.opened'), false);
+  await evaluate(`window.__mockDevice.close = async () => { window.__mockDevice.opened = false; }; document.getElementById('hid-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  await evaluate(`window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('window.__mockDevice.opened'), false);
+  await evaluate(`window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })); document.getElementById('hid-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
   await evaluate(`window.__mockDevice.opened = false; window.__mockHID.dispatchEvent(Object.assign(new Event('disconnect'), { device: window.__mockDevice }));`);
   assert.match(await text('hid-status'), /设备已拔出/);
   await call('Page.navigate', { url: `http://127.0.0.1:${port}/capture.html` });
@@ -233,12 +273,63 @@ try {
   assert.equal(capture.reports.at(-1).result.decoded.values[0].value, -1);
   assert.equal(capture.browser_collections[0].inputReports[0].items[0].logicalMaximum, -128);
   assert.equal(await evaluate('document.getElementById("capture-raw").disabled'), false);
+  await evaluate(`window.__mockDevice.close = async () => { throw new Error('simulated close failure'); }; document.getElementById('capture-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  await evaluate(`window.__mockDevice.emit(); document.getElementById('capture-stop').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('capture-status'), /关闭失败.*simulated close failure/);
+  for (const id of ['capture-connect', 'capture-raw', 'capture-model', 'capture-export']) {
+    assert.equal(await evaluate(`document.getElementById(${JSON.stringify(id)}).disabled`), false, id);
+  }
+  assert.equal(await evaluate('document.getElementById("capture-stop").disabled'), true);
+  const savedCapture = JSON.parse(await evaluate('document.getElementById("capture-record").value'));
+  assert.equal(savedCapture.total_received, 1);
+  assert.equal(savedCapture.reports[0].wire_hex, '03 ff');
+  const exportedCapture = await evaluate(`(async () => {
+    let blob;
+    const create = URL.createObjectURL;
+    const click = HTMLAnchorElement.prototype.click;
+    URL.createObjectURL = value => { blob = value; return create(value); };
+    HTMLAnchorElement.prototype.click = () => {};
+    try { document.getElementById('capture-export').click(); }
+    finally { URL.createObjectURL = create; HTMLAnchorElement.prototype.click = click; }
+    return JSON.parse(await blob.text());
+  })()`);
+  assert.deepEqual(exportedCapture, savedCapture);
+  await evaluate(`window.__mockDevice.emit(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('document.getElementById("capture-record").value'), JSON.stringify(savedCapture, null, 2));
+  await evaluate(`window.__mockDevice.close = async () => { window.__mockDevice.opened = false; }; document.getElementById('capture-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('capture-status'), /已连接/);
+  await evaluate(`window.__mockDevice.emit(); document.getElementById('capture-stop').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('capture-status'), /已停止接收/);
+  assert.equal(JSON.parse(await evaluate('document.getElementById("capture-record").value')).total_received, 1);
+  const retainedCapture = await evaluate('document.getElementById("capture-record").value');
+  // Leaving while open() is pending must close the late result and keep the record.
+  await evaluate(`window.__mockDevice.open = async () => { window.__openingStarted = true; await new Promise(resolve => { window.__finishOpen = resolve; }); window.__mockDevice.opened = true; }; document.getElementById('capture-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('window.__openingStarted'), true);
+  await evaluate(`window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('document.getElementById("capture-connect").disabled'), true);
+  await evaluate(`window.__finishOpen(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('window.__mockDevice.opened'), false);
+  assert.equal(await evaluate('document.getElementById("capture-stop").disabled'), true);
+  assert.equal(await evaluate('document.getElementById("capture-record").value'), retainedCapture);
+  await evaluate(`window.__mockDevice.emit(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('document.getElementById("capture-record").value'), retainedCapture);
+  // A pending device chooser must not open its result after leaving either.
+  await evaluate(`window.__openCalls = 0; window.__mockDevice.open = async () => { window.__openCalls++; window.__mockDevice.opened = true; }; window.__mockHID.requestDevice = () => new Promise(resolve => { window.__finishChoice = resolve; }); window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })); document.getElementById('capture-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  await evaluate(`window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })); window.__finishChoice([window.__mockDevice]); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('window.__openCalls'), 0);
+  assert.equal(await evaluate('window.__mockDevice.opened'), false);
+  assert.equal(await evaluate('document.getElementById("capture-record").value'), retainedCapture);
+  await evaluate(`window.__mockHID.requestDevice = async () => [window.__mockDevice]; window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })); document.getElementById('capture-connect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('capture-status'), /已连接/);
+  await evaluate(`window.__mockDevice.emit(); window.__mockDevice.opened = false; window.__mockHID.dispatchEvent(Object.assign(new Event('disconnect'), { device: window.__mockDevice })); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.match(await text('capture-status'), /已断开/);
+  assert.equal(JSON.parse(await evaluate('document.getElementById("capture-record").value')).total_received, 1);
   if (process.env.MOONHID_SCREENSHOTS) {
     const { data } = await call('Page.captureScreenshot', { format: 'png' });
     await writeFile(join(process.env.MOONHID_SCREENSHOTS, 'capture.png'), Buffer.from(data, 'base64'));
   }
   assert.deepEqual(errors, []);
-  console.log('Inspector DOM: A–G, opaque/large Usage, widths/themes, diagnostics and simulated WebHID lifecycle passed.');
+  console.log('Inspector DOM: A–G, widths/themes, current exports, slow disconnect, capture recovery, cancelled chooser/open and restored-page unplug passed.');
 } finally {
   socket?.close();
   // The isolated Chrome process group includes its profile-writing children.
