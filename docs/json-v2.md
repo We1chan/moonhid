@@ -99,8 +99,8 @@ Constant 字段不产生整数或原始字节值；Data Array 位宽仍限制 1.
 - `examples_json()` → 鼠标、键盘、手柄样例数组，含 `name`, `descriptor_hex`, `input_hex`, `expected_values`, `output_hex`。
 
 所有参数及返回值都是原生 JavaScript 字符串；返回值再用 `JSON.parse` 读取。
-`inspect_descriptor` 返回的 `descriptor.lints` 与核心导出一致；当前网页尚未展示检查面板，
-导出的描述符 JSON 已包含这些提示。
+`inspect_descriptor` 返回的 `descriptor.lints` 与核心导出一致；网页检查面板支持中文说明、
+级别筛选、分页和字段定位，导出的描述符 JSON 保留完整提示。
 失败格式为 `{ "ok": false, "schema_version": 2, "stage": ..., "error": { "offset": ..., "code": ..., "message": ... } }`。
 `stage` 是 `descriptor_hex`、`descriptor`、`report_hex` 或 `report`。
 十六进制阶段的 offset 是原始文本 UTF-16 索引，二进制阶段是零起始字节偏移。

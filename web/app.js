@@ -224,7 +224,7 @@ function unitText(unit, exponent = null) {
   const symbols = unitSymbols[unit.system];
   const parts = unitDimensions.map((key, n) => unit[key] ? `${symbols ? symbols[n] : dimensionLetters[n]}${unit[key] === 1 ? '' : superscript(unit[key])}` : null).filter(Boolean);
   const scale = exponent ? `10${superscript(exponent)} ` : '';
-  return parts.length ? scale + parts.join('·') : '无量纲';
+  return scale + (parts.length ? parts.join('·') : '无量纲');
 }
 function unitFromRaw(raw) {
   const nibble = shift => { const v = (raw >>> shift) & 0xf; return v >= 8 ? v - 16 : v; };
@@ -444,7 +444,7 @@ function parseDescriptor() {
   }
   const keep = previous && state.selected !== null && reportFields().some(({ index }) => index === state.selected);
   if (!keep) state.selected = firstField();
-  state.valuePage = 0;
+  state.valuePage = valuesPageForField(state.selected, 0);
   reportEditor.value = state.drafts.get(state.reportKey) ?? '';
   decodeReport(false);
   renderAll();
@@ -476,12 +476,24 @@ const scheduleDescriptor = debounce(parseDescriptor, 180);
 const scheduleReport = debounce(() => decodeReport(), 120);
 
 // ---------- Selection ----------
+function valuesPageForField(index, page) {
+  const start = page * VALUE_PAGE;
+  let row = 0;
+  for (const { field, index: candidate } of reportFields()) {
+    const count = field.flags & 1 ? 1 : field.count;
+    if (candidate === index) return row < start + VALUE_PAGE && row + count > start ? page : Math.floor(row / VALUE_PAGE);
+    row += count;
+  }
+  return page;
+}
 function selectField(index, { fromItems = false } = {}) {
   const field = state.descriptor.layout.fields[index];
   const key = `${field.kind}:${field.report_id}`;
   state.selected = index;
   state.focus = null;
   if (key !== state.reportKey) return switchReport(key, index);
+  const page = valuesPageForField(index, state.valuePage);
+  if (page !== state.valuePage) { state.valuePage = page; renderValues(); }
   applySelection({ list: !fromItems, hex: true });
 }
 function focusItem(index, reveal = false) {
@@ -530,7 +542,7 @@ function switchReport(key, select = null) {
   state.reportKey = key;
   state.selected = select ?? firstField();
   state.focus = null;
-  state.valuePage = 0;
+  state.valuePage = valuesPageForField(state.selected, 0);
   reportEditor.value = state.drafts.get(key) ?? '';
   decodeReport(false);
   renderReports();
