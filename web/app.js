@@ -81,7 +81,7 @@ const hidController = createHIDController(hidAvailable ? navigator.hid : null, {
       }
       state.drafts.set(key, input.wireHex);
       if (state.reportKey !== key) switchReport(key);
-      else { reportEditor.value = input.wireHex; decodeReport(); applySelection(); }
+      else { reportEditor.value = input.wireHex; decodeReport(); }
       renderLiveState();
     });
   },
@@ -146,6 +146,33 @@ function h(tag, attrs, ...children) {
     if (child !== null && child !== undefined && child !== false) node.append(typeof child === 'object' ? child : String(child));
   }
   return node;
+}
+// Reuse report controls while their layout, report and page stay the same.
+// Their handlers capture stable field indices; a changed key rebuilds them.
+const viewKeys = new WeakMap();
+function updateView(container, key, ...children) {
+  const nodes = children.flat().filter(child => child !== null && child !== undefined && child !== false)
+    .map(child => child instanceof Node ? child : document.createTextNode(String(child)));
+  if (key === null || viewKeys.get(container) !== key) {
+    viewKeys.set(container, key);
+    container.replaceChildren(...nodes);
+  } else patchChildren(container, nodes);
+}
+function patchChildren(container, nodes) {
+  nodes.forEach((node, index) => {
+    const current = container.childNodes[index];
+    if (!current) container.append(node);
+    else if (current.isEqualNode(node)) return;
+    else if (current.nodeType !== node.nodeType || current.nodeName !== node.nodeName) current.replaceWith(node);
+    else if (node.nodeType !== Node.ELEMENT_NODE) {
+      if (current.nodeValue !== node.nodeValue) current.nodeValue = node.nodeValue;
+    } else {
+      for (const name of current.getAttributeNames()) if (!node.hasAttribute(name)) current.removeAttribute(name);
+      for (const { name, value } of node.attributes) if (current.getAttribute(name) !== value) current.setAttribute(name, value);
+      patchChildren(current, [...node.childNodes]);
+    }
+  });
+  while (container.childNodes.length > nodes.length) container.lastChild.remove();
 }
 const empty = text => h('p', { class: 'empty' }, text);
 const hex = (n, width = 2) => n.toString(16).padStart(width, '0');
@@ -363,6 +390,7 @@ const reportEditor = new HexEditor($('report'));
 
 // ---------- Derived state ----------
 const reportKey = report => `${report.kind}:${report.report_id}`;
+const reportViewKey = () => `${state.version}|${state.reportKey}`;
 function currentReport() {
   return state.descriptor?.layout.reports.find(report => reportKey(report) === state.reportKey) ?? null;
 }
@@ -500,7 +528,7 @@ function focusItem(index, reveal = false) {
   const item = state.info.items[index];
   if (item.field !== undefined) return selectField(item.field, { fromItems: !reveal });
   state.focus = { item: index, start: item.offset, end: item.end };
-  applySelection({ hex: true });
+  applySelection({ list: reveal, hex: true });
 }
 function focusCollection(index) {
   const collection = state.descriptor.layout.collections[index];
@@ -583,7 +611,9 @@ function diagnostic(result, locate) {
 }
 function setStatus(id, tone, ...children) {
   $(id).className = `status ${tone}`;
-  $(id).replaceChildren(...children.flat());
+  const key = id === 'report-status' && currentReport()
+    ? `${reportViewKey()}|${state.reportError?.error.code ?? ''}|${state.reportIdSwitch ?? ''}` : null;
+  updateView($(id), key, ...children);
 }
 function renderDescriptorStatus() {
   const d = state.descriptor;
@@ -694,7 +724,7 @@ function renderReportStatus() {
 function renderBitmap() {
   const box = $('bitmap');
   const report = currentReport();
-  if (!report) return box.replaceChildren(empty('描述符通过检查后显示每个报告字节的位分配。'));
+  if (!report) return updateView(box, null, empty('描述符通过检查后显示每个报告字节的位分配。'));
   const prefix = prefixBytes();
   const shown = Math.min(report.wire_bytes, BITMAP_BYTES);
   const limit = Math.max(0, (shown - prefix) * 8);
@@ -757,11 +787,11 @@ function renderBitmap() {
       h('span', { class: `bm-hex${value === null && !(prefix && byte === 0) ? ' unknown' : ''}` }, value !== null ? hex(value) : prefix && byte === 0 ? hex(report.report_id) : '··')));
   }
   if (report.wire_bytes > shown) rows.push(h('p', { class: 'bm-more' }, `只显示前 ${shown} 个字节；完整 ${report.wire_bytes} 字节的解码值见下表与导出的 JSON。`));
-  box.replaceChildren(...rows);
+  updateView(box, reportViewKey(), ...rows);
 }
 function renderValues() {
   const box = $('values');
-  if (!currentReport()) { $('values-meta').textContent = ''; return box.replaceChildren(empty('描述符通过检查后列出字段。')); }
+  if (!currentReport()) { $('values-meta').textContent = ''; return updateView(box, null, empty('描述符通过检查后列出字段。')); }
   const rows = [];
   for (const { field, index } of reportFields()) {
     if (field.flags & 1) rows.push({ field, index, pad: true });
@@ -803,7 +833,7 @@ function renderValues() {
   const table = h('table', null,
     h('thead', null, h('tr', null, h('th', null, '字段'), h('th', null, 'Usage'), h('th', null, '载荷位'), h('th', { class: 'num' }, '值'), h('th', null, '说明'))),
     h('tbody', null, body));
-  box.replaceChildren(table, pager(state.valuePage, rows.length, VALUE_PAGE, p => { state.valuePage = p; renderValues(); }) ?? '');
+  updateView(box, `${reportViewKey()}|${state.valuePage}`, table, pager(state.valuePage, rows.length, VALUE_PAGE, p => { state.valuePage = p; renderValues(); }) ?? '');
 }
 function collectionPath(index) {
   const path = [];

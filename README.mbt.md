@@ -143,6 +143,7 @@ Chrome 会屏蔽键盘和鼠标的受保护 Collection；手柄与厂商自定�
 
 页面只接收 Input 报告，非零 `reportId` 补回数据前缀后交给 MoonBit 解码。
 每帧显示最新报告，计数包含收到的全部事件；不同 ID 自动切换到对应 Input 布局。
+同一报告的刷新保留字段按钮和键盘焦点，可以在接收过程中选择字段和定位错误。
 点「断开」或拔出设备会停止监听，之后可继续离线编辑。页面不发送 Output/Feature 报告。
 
 「与浏览器 collections 对照」比较方向/ID/载荷位数，以及 Main 字段的 size、count、flags、
