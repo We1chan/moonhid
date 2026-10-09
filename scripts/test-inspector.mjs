@@ -65,13 +65,15 @@ try {
   await once(socket, 'open');
   let nextId = 0;
   const pending = new Map();
+  const pausedCore = [];
   socket.addEventListener('message', event => {
     const message = JSON.parse(event.data);
     if (message.id && pending.has(message.id)) {
       const { resolve, reject, timer } = pending.get(message.id);
       clearTimeout(timer); pending.delete(message.id);
       if (message.error) reject(new Error(JSON.stringify(message.error))); else resolve(message.result);
-    } else if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text);
+    } else if (message.method === 'Fetch.requestPaused') pausedCore.push(message.params.requestId);
+    else if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text);
     else if (message.method === 'Runtime.consoleAPICalled' && ['error', 'warning'].includes(message.params.type)) errors.push(JSON.stringify(message.params.args));
   });
   const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
@@ -85,13 +87,60 @@ try {
   const call = (method, params) => send(method, params, sessionId);
   await call('Runtime.enable');
   await call('Page.enable');
-  await call('Page.navigate', { url: `http://127.0.0.1:${port}/` });
   const evaluate = async expression => {
     const result = await call('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
     if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
     return result.result.value;
   };
+  // Hold the parser download so early input and restored form values are exercised.
+  await call('Fetch.enable', { patterns: [{ urlPattern: '*moonhid-core.js*', requestStage: 'Request' }] });
+  await call('Page.navigate', { url: `http://127.0.0.1:${port}/` });
+  const waitForCoreRequest = () => new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (pausedCore.length) resolve();
+      else if (Date.now() - start > 10000) reject(new Error('Parser interception timed out'));
+      else setTimeout(check, 20);
+    };
+    check();
+  });
+  await waitForCoreRequest();
+  const earlyDescriptor = '05 01 09 30 15 81 25 7f 75 08 95 01 81 06';
+  await evaluate(`document.getElementById('descriptor').value = ${JSON.stringify(earlyDescriptor)}; document.getElementById('descriptor').dispatchEvent(new Event('input', { bubbles: true })); document.getElementById('report').value = 'ff'; new Promise(resolve => setTimeout(resolve, 220))`);
+  await call('Fetch.continueRequest', { requestId: pausedCore[0] });
+  await call('Fetch.disable');
   await evaluate(`new Promise((resolve, reject) => { const start = Date.now(); const check = () => { if (document.querySelector('[data-fixture="mouse"]')) resolve(true); else if (Date.now() - start > 10000) reject(new Error('Core loading timed out')); else setTimeout(check, 20); }; check(); })`);
+  assert.equal(await evaluate('document.getElementById("descriptor").value'), earlyDescriptor);
+  assert.equal(await evaluate('document.getElementById("report").value'), 'ff');
+  assert.match(await evaluate('document.getElementById("values").textContent'), /-1/);
+  pausedCore.length = 0;
+  await call('Fetch.enable', { patterns: [{ urlPattern: '*moonhid-core.js*', requestStage: 'Request' }] });
+  await call('Page.reload', { ignoreCache: true });
+  await waitForCoreRequest();
+  await evaluate(`document.getElementById('descriptor').value = '05 q1'; document.getElementById('descriptor').dispatchEvent(new Event('input', { bubbles: true })); document.getElementById('report').value = 'ff';`);
+  await call('Fetch.continueRequest', { requestId: pausedCore[0] });
+  await call('Fetch.disable');
+  await evaluate(`new Promise((resolve, reject) => { const start = Date.now(); const check = () => { if (document.querySelector('[data-fixture="mouse"]')) resolve(true); else if (Date.now() - start > 10000) reject(new Error('Invalid input page loading timed out')); else setTimeout(check, 20); }; check(); })`);
+  assert.equal(await evaluate('document.getElementById("descriptor").value'), '05 q1');
+  assert.equal(await evaluate('document.getElementById("report").value'), 'ff');
+  assert.match(await evaluate('document.getElementById("descriptor-status").textContent'), /invalid_hex/);
+  assert.equal(await evaluate('document.getElementById("export").disabled'), true);
+  await evaluate(`document.getElementById('descriptor').value = ${JSON.stringify(earlyDescriptor)}; document.getElementById('descriptor').dispatchEvent(new Event('input', { bubbles: true })); document.getElementById('descriptor').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }));`);
+  assert.equal(await evaluate('document.getElementById("report").value'), 'ff');
+  assert.match(await evaluate('document.getElementById("values").textContent'), /-1/);
+  // Explicitly clearing the descriptor while loading must leave an empty editor.
+  pausedCore.length = 0;
+  await call('Fetch.enable', { patterns: [{ urlPattern: '*moonhid-core.js*', requestStage: 'Request' }] });
+  await call('Page.reload', { ignoreCache: true });
+  await waitForCoreRequest();
+  await evaluate(`document.getElementById('descriptor').dispatchEvent(new Event('input', { bubbles: true })); document.getElementById('report').value = 'ff';`);
+  await call('Fetch.continueRequest', { requestId: pausedCore[0] });
+  await call('Fetch.disable');
+  await evaluate(`new Promise((resolve, reject) => { const start = Date.now(); const check = () => { if (document.querySelector('[data-fixture="mouse"]')) resolve(true); else if (Date.now() - start > 10000) reject(new Error('Empty input page loading timed out')); else setTimeout(check, 20); }; check(); })`);
+  assert.equal(await evaluate('document.getElementById("descriptor").value'), '');
+  assert.equal(await evaluate('document.getElementById("report").value'), 'ff');
+  assert.equal(await evaluate('document.getElementById("export").disabled'), true);
+  await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
   const fixtures = [...(await readFile(join(root, 'real_devices_test.mbt'), 'utf8')).matchAll(/fn real_device_([a-g])\(\) -> String \{\s*"([^"]+)"/g)];
   const setText = (id, value) => evaluate(`(() => { const node = document.getElementById(${JSON.stringify(id)}); node.value = ${JSON.stringify(value)}; node.dispatchEvent(new Event('input', { bubbles: true })); node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true })); })()`);
   const text = id => evaluate(`document.getElementById(${JSON.stringify(id)}).textContent`);
@@ -121,6 +170,37 @@ try {
   const editedDescriptor = await exportAfterInput('descriptor', '05 q1');
   assert.deepEqual(editedDescriptor, { enabled: false, data: null });
   assert.equal(await evaluate('document.querySelectorAll("#values tbody tr").length'), 0);
+  await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
+  // A known ID can be selected even if its report still has the wrong length.
+  const multipleIds = '15 00 26 ff 00 75 08 95 01 85 01 81 02 85 02 95 02 81 02';
+  await setText('descriptor', multipleIds);
+  await setText('report', '02');
+  assert.match(await text('report-status'), /report_id_selection/);
+  assert.match(await text('report-status'), /切换到 ID 2/);
+  await evaluate(`document.querySelector('#report-status button').click()`);
+  assert.match(await text('report-status'), /report_length/);
+  assert.equal(await evaluate('document.querySelector("#reports [aria-pressed=true]").textContent.includes("ID 2")'), true);
+  await setText('report', '02 7f 80');
+  assert.match(await text('report-status'), /已解码/);
+  await evaluate(`[...document.querySelectorAll('#reports button')].find(button => button.textContent.includes('ID 1')).click()`);
+  assert.equal(await evaluate('document.getElementById("report").value'), '');
+  await setText('report', '03');
+  assert.match(await text('report-status'), /unknown_report/);
+  assert.doesNotMatch(await text('report-status'), /切换到/);
+  await setText('report', '02 zz');
+  assert.match(await text('report-status'), /invalid_hex/);
+  assert.doesNotMatch(await text('report-status'), /切换到/);
+  const otherDirections = '15 00 26 ff 00 75 08 95 01 85 01 91 02 b1 02 85 02 95 02 91 02 b1 02';
+  await setText('descriptor', otherDirections);
+  for (const kind of ['Output', 'Feature']) {
+    await evaluate(`[...document.querySelectorAll('#reports button')].find(button => button.querySelector('strong').textContent === ${JSON.stringify(kind)} && button.textContent.includes('ID 1')).click()`);
+    await setText('report', '02');
+    assert.match(await text('report-status'), /切换到 ID 2/);
+    await evaluate(`document.querySelector('#report-status button').click()`);
+    assert.match(await text('report-status'), /report_length/);
+    await setText('report', '02 7f 80');
+    assert.match(await text('report-status'), /已解码/);
+  }
   await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
   for (const width of [1440, 1100, 390]) {
     await call('Emulation.setDeviceMetricsOverride', { width, height: width === 390 ? 844 : 900, deviceScaleFactor: 1, mobile: false });
@@ -329,7 +409,7 @@ try {
     await writeFile(join(process.env.MOONHID_SCREENSHOTS, 'capture.png'), Buffer.from(data, 'base64'));
   }
   assert.deepEqual(errors, []);
-  console.log('Inspector DOM: A–G, widths/themes, current exports, slow disconnect, capture recovery, cancelled chooser/open and restored-page unplug passed.');
+  console.log('Inspector DOM: delayed parser startup, restored/invalid/cleared inputs, ID routing before length checks, A–G, widths/themes, exports and HID lifecycle passed.');
 } finally {
   socket?.close();
   // The isolated Chrome process group includes its profile-writing children.

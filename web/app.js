@@ -407,6 +407,8 @@ function guard(text, stage) {
 function parseDescriptor() {
   if (!core) return;
   const text = descriptorEditor.value;
+  const unassignedReport = state.reportKey === null ? reportEditor.value : '';
+  const loadingFixture = Boolean(state.fixture?.pending);
   compiledDescriptorText = null;
   state.descriptorPending = false;
   if (!text.trim()) {
@@ -437,6 +439,9 @@ function parseDescriptor() {
   } else if (!reports.some(report => reportKey(report) === state.reportKey)) {
     state.reportKey = reportKey(reports[0]);
   }
+  if (!loadingFixture && unassignedReport && !state.drafts.has(state.reportKey)) {
+    state.drafts.set(state.reportKey, unassignedReport);
+  }
   const keep = previous && state.selected !== null && reportFields().some(({ index }) => index === state.selected);
   if (!keep) state.selected = firstField();
   state.valuePage = 0;
@@ -450,11 +455,16 @@ function decodeReport(render = true) {
   const text = reportEditor.value;
   if (report && text.trim()) {
     const result = guard(text, 'report_hex') ?? JSON.parse(core.decode_wire(state.descriptor.descriptor_hex, report.kind, text));
-    if (!result.ok) state.reportError = result;
-    else if (result.decoded.report_id !== report.report_id) {
-      state.reportError = { ok: false, stage: 'report', error: { offset: 0, code: 'report_id_selection', message: `First byte is Report ID ${result.decoded.report_id}, selected ID ${report.report_id}` } };
-      const target = state.descriptor.layout.reports.find(r => r.kind === report.kind && r.report_id === result.decoded.report_id);
-      if (target) state.reportIdSwitch = reportKey(target);
+    // A report-stage error means the bridge already validated the hex input.
+    const actualId = result.ok ? result.decoded.report_id
+      : result.stage === 'report' && state.descriptor.layout.has_report_ids ? parseInt(text.trim().slice(0, 2), 16) : null;
+    const target = actualId !== report.report_id
+      ? state.descriptor.layout.reports.find(r => r.kind === report.kind && r.report_id === actualId) : null;
+    if (target) {
+      state.reportError = { ok: false, stage: 'report', error: { offset: 0, code: 'report_id_selection', message: `First byte is Report ID ${actualId}, selected ID ${report.report_id}` } };
+      state.reportIdSwitch = reportKey(target);
+    } else if (!result.ok) {
+      state.reportError = result;
     } else {
       state.decoded = result.decoded;
       state.wireHex = result.wire_hex;
@@ -932,7 +942,15 @@ try {
   $('fixtures').replaceChildren(...fixtures.map(fixture => h('button', {
     type: 'button', 'aria-pressed': 'false', dataset: { fixture: fixture.name }, onclick: () => loadFixture(fixture),
   }, fixtureNames[fixture.name] ?? fixture.name)));
-  loadFixture(fixtures[0]);
+  const initialReport = reportEditor.value;
+  if (state.version > 0 || descriptorEditor.value.trim()) scheduleDescriptor.now();
+  else loadFixture(fixtures[0]);
+  if (initialReport.trim() && currentReport()) {
+    reportEditor.value = initialReport;
+    state.drafts.set(state.reportKey, initialReport);
+    decodeReport();
+    applySelection();
+  }
 } catch (error) {
   console.error(error);
   $('boot-error').hidden = false;
