@@ -252,6 +252,31 @@ try {
       }
     }
   }
+  // Item and lint navigation must reveal fields beyond the current values page.
+  const pagedFields = '05 01 09 05 a1 01 15 00 25 01 75 01 96 c9 00 09 30 81 02 95 01 81 02 c0';
+  await setText('descriptor', pagedFields);
+  await evaluate(`[...document.querySelectorAll('#items .item')].find(item => item.querySelector('.item-ref')?.textContent === '#1').click()`);
+  assert.match(await text('field-detail'), /#1/);
+  assert.equal(await evaluate(`document.querySelector('#values tr[data-field="1"].on') !== null`), true, 'Selected item must reveal its values page');
+  assert.match(await text('values'), /201–202 \/ 202/);
+  await field(0);
+  assert.match(await text('values'), /201–202 \/ 202/, 'Keep the current page when it already contains the selected field');
+  await evaluate(`document.querySelector('#values .pager button:first-child').click(); document.querySelector('[data-lint-code="missing_usage"] .lint-location button').click()`);
+  assert.equal(await evaluate(`document.querySelector('#values tr[data-field="1"].on') !== null`), true, 'Lint navigation must reveal its values page');
+  const crossReportFields = '15 00 25 01 75 01 95 01 81 02 96 c9 00 91 02 95 01 91 02';
+  await setText('descriptor', crossReportFields);
+  await evaluate(`[...document.querySelectorAll('#items .item')].find(item => item.querySelector('.item-ref')?.textContent === 'Output #2').click()`);
+  assert.equal(await evaluate(`document.querySelector('#values tr[data-field="2"].on') !== null`), true, 'Cross-report item navigation must reveal its values page');
+  for (const count of [199, 200, 201]) {
+    await setText('descriptor', `15 00 25 01 75 01 96 ${count.toString(16)} 00 81 02 95 01 81 02`);
+    await evaluate(`[...document.querySelectorAll('#items .item')].find(item => item.querySelector('.item-ref')?.textContent === '#1').click()`);
+    assert.equal(await evaluate(`document.querySelector('#values tr[data-field="1"].on') !== null`), true, `Values page boundary ${count}`);
+  }
+  // A dimensionless unit can still declare a decimal scale.
+  for (const [unit, label] of [['55 0d 65 01', '10⁻³ 无量纲'], ['55 03 65 00', '10³ 无量纲'], ['55 00 65 01', '无量纲'], ['55 0c 65 13', '10⁻⁴ in']]) {
+    await setText('descriptor', `05 01 09 30 15 00 25 01 75 01 95 01 ${unit} 81 02`);
+    assert.equal((await text('field-detail')).includes(label), true, label);
+  }
   // Successful compilation with a Warning remains usable and can be located.
   await evaluate(`document.querySelector('.lesson-panel').open = true; document.getElementById('lesson-before').click()`);
   assert.match(await text('descriptor-status'), /已解析.*1 条需核对/);
@@ -409,7 +434,7 @@ try {
     await writeFile(join(process.env.MOONHID_SCREENSHOTS, 'capture.png'), Buffer.from(data, 'base64'));
   }
   assert.deepEqual(errors, []);
-  console.log('Inspector DOM: delayed parser startup, restored/invalid/cleared inputs, ID routing before length checks, A–G, widths/themes, exports and HID lifecycle passed.');
+  console.log('Inspector DOM: delayed parser startup, input preservation, ID routing, linked values pagination, unit scales, A–G, widths/themes, exports and HID lifecycle passed.');
 } finally {
   socket?.close();
   // The isolated Chrome process group includes its profile-writing children.
