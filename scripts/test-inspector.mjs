@@ -306,6 +306,12 @@ try {
   await setText('descriptor', '05 01 a1 01 15 00 25 01 75 08 95 01 09 30 81 02 c0');
   await evaluate(`document.querySelector('[data-lint-filter="all"]').click(); document.querySelector('[data-lint-code="collection_without_usage"] .lint-location button').click()`);
   assert.equal(await evaluate('document.querySelector("#items .focus").dataset.item'), '1');
+  const lateMetadata = '05 01 09 05 a1 01 15 00 25 01 75 08 95 01 ' + '81 01 '.repeat(501) + '25 ff 09 30 81 02 c0 a1 01 81 01 c0';
+  await setText('descriptor', lateMetadata);
+  await evaluate(`document.querySelector('[data-lint-code="logical_max_sign"] .lint-location button').click()`);
+  assert.equal(await evaluate('document.querySelector("#items .focus .item-name")?.textContent'), 'Logical Maximum', 'Global lint location must reveal its Items page');
+  await evaluate(`document.querySelector('#items .pager button:first-child').click(); document.querySelector('[data-lint-code="collection_without_usage"] .lint-location button').click()`);
+  assert.equal(await evaluate('document.querySelector("#items .focus .item-name")?.textContent'), 'Collection', 'Collection lint location must reveal its Items page');
   await setText('descriptor', '05 q1');
   assert.match(await text('descriptor-status'), /invalid_hex/);
   assert.equal(await evaluate('document.getElementById("export").disabled'), true);
@@ -339,6 +345,45 @@ try {
   await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
   assert.equal(await evaluate('document.getElementById("report").value'), '03 ff');
   assert.match(await text('values'), /-1/);
+  // Deliver an actual pointer press/release with a report frame in between.
+  await evaluate(`window.__originalEmit = window.__mockDevice.emit; window.__originalItems = window.__mockDevice.collections[0].inputReports[0].items;
+    window.__mockDevice.collections[0].inputReports[0].items = [window.__originalItems[0], { ...window.__originalItems[0], usages: [0x10031] }];
+    window.__livePayload = [255, 0];
+    window.__mockDevice.emit = () => window.__mockDevice.dispatchEvent(Object.assign(new Event('inputreport'), { device: window.__mockDevice, reportId: 3, data: new DataView(new Uint8Array(window.__livePayload).buffer) }));`);
+  await setText('descriptor', '05 01 15 81 25 7f 75 08 95 01 85 03 09 30 81 06 09 31 81 06');
+  await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+  const clickDuringReport = async selector => {
+    const { x, y } = await evaluate(`(() => { const node = document.querySelector(${JSON.stringify(selector)}); node.scrollIntoView({ block: 'center' }); const rect = node.getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }; })()`);
+    await call('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, x, y });
+    await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+    await call('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, x, y });
+  };
+  await clickDuringReport('#bitmap button[data-field="1"]');
+  assert.match(await text('field-detail'), /字段 #1/, 'Incoming reports must not cancel bitmap clicks');
+  await field(0);
+  await clickDuringReport('#values tr[data-field="1"] .field-ref');
+  assert.match(await text('field-detail'), /字段 #1/, 'Incoming reports must not cancel values clicks');
+  assert.equal(await evaluate(`(async () => { const button = document.querySelector('#field-detail .facts button'); button.focus(); window.__livePayload = [1, 2]; window.__mockDevice.emit(); await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); return document.activeElement === button; })()`), true, 'Live reports must preserve detail keyboard focus');
+  assert.equal(await evaluate('document.getElementById("report").value'), '03 01 02');
+  await evaluate(`window.__livePayload = [128, 3]; window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+  assert.match(await text('report-status'), /1 个越界/);
+  assert.equal(await evaluate(`document.querySelector('#values tr[data-field="0"] .tag.bad') !== null`), true);
+  assert.equal(await evaluate('document.querySelectorAll("#bitmap .bm-hex")[2].textContent'), '80');
+  await evaluate(`window.__livePayload = []; window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+  assert.match(await text('report-status'), /report_length/);
+  await evaluate('window.__livePayload = [0]');
+  await clickDuringReport('#report-status button');
+  assert.equal(await evaluate(`(() => { const node = document.getElementById('report'); return node.value.slice(node.selectionStart, node.selectionEnd); })()`), '00', 'Report locator must survive a frame and use the latest diagnostic');
+  await setText('descriptor', '05 09 19 01 29 03 15 00 25 02 75 08 95 01 85 03 81 40');
+  for (const [payload, usage] of [[0, '0009:0001'], [1, '0009:0002'], [3, '未映射']]) {
+    await evaluate(`window.__livePayload = [${payload}]; window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+    assert.equal((await text('values')).includes(usage), true, 'Live Array usage must update');
+    assert.equal((await text('values')).includes('Null State'), payload === 3, 'Live Null State must update');
+  }
+  await evaluate(`window.__mockDevice.emit = window.__originalEmit; window.__mockDevice.collections[0].inputReports[0].items = window.__originalItems;`);
+  await setText('descriptor', '05 01 09 30 15 81 25 7f 75 08 95 01 85 03 81 06');
+  await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+  assert.equal(await evaluate('document.getElementById("report").value'), '03 ff');
   await evaluate(`document.getElementById('hid-disconnect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
   await setText('report', '03 00');
   await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(resolve))`);
@@ -434,7 +479,7 @@ try {
     await writeFile(join(process.env.MOONHID_SCREENSHOTS, 'capture.png'), Buffer.from(data, 'base64'));
   }
   assert.deepEqual(errors, []);
-  console.log('Inspector DOM: delayed parser startup, input preservation, ID routing, linked values pagination, unit scales, A–G, widths/themes, exports and HID lifecycle passed.');
+  console.log('Inspector DOM: startup inputs, ID routing, linked pagination, units, live pointer/focus and Array/Null updates, A–G, widths/themes, exports and HID lifecycle passed.');
 } finally {
   socket?.close();
   // The isolated Chrome process group includes its profile-writing children.
