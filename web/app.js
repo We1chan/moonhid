@@ -97,6 +97,7 @@ const state = {
   wireHex: null,
   reportError: null,
   reportIdSwitch: null,
+  descriptorPending: false,
   selected: null,
   focus: null,
   version: 0,
@@ -109,10 +110,11 @@ const state = {
 function renderLiveState(note = null) {
   const ready = core && state.descriptor && compiledDescriptorText === descriptorEditor.value;
   $('hid-connect').disabled = !hidAvailable || !ready || hidController.busy || Boolean(hidController.device);
-  $('hid-disconnect').disabled = !hidController.device && !hidController.busy;
+  $('hid-disconnect').disabled = liveState.status === 'disconnecting' || (!hidController.device && !hidController.busy);
   document.querySelector('.offline').textContent = hidController.device ? '实时' : '离线';
   const labels = {
     idle: '可选模式：连接前请粘贴并解析描述符。', connecting: '等待设备选择与连接…',
+    disconnecting: '正在断开，请稍候…',
     connected: `${liveState.device?.productName || 'HID 设备'} · 已收到 ${liveState.received} 个报告`,
     disconnected: '已断开，输入可继续离线编辑。', unplugged: '设备已拔出，已停止接收。',
     cancelled: '没有选择设备。', error: `连接或报告错误：${liveState.error}`,
@@ -154,6 +156,7 @@ function debounce(fn, ms) {
   const run = () => { clearTimeout(timer); fn(); };
   const call = () => { clearTimeout(timer); timer = setTimeout(fn, ms); };
   call.now = run;
+  call.cancel = () => clearTimeout(timer);
   return call;
 }
 
@@ -402,8 +405,10 @@ function guard(text, stage) {
   return text.length > MAX_TEXT ? { ok: false, stage, error: { offset: MAX_TEXT, code: 'text_limit', message: `Hex text exceeds ${MAX_TEXT} characters` } } : null;
 }
 function parseDescriptor() {
+  if (!core) return;
   const text = descriptorEditor.value;
   compiledDescriptorText = null;
+  state.descriptorPending = false;
   if (!text.trim()) {
     Object.assign(state, { descriptor: null, info: null, descriptorError: null, decoded: null, wireHex: null, reportError: null, selected: null, focus: null });
     return renderAll();
@@ -546,7 +551,7 @@ function renderAll() {
 function renderFixtures() {
   for (const button of $('fixtures').querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.fixture === state.fixture?.name));
 }
-function renderExport() { $('export').disabled = !state.descriptor; }
+function renderExport() { $('export').disabled = !currentReport() || compiledDescriptorText !== descriptorEditor.value; }
 function diagnostic(result, locate) {
   const unit = result.stage.endsWith('_hex') ? '字符' : '字节';
   const text = h('span', { class: 'status-text' },
@@ -566,6 +571,7 @@ function renderDescriptorStatus() {
     const locate = h('button', { type: 'button', class: 'link', onclick: () => { const range = descriptorEditor.errorRange(state.descriptorError); if (range) descriptorEditor.select(range); } }, '定位');
     return setStatus('descriptor-status', 'error', diagnostic(state.descriptorError, locate));
   }
+  if (core && state.descriptorPending) return setStatus('descriptor-status', '', h('span', { class: 'status-text' }, '正在解析当前描述符…'));
   if (!d) return setStatus('descriptor-status', '', h('span', { class: 'status-text' }, core ? '粘贴报告描述符的十六进制字节，或选择一个样例。' : '正在加载 MoonBit 解析器…'));
   const layout = d.layout;
   const counts = lintCounts(d.lints ?? []);
@@ -871,7 +877,10 @@ function loadFixture(fixture) {
   scheduleDescriptor.now();
 }
 function exportJson() {
+  if (!state.descriptor || compiledDescriptorText !== descriptorEditor.value) return;
+  scheduleReport.now();
   const report = currentReport();
+  if (!report) return;
   const result = { schema_version: 2, descriptor: state.descriptor, selected_report: { kind: report.kind, report_id: report.report_id }, wire_hex: state.wireHex, decoded: state.decoded };
   const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2) + '\n'], { type: 'application/json' }));
   h('a', { href: url, download: 'moonhid-inspection.json' }).click();
@@ -880,15 +889,24 @@ function exportJson() {
 
 $('descriptor').addEventListener('input', () => {
   compiledDescriptorText = null;
-  renderLiveState();
+  scheduleReport.cancel();
+  state.version++;
+  Object.assign(state, {
+    descriptor: null, info: null, descriptorError: null, decoded: null, wireHex: null,
+    reportError: null, reportIdSwitch: null, selected: null, focus: null,
+    descriptorPending: Boolean(descriptorEditor.value.trim()),
+  });
   state.fixture = null;
-  renderFixtures();
-  descriptorEditor.setMarks([]);
+  renderAll();
   scheduleDescriptor();
 });
 $('report').addEventListener('input', () => {
   if (state.reportKey) state.drafts.set(state.reportKey, reportEditor.value);
-  reportEditor.setMarks([]);
+  Object.assign(state, { decoded: null, wireHex: null, reportError: null, reportIdSwitch: null });
+  renderReportStatus();
+  renderBitmap();
+  renderValues();
+  paintReport();
   scheduleReport();
 });
 for (const [id, run] of [['descriptor', () => scheduleDescriptor.now()], ['report', () => scheduleReport.now()]]) {
@@ -905,7 +923,8 @@ $('export').addEventListener('click', exportJson);
 for (const phase of ['before', 'after']) $('lesson-' + phase).addEventListener('click', () => loadFixture(nullLesson[phase]));
 $('hid-connect').addEventListener('click', () => hidController.connect());
 $('hid-disconnect').addEventListener('click', () => hidController.disconnect());
-window.addEventListener('pagehide', () => { void hidController.dispose(); });
+// Keep the controller's disconnect listener when this page is restored from history.
+window.addEventListener('pagehide', () => { void hidController.disconnect(); });
 
 try {
   core = await import('./moonhid-core.js');
