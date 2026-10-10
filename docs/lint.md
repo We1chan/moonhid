@@ -68,8 +68,8 @@ Report ID 冲突按 `(kind, id)` 检查，允许 Input / Output / Feature 复用
 ## 文件 CLI
 
 ```sh
-moon run cmd/moonhid --target native -- lint descriptor.hex
-moon run cmd/moonhid --target js -- lint descriptor.hex
+moon run src/cmd/moonhid --target native -- lint descriptor.hex
+moon run src/cmd/moonhid --target js -- lint descriptor.hex
 ```
 
 每条提示向 stdout 输出一行 `warning usage_count @18: ...` 或 `info logical_max_sign @8: ...`。
@@ -84,11 +84,11 @@ moon run cmd/moonhid --target js -- lint descriptor.hex
 `lint_test.mbt` 为每条规则检查正反例，并覆盖 Push/Pop、零长度/32 位 Maximum、
 非零逻辑起点、Delimiter、超宽字段、方向/ID 隔离、Constant 填充和 280 次固定种子 A–G 突变。
 检查编译结果不变、失败 Diagnostic 相同、提示位置对应真实 item、排序与重复调用稳定。
-`examples/fixtures_test.mbt` 要求三份现有合成样例没有 Warning，未修改样例字节。
+`src/examples/fixtures_test.mbt` 要求三份现有合成样例没有 Warning，未修改样例字节。
 `real_devices_test.mbt` 固定 A–G 全部 code、级别、偏移与字段索引，不将英文文案冻结为解析协议。
 
 ```sh
-moon test lint_test.mbt
-moon test real_devices_test.mbt
+moon test src/lint_test.mbt
+moon test src/real_devices_test.mbt
 moon test -p We1chan/moonhid/examples
 ```

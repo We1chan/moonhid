@@ -15,6 +15,16 @@ You can browse and install extra skills here:
 - In the toplevel directory, there is a `moon.mod` file listing module
   metadata.
 
+- This module sets `source = "src"` in `moon.mod`. Core sources, tests, and
+  `moon.pkg` live in `src/`; the other MoonBit packages live in `src/browser/`,
+  `src/cmd/`, and `src/examples/`. Package imports do not include `src`.
+  Keep non-MoonBit example data in the toplevel `examples/` directory.
+
+- Run commands from the repository root. Commands taking a filesystem path
+  need the `src/` prefix, for example `moon run src/cmd/main` and
+  `moon test src/layout_test.mbt`. `src/README.mbt.md` contains executable
+  documentation examples; the toplevel `README.md` links to it.
+
 ## Coding convention
 
 - MoonBit code is organized in block style, each block is separated by `///|`,

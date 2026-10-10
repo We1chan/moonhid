@@ -17,12 +17,12 @@ MoonHID 的目标是将这些二进制定义转换为可检查、可复用的数
 ## 当前状态
 
 0.3.0 已发布到 mooncakes.io，并通过独立项目的四后端安装验收。JSON schema 为 v2，新增 lint API、CLI 与中文网页提示，见
-[0.3.0 发布说明](docs/release-0.3.0.md)。0.2.0 的独立四后端安装验收仍保留在
-[历史发布说明](docs/release-0.2.0.md)。核心库为纯 MoonBit，
+[0.3.0 发布说明](../docs/release-0.3.0.md)。0.2.0 的独立四后端安装验收仍保留在
+[历史发布说明](../docs/release-0.2.0.md)。核心库为纯 MoonBit，
 已实现十六进制输入、短项/长项分词、布局编译、Collection 层级、Physical/Unit 元数据和报告解码。
-仓库提供合成的鼠标、键盘和手柄样例，以及 [七份真实设备描述符回归](docs/real-devices.md)，运行时不依赖 USB 权限、真实设备或网络服务。
+仓库提供合成的鼠标、键盘和手柄样例，以及 [七份真实设备描述符回归](../docs/real-devices.md)，运行时不依赖 USB 权限、真实设备或网络服务。
 浏览器检查器直接运行 MoonBit 编译的 JS 模块，提供字段布局、解码值与版本化 JSON 导出。
-后续协议覆盖与实机验收计划见 [开发路线](ROADMAP.md)。
+后续协议覆盖与实机验收计划见 [开发路线](../ROADMAP.md)。
 
 ## 安装
 
@@ -49,7 +49,7 @@ import {
 ```sh
 git clone https://github.com/We1chan/moonhid.git
 cd moonhid
-moon run cmd/main
+moon run src/cmd/main
 ```
 
 程序打印三个设备样例的字段偏移、数字 Usage 和原始整数值。其中鼠标样例
@@ -61,10 +61,10 @@ moon run cmd/main
 CLI 提供 native 与 Node.js 后端，文件按 UTF-8 十六进制文本读取：
 
 ```sh
-moon run cmd/moonhid --target native -- inspect descriptor.hex
-moon run cmd/moonhid --target native -- lint descriptor.hex
-moon run cmd/moonhid --target native -- decode --kind input descriptor.hex report.hex
-moon run cmd/moonhid --target js -- inspect descriptor.hex
+moon run src/cmd/moonhid --target native -- inspect descriptor.hex
+moon run src/cmd/moonhid --target native -- lint descriptor.hex
+moon run src/cmd/moonhid --target native -- decode --kind input descriptor.hex report.hex
+moon run src/cmd/moonhid --target js -- inspect descriptor.hex
 ```
 
 `inspect` 输出完整描述符 JSON v2；`decode` 输出带 `schema_version: 2` 的
@@ -74,14 +74,14 @@ moon run cmd/moonhid --target js -- inspect descriptor.hex
 
 仓库新增的 `lint` 子命令每条向 stdout 输出一行检查结果，例如
 `warning usage_count @18: ...`，没有提示时 stdout 为空。退出 0 表示无 Warning（可以有 Info），
-1 表示文件/输入/编译错误，2 表示参数错误，3 表示存在 Warning；详细规则见 [lint 说明](docs/lint.md)。
+1 表示文件/输入/编译错误，2 表示参数错误，3 表示存在 Warning；详细规则见 [lint 说明](../docs/lint.md)。
 `inspect` 的 JSON v2 新增 `lints` 数组，有 Warning 仍成功退出 0。
 这些功能从 0.3.0 提供；使用 0.2.0 时需要升级。
 
 固件仓库的 CI 可以构建 native 可执行文件，检查导出的描述符，并根据退出码判断是否需要审阅：
 
 ```sh
-moon build cmd/moonhid --target native --release
+moon build src/cmd/moonhid --target native --release
 ./_build/native/release/build/cmd/moonhid/moonhid.exe lint descriptor.hex
 ```
 
@@ -107,7 +107,7 @@ python3 scripts/serve-web.py
 ```
 
 打开 <http://127.0.0.1:8765/>。macOS 可直接双击仓库根目录的
-[start-inspector.command](start-inspector.command)，自动构建并打开浏览器；
+[start-inspector.command](../start-inspector.command)，自动构建并打开浏览器；
 终端中按 `Ctrl+C` 关闭服务。端口被其他程序占用时，可设置 `MOONHID_PORT=8766`。
 
 界面分为三栏：左侧是描述符编辑器和逐项注释的 Items 列表，中间是报告选择、原始报告输入、
@@ -126,19 +126,19 @@ Input / Output / Feature 与 Report ID，填入完整报告后自动解码，`Ct
 左侧中文 lint 面板区分 Warning / Info，可筛选、分页并定位 item 与字段。
 编译成功但有 Warning 时仍可解码；未产生提示不等于协议认证。
 中栏「发现问题 → 修改 → 验证」案例演示 Hat Null 范围修正和同一报告的解码变化。
-固件团队可复制 [完整 CI 示例](docs/firmware-ci.md)，检查描述符及保存的报告预期值。
+固件团队可复制 [完整 CI 示例](../docs/firmware-ci.md)，检查描述符及保存的报告预期值。
 
 页面不加载外部脚本或 CDN，数据只在页面内处理。本地服务只监听 `127.0.0.1`。
 解码值表每页最多 200 行，Items 每页最多 500 项，位布局最多展示前 256 个字节，Collection 树最多列出 500 个；
 分页表格、报告输入和 JSON 保留完整数据。位布局每行一个字节、左侧为最高位，载荷按 HID 的 LSB 位序解释。
-「导出 JSON」保存当前描述符及已成功解码的报告，格式见 [JSON v2](docs/json-v2.md)。
+「导出 JSON」保存当前描述符及已成功解码的报告，格式见 [JSON v2](../docs/json-v2.md)。
 生成的 `web/moonhid-core.js` 不提交，始终从仓库中的 MoonBit 源码构建。
 
 ## WebHID 实时输入
 
 在 Chromium 中使用 HTTPS 或 `http://127.0.0.1` 打开检查器，先粘贴并解析描述符，
 再点「连接 HID」选择设备。WebHID 不提供原始描述符，需要按
-[读取方法](docs/real-devices.md#自行读取描述符) 自行获取。
+[读取方法](../docs/real-devices.md#自行读取描述符) 自行获取。
 Chrome 会屏蔽键盘和鼠标的受保护 Collection；手柄与厂商自定义 Collection 是否可用由浏览器决定。
 
 页面只接收 Input 报告，非零 `reportId` 补回数据前缀后交给 MoonBit 解码。
@@ -151,7 +151,7 @@ Logical 和 Usage。WebHID 顶层 reports 已包含嵌套集合字段，避免�
 缺少报告可能来自浏览器保护规则或粘贴的描述符不匹配，不应直接视为 MoonHID 解析错误。
 WebHID 不暴露完整原始项，String/Designator/Delimiter 等元数据不参与此对照。
 
-[Xbox 蓝牙实测](docs/xbox-bluetooth.md) 已记录 42 条实际 Input，验证 A 状态、左轴两端和回中，
+[Xbox 蓝牙实测](../docs/xbox-bluetooth.md) 已记录 42 条实际 Input，验证 A 状态、左轴两端和回中，
 并重放原始数据。检查器提供独立的「手柄实机验证」入口：浏览器可见字段生成参考布局，
 逻辑范围不完整时需明确选择原始位值模式；不会冒充原始设备描述符。
 自动测试仍用模拟 HIDDevice 覆盖前缀、DataView 子视图、连接/断开、热拔插和连接中取消；
@@ -187,7 +187,7 @@ test "README: decode one relative axis" {
 | `unsigned_value` / `signed_value` | 小端短项数值，完整保留 32 位范围 |
 | `field_usage` | 按序查询 Usage；Variable 越界重复最后一项，Array 越界返回 None |
 | `compile_descriptor` | 计算 Main 字段、集合树、元数据、报告 ID 与位偏移 |
-| `lint_descriptor` | 检查可编译描述符的映射与结构风险；核心 API 见 [lint 说明](docs/lint.md)，从 0.3.0 提供 |
+| `lint_descriptor` | 检查可编译描述符的映射与结构风险；核心 API 见 [lint 说明](../docs/lint.md)，从 0.3.0 提供 |
 | `decode_unit` / `effective_physical_range` | 展开单位维度，并应用 HID 物理范围缺省规则 |
 | `descriptor_to_json` / `layout_to_json` / `report_to_json` | 导出版本化描述符与布局、解码组件 |
 | `lint_to_json` | 导出含级别、item 偏移与可选字段索引的 lint 组件 |
@@ -204,7 +204,7 @@ test "README: decode one relative axis" {
   规则包括 `logical_max_sign`、`physical_max_sign`、`null_without_room`、`usage_count`、`missing_usage`、
   `unaligned_report`、`field_outside_application`、`collection_without_usage`、
   `multiple_applications_without_report_id`、`report_id_shared_across_applications`，
-  触发条件与级别是契约，见 [规则依据与限制](docs/lint.md)。JSON v2、bridge、CLI 与中文网页面板均已接入。
+  触发条件与级别是契约，见 [规则依据与限制](../docs/lint.md)。JSON v2、bridge、CLI 与中文网页面板均已接入。
 - 支持 Input / Output / Feature、Usage / Usage 范围 / 32 位扩展 Usage、
   Logical / Physical 范围、Unit / Unit Exponent、Report Size / Count / ID、Global Push / Pop，
   并保留 Collection 的类型、Usage、父索引与字段所属集合。
@@ -236,6 +236,31 @@ test "README: decode one relative axis" {
 十六进制文本的 `offset` 是 UTF-16 索引。`parse_hex` 不接受 `0x` 前缀、逗号或
 字节对内的空白，`05 01`、`0501` 均可。
 
+## 项目目录
+
+```text
+moonhid/
+├── moon.mod                 # 模块配置，source = "src"
+├── src/                     # MoonBit 源码根目录
+│   ├── *.mbt、*_test.mbt    # 核心库及同包测试
+│   ├── moon.pkg             # 核心包依赖
+│   ├── pkg.generated.mbti   # 核心包公开接口
+│   ├── README.mbt.md        # 本文，API 示例参与自动测试
+│   ├── browser/             # 浏览器 JS 桥接
+│   ├── cmd/                 # 文件 CLI 与演示入口
+│   └── examples/            # MoonBit 合成设备样例包
+├── examples/                # 设备回归数据与固件 CI 示例
+├── web/                     # 检查器页面
+├── scripts/                 # 构建、验收与打包脚本
+├── docs/                    # 协议说明与验收记录
+└── README.md                # 指向 src/README.mbt.md
+```
+
+包名仍为 `We1chan/moonhid`；`src/` 是源码根目录，不属于导入路径。
+MoonBit 按目录组织包，因此 `*_test.mbt` 与被测源码保留在同一个包目录中。
+以下开发命令均在仓库根目录执行；指定文件或入口包时使用实际路径，
+例如 `moon test src/layout_test.mbt` 和 `moon run src/cmd/main`。
+
 ## 开发
 
 本机验证工具链：`moon 0.1.20260920`、`moonc v0.10.14+7d59c7ec9`。
@@ -259,9 +284,9 @@ moon fmt --check
 CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
 Physical/Unit、完整 uint32 和错误路径。独立 hid-tools 对照与 headless Chrome DOM 检查也纳入 JS CI，验证真实描述符布局与界面。
 四后端还运行固定种子的随机字节、结构化有效描述符与真实描述符突变；
-语料、资源边界及解码性质见 [模糊测试验收](docs/fuzz-validation.md)。
+语料、资源边界及解码性质见 [模糊测试验收](../docs/fuzz-validation.md)。
 浏览器人工和自动验收记录见
-[检查器验收](docs/inspector-validation.md)。[性能基准](docs/performance.md) 记录实际来源
+[检查器验收](../docs/inspector-validation.md)。[性能基准](../docs/performance.md) 记录实际来源
 描述符与资源上限报告的 bridge/JSON 耗时，每次 CI 保存测量结果。
 
 ## 协议与参考
@@ -270,7 +295,7 @@ Physical/Unit、完整 uint32 和错误路径。独立 hid-tools 对照与 headl
 - [Linux 内核：HID report descriptors](https://docs.kernel.org/hid/hidintro.html)
 
 本项目按公开协议独立实现。仓库内的合成设备样例用于测试声明的支持范围。
-采用 Apache-2.0 许可证，见 [LICENSE](LICENSE)。
+采用 Apache-2.0 许可证，见 [LICENSE](../LICENSE)。
 
 代码、测试与文档包含 AI 辅助开发成果。正式参赛前应由参赛者审阅实现，
 理解协议与边界，并按比赛规则自行撰写参赛提案。

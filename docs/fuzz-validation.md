@@ -29,10 +29,10 @@ wasm、wasm-gc、js、native 使用相同语料，不增加随机库或模糊测
 ## 复现
 
 ```sh
-moon test fuzz_test.mbt --target wasm
-moon test fuzz_test.mbt --target wasm-gc
-moon test fuzz_test.mbt --target js
-moon test fuzz_test.mbt --target native
+moon test src/fuzz_test.mbt --target wasm
+moon test src/fuzz_test.mbt --target wasm-gc
+moon test src/fuzz_test.mbt --target js
+moon test src/fuzz_test.mbt --target native
 ```
 
 本机使用 `moon 0.1.20260920`、`moonc v0.10.14+7d59c7ec9`。

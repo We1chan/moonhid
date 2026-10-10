@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const build = spawnSync('moon', ['build', 'browser', '--target', 'js', '--release'], { cwd: root, stdio: 'inherit' });
+const build = spawnSync('moon', ['build', 'src/browser', '--target', 'js', '--release'], { cwd: root, stdio: 'inherit' });
 if (build.error) throw build.error;
 if (build.status !== 0) process.exit(build.status ?? 1);
 const directory = join(root, '_build/js/release/build/browser');

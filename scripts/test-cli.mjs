@@ -29,7 +29,7 @@ try {
   await writeFile(compileError, '75');
   for (const target of targets) {
     assert.ok(['native', 'js'].includes(target));
-    const build = spawnSync('moon', ['build', 'cmd/moonhid', '--target', target, '--release'], { cwd: root, encoding: 'utf8' });
+    const build = spawnSync('moon', ['build', 'src/cmd/moonhid', '--target', target, '--release'], { cwd: root, encoding: 'utf8' });
     assert.equal(build.status, 0, build.stderr);
     const directory = join(root, '_build', target, 'release/build/cmd/moonhid');
     const name = (await readdir(directory)).find(name => target === 'js' ? name.endsWith('.js') : name.endsWith('.exe'));

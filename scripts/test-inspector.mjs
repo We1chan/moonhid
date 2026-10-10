@@ -141,7 +141,7 @@ try {
   assert.equal(await evaluate('document.getElementById("report").value'), 'ff');
   assert.equal(await evaluate('document.getElementById("export").disabled'), true);
   await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
-  const fixtures = [...(await readFile(join(root, 'real_devices_test.mbt'), 'utf8')).matchAll(/fn real_device_([a-g])\(\) -> String \{\s*"([^"]+)"/g)];
+  const fixtures = [...(await readFile(join(root, 'src/real_devices_test.mbt'), 'utf8')).matchAll(/fn real_device_([a-g])\(\) -> String \{\s*"([^"]+)"/g)];
   const setText = (id, value) => evaluate(`(() => { const node = document.getElementById(${JSON.stringify(id)}); node.value = ${JSON.stringify(value)}; node.dispatchEvent(new Event('input', { bubbles: true })); node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true })); })()`);
   const text = id => evaluate(`document.getElementById(${JSON.stringify(id)}).textContent`);
   const field = index => evaluate(`document.querySelector('#values button.field-ref') && [...document.querySelectorAll('#values button.field-ref')].find(b => b.textContent === '#${index}')?.click()`);

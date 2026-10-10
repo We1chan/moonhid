@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const target = process.argv[2] ?? 'js';
 assert.ok(['js', 'native'].includes(target));
-const built = spawnSync('moon', ['build', 'cmd/moonhid', '--target', target, '--release'], { cwd: root, encoding: 'utf8' });
+const built = spawnSync('moon', ['build', 'src/cmd/moonhid', '--target', target, '--release'], { cwd: root, encoding: 'utf8' });
 assert.equal(built.status, 0, built.stderr);
 const directory = join(root, '_build', target, 'release/build/cmd/moonhid');
 const binary = (await readdir(directory)).find(name => name.endsWith(target === 'js' ? '.js' : '.exe'));

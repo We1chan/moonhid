@@ -3,7 +3,7 @@
 这七份描述符由参赛者在本机 macOS 上于 2026-10-01 使用
 `ioreg -r -c IOHIDDevice -l -w0` 读取，并通过本地交接文件提供。
 回归样例只保留 `ReportDescriptor` 的字节，不包含序列号、设备路径、按键记录或实时报告。
-原始十六进制见 [real_devices_test.mbt](../real_devices_test.mbt)。
+原始十六进制见 [real_devices_test.mbt](../src/real_devices_test.mbt)。
 
 这里验证的是保存的描述符能否编译，以及报告结构是否符合断言；
 它不能证明设备通信、实时输入或所有同型号设备都已兼容。
