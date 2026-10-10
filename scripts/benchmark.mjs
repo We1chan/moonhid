@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { inspect_descriptor, decode_wire } from '../web/moonhid-core.js';
 
-const source = readFileSync(new URL('../real_devices_test.mbt', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../src/real_devices_test.mbt', import.meta.url), 'utf8');
 const fixtures = [...source.matchAll(/fn real_device_([a-g])\(\) -> String \{\s*"([^"]+)"/g)];
 const results = [];
 function measure(name, operation, iterations) {

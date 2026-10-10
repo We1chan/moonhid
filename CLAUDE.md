@@ -12,11 +12,11 @@ On this machine `moon` lives in `~/.moon/bin`, which may not be on `PATH` in a n
 moon check --target all --deny-warn    # CI treats warnings as errors (the pre-commit hook runs `moon check --deny-warn`)
 moon test                              # default target is wasm (preferred_target in moon.mod)
 moon test --target js                  # CI also runs wasm-gc, js and native
-moon test layout_test.mbt              # one test file
+moon test src/layout_test.mbt          # one test file
 moon test -f "*README*"                # tests whose name matches a glob
 moon test -p We1chan/moonhid/examples  # one package
 moon test --update                     # refresh snapshot expectations
-moon run cmd/main                      # print the decoded mouse/keyboard/gamepad fixtures
+moon run src/cmd/main                  # print the decoded mouse/keyboard/gamepad fixtures
 moon info && moon fmt                  # final step: regenerate .mbti and format
 ```
 
@@ -25,7 +25,7 @@ CI fails if `moon fmt --check` fails or if `moon info` changes any `*.mbti` (`gi
 Browser inspector (needs Node 22+ and Python 3):
 
 ```sh
-node scripts/build-web.mjs   # moon build browser --target js --release → copies to web/moonhid-core.js
+node scripts/build-web.mjs   # moon build src/browser --target js --release → copies to web/moonhid-core.js
 node scripts/test-web.mjs    # Node assertions against the built ESM bridge (also run in CI)
 python3 scripts/serve-web.py # serves web/ on 127.0.0.1:8765 (MOONHID_PORT to change)
 ```
@@ -34,7 +34,7 @@ python3 scripts/serve-web.py # serves web/ on 127.0.0.1:8765 (MOONHID_PORT to ch
 
 ## Architecture
 
-**Core package (repo root, `We1chan/moonhid`).** A linear pipeline. Each stage returns `Result[_, Diagnostic]` and never raises:
+**Core package (`src/`, `We1chan/moonhid`).** `moon.mod` sets `source = "src"`; package names and imports exclude that prefix. Run commands from the repo root and use actual paths (`src/cmd/main`, `src/layout_test.mbt`) when selecting packages or files. A linear pipeline. Each stage returns `Result[_, Diagnostic]` and never raises:
 
 1. `hex.mbt` `parse_hex`: strict hex text to `Bytes`. Diagnostic offsets here are UTF-16 indices into the text.
 2. `items.mbt` `parse_items`: tokenizes short and long items. `values.mbt` reads little-endian item payloads.
@@ -49,16 +49,17 @@ Cross-cutting invariants:
 - JSON v2 (`docs/json-v2.md`) is versioned. An incompatible change to fields or semantics must bump `schema_version`. Encode `Int64` with `number64` (`Json::number`), because the default `ToJson` emits strings.
 
 **Other packages:**
-- `examples/`: synthetic mouse, keyboard and gamepad `Fixture`s shared by `cmd/main`, `browser`, the tests and the web UI. `scripts/test-web.mjs` asserts the fixture names and their order. The keyboard LED output report `03` is hard-coded in `browser/bridge.mbt` `examples_json`, not stored in `Fixture`.
-- `browser/`: JS ESM exports (`inspect_descriptor`, `decode_wire`, `examples_json`) declared in `browser/moon.pkg`. These take plain strings and return JSON strings shaped `{ok, schema_version, ...}`. On failure the result carries a `stage` (`descriptor_hex` | `descriptor` | `report_hex` | `report`) that tells the UI whether the offset counts characters or bytes.
-- `cmd/main/`: CLI demo that decodes each fixture.
+- `src/examples/`: synthetic mouse, keyboard and gamepad `Fixture`s shared by `cmd/main`, `browser`, the tests and the web UI. `scripts/test-web.mjs` asserts the fixture names and their order. The keyboard LED output report `03` is hard-coded in `src/browser/bridge.mbt` `examples_json`, not stored in `Fixture`. The toplevel `examples/` directory holds device data and firmware CI examples.
+- `src/browser/`: JS ESM exports (`inspect_descriptor`, `decode_wire`, `examples_json`) declared in `src/browser/moon.pkg`. These take plain strings and return JSON strings shaped `{ok, schema_version, ...}`. On failure the result carries a `stage` (`descriptor_hex` | `descriptor` | `report_hex` | `report`) that tells the UI whether the offset counts characters or bytes.
+- `src/cmd/main/`: CLI demo that decodes each fixture.
+- `src/cmd/moonhid/`: native/Node.js file CLI.
 - `web/`: vanilla JS/HTML/CSS with no dependencies, no CDN and no bundler. `app.js` dynamically imports `./moonhid-core.js` and adds names for common Usages only.
 
 ## Conventions
 
 - MoonBit code is split into blocks separated by `///|`. Deprecated blocks go in `deprecated.mbt`.
 - Blackbox tests are `*_test.mbt` and refer to the root package as `@moonhid`. Other packages import it as `@hid`. Prefer `assert_eq` or `assert_true(x is Pattern(...))`, and use `debug_inspect` with `derive(Debug)` for structural snapshots.
-- `README.mbt.md` is the module readme and `README.md` symlinks to it. Its ` ```mbt check ` blocks run as tests under `moon test`.
+- `src/README.mbt.md` is the module readme and the toplevel `README.md` symlinks to it. Its ` ```mbt check ` blocks run as tests under `moon test`.
 - `docs/inspector-validation.md` records manual Chrome checks that CI does not run. Update it when you re-verify UI behavior.
 - `submission/` is gitignored and holds the competition proposal. The README says the contestant must write it themselves, so do not author it.
 
