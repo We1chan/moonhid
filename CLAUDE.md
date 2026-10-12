@@ -63,6 +63,7 @@ Cross-cutting invariants:
 - `src/real_devices_test.mbt` stores real descriptors as `fn real_device_a() -> String { "..." }` through `real_device_g`. `scripts/export-real-layouts.mjs` and `scripts/benchmark.mjs` extract them with a regex, so keep that exact shape.
 - Size limits (descriptor 65536 B, 4096 fields, 1..32 bits/integer or opaque Variable fields, at most 65536 values/field within 65536 bits/report, 1024 Usage spans, 4096 collections, stack depth 64) are enforced in `compile_descriptor`. `report_length` re-checks them because callers can build `Layout` values by hand.
 - JSON v2 (`docs/json-v2.md`) is versioned. An incompatible change to fields or semantics must bump `schema_version`. Encode `Int64` with `number64` (`Json::number`), because the default `ToJson` emits strings.
+- Use `Json(value)` for primitive JSON conversions. Direct `.to_json()` calls are deprecated by the 0.10.15 toolchain and fail the latest-compatible job with `--deny-warn`; `Json(value)` also works with pinned 0.10.14. Keep explicit numeric `number64` conversion for HID Int64 values.
 
 **Other packages:**
 - `src/examples/`: synthetic mouse, keyboard and gamepad `Fixture`s shared by `cmd/main`, `browser`, the tests and the web UI. `scripts/test-web.mjs` asserts the fixture names and their order. The keyboard LED output report `03` is hard-coded in `src/browser/bridge.mbt` `examples_json`, not stored in `Fixture`. The toplevel `examples/` directory holds device data and firmware CI examples.
