@@ -19,7 +19,7 @@ pub fn report_kind_name(kind : ReportKind) -> String {
 ///|
 fn optional_int(value : Int?) -> Json {
   match value {
-    Some(value) => value.to_json()
+    Some(value) => Json(value)
     None => Json::null()
   }
 }
@@ -41,18 +41,14 @@ fn number64(value : Int64) -> Json {
 ///|
 fn usage_json(usage : Usage?) -> Json {
   match usage {
-    Some(usage) => { "page": usage.page.to_json(), "id": usage.id.to_json() }
+    Some(usage) => { "page": Json(usage.page), "id": Json(usage.id) }
     None => Json::null()
   }
 }
 
 ///|
 fn usage_span_json(span : UsageSpan) -> Json {
-  {
-    "page": span.page.to_json(),
-    "min": span.min.to_json(),
-    "max": span.max.to_json(),
-  }
+  { "page": Json(span.page), "min": Json(span.min), "max": Json(span.max) }
 }
 
 ///|
@@ -68,14 +64,14 @@ fn unit_json(raw : Int64?) -> Json {
         Ok(unit) =>
           {
             "raw": number64(unit.raw),
-            "system": unit.system.to_json(),
-            "length": unit.length.to_json(),
-            "mass": unit.mass.to_json(),
-            "time": unit.time.to_json(),
-            "temperature": unit.temperature.to_json(),
-            "current": unit.current.to_json(),
-            "luminous_intensity": unit.luminous_intensity.to_json(),
-            "reserved": unit.reserved.to_json(),
+            "system": Json(unit.system),
+            "length": Json(unit.length),
+            "mass": Json(unit.mass),
+            "time": Json(unit.time),
+            "temperature": Json(unit.temperature),
+            "current": Json(unit.current),
+            "luminous_intensity": Json(unit.luminous_intensity),
+            "reserved": Json(unit.reserved),
           }
         Err(_) => Json::null()
       }
@@ -107,10 +103,11 @@ pub fn layout_to_json(layout : Layout) -> Json {
     }
     reports.push({
       "kind": Json::string(report_kind_name(field.kind)),
-      "report_id": field.report_id.to_json(),
-      "payload_bits": bits.to_json(),
-      "wire_bytes": ((bits + 7) / 8 +
-      (if layout.has_report_ids { 1 } else { 0 })).to_json(),
+      "report_id": Json(field.report_id),
+      "payload_bits": Json(bits),
+      "wire_bytes": Json(
+        (bits + 7) / 8 + (if layout.has_report_ids { 1 } else { 0 }),
+      ),
     })
   }
   {
@@ -118,9 +115,9 @@ pub fn layout_to_json(layout : Layout) -> Json {
     "reports": Json::array(reports),
     "collections": Json::array(
       layout.collections.map(c => {
-        "descriptor_offset": c.descriptor_offset.to_json(),
-        "end_offset": c.end_offset.to_json(),
-        "collection_type": c.collection_type.to_json(),
+        "descriptor_offset": Json(c.descriptor_offset),
+        "end_offset": Json(c.end_offset),
+        "collection_type": Json(c.collection_type),
         "usage": usage_json(c.usage),
         "parent_index": optional_int(c.parent_index),
         "string_spans": Json::array(c.string_spans.map(index_span_json)),
@@ -136,13 +133,13 @@ pub fn layout_to_json(layout : Layout) -> Json {
       layout.fields.map(f => {
         let (physical_min, physical_max) = effective_physical_range(f)
         {
-          "descriptor_offset": f.descriptor_offset.to_json(),
+          "descriptor_offset": Json(f.descriptor_offset),
           "kind": Json::string(report_kind_name(f.kind)),
-          "report_id": f.report_id.to_json(),
-          "bit_offset": f.bit_offset.to_json(),
-          "bit_size": f.bit_size.to_json(),
-          "count": f.count.to_json(),
-          "flags": f.flags.to_json(),
+          "report_id": Json(f.report_id),
+          "bit_offset": Json(f.bit_offset),
+          "bit_size": Json(f.bit_size),
+          "count": Json(f.count),
+          "flags": Json(f.flags),
           "logical_min": number64(f.logical_min),
           "logical_max": number64(f.logical_max),
           "physical_min": optional_int64(f.physical_min),
@@ -153,7 +150,7 @@ pub fn layout_to_json(layout : Layout) -> Json {
           "unit_exponent": optional_int(f.unit_exponent),
           "collection_index": optional_int(f.collection_index),
           "usage_spans": Json::array(f.usage_spans.map(usage_span_json)),
-          "usage_count": usage_count(f.usage_spans).to_json(),
+          "usage_count": Json(usage_count(f.usage_spans)),
           "string_spans": Json::array(f.string_spans.map(index_span_json)),
           "designator_spans": Json::array(
             f.designator_spans.map(index_span_json),
@@ -173,21 +170,21 @@ pub fn layout_to_json(layout : Layout) -> Json {
 pub fn report_to_json(report : DecodedReport) -> Json {
   {
     "kind": Json::string(report_kind_name(report.kind)),
-    "report_id": report.report_id.to_json(),
+    "report_id": Json(report.report_id),
     "opaque_values": Json::array(
       report.opaque_values.map(v => {
-        "field_index": v.field_index.to_json(),
-        "element_index": v.element_index.to_json(),
-        "bit_offset": v.bit_offset.to_json(),
-        "bit_size": v.bit_size.to_json(),
+        "field_index": Json(v.field_index),
+        "element_index": Json(v.element_index),
+        "bit_offset": Json(v.bit_offset),
+        "bit_size": Json(v.bit_size),
         "hex": Json::string(format_hex(v.bytes)),
       }),
     ),
     "values": Json::array(
       report.values.map(v => {
-        "field_index": v.field_index.to_json(),
-        "element_index": v.element_index.to_json(),
-        "bit_offset": v.bit_offset.to_json(),
+        "field_index": Json(v.field_index),
+        "element_index": Json(v.element_index),
+        "bit_offset": Json(v.bit_offset),
         "value": number64(v.value),
         "usage": usage_json(v.usage),
         "is_array": Json::boolean(v.is_array),
@@ -201,7 +198,7 @@ pub fn report_to_json(report : DecodedReport) -> Json {
 ///|
 pub fn diagnostic_to_json(error : Diagnostic) -> Json {
   {
-    "offset": error.offset.to_json(),
+    "offset": Json(error.offset),
     "code": Json::string(error.code),
     "message": Json::string(error.message),
   }
@@ -211,15 +208,15 @@ pub fn diagnostic_to_json(error : Diagnostic) -> Json {
 /// An unversioned component of the schema v2 descriptor's lints array.
 pub fn lint_to_json(lint : Lint) -> Json {
   {
-    "offset": lint.offset.to_json(),
-    "code": lint.code.to_json(),
+    "offset": Json(lint.offset),
+    "code": Json(lint.code),
     "level": Json::string(
       match lint.level {
         Warning => "warning"
         Info => "info"
       },
     ),
-    "message": lint.message.to_json(),
+    "message": Json(lint.message),
     "field_index": optional_int(lint.field_index),
   }
 }
@@ -239,13 +236,13 @@ pub fn descriptor_to_json(bytes : Bytes) -> Result[Json, Diagnostic] {
   Ok({
     "schema_version": 2,
     "descriptor_hex": Json::string(format_hex(bytes)),
-    "byte_length": bytes.length().to_json(),
+    "byte_length": Json(bytes.length()),
     "lints": Json::array(lint_compiled(layout, items).map(lint_to_json)),
     "items": Json::array(
       items.map(item => {
-        "offset": item.offset.to_json(),
-        "type_code": item.type_code.to_json(),
-        "tag": item.tag.to_json(),
+        "offset": Json(item.offset),
+        "type_code": Json(item.type_code),
+        "tag": Json(item.tag),
         "data_hex": Json::string(format_hex(item.data)),
         "is_long": Json::boolean(item.is_long),
       }),
