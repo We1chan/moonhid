@@ -28,5 +28,16 @@ fn main {
       }
       println("  bit \{value.bit_offset}: usage=\{usage}, value=\{value.value}")
     }
+    let encoded = match
+      @hid.encode_report(
+        layout,
+        @hid.Input,
+        report.report_id,
+        report.values.map(value => @hid.Integer(value.value)),
+      ) {
+      Ok(bytes) => bytes
+      Err(error) => abort("\{fixture.name} encode: \{error.code}")
+    }
+    println("  encoded input: \{@hid.format_hex(encoded)}")
   }
 }

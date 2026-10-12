@@ -67,3 +67,69 @@ pub fn parse_items(bytes : Bytes) -> Result[Array[Item], Diagnostic] {
   }
   Ok(items)
 }
+
+///|
+/// Serializes raw items without interpreting semantics; offsets are ignored.
+/// Retains short-item payload widths and long-item bytes for lossless round trips.
+pub fn serialize_items(items : Array[Item]) -> Result[Bytes, Diagnostic] {
+  if items.length() > 65536 {
+    return Err(diagnostic(0, "descriptor_limit", "More than 65536 items"))
+  }
+  let output : Array[Byte] = []
+  for index = 0; index < items.length(); index = index + 1 {
+    let item = items[index]
+    let size = item.data.length()
+    let size_code = match size {
+      0 => 0
+      1 => 1
+      2 => 2
+      4 => 3
+      _ => -1
+    }
+    if (
+        item.is_long &&
+        (item.type_code != 3 || item.tag < 0 || item.tag > 255 || size > 255)
+      ) ||
+      (
+        !item.is_long &&
+        (
+          item.type_code < 0 ||
+          item.type_code > 3 ||
+          item.tag < 0 ||
+          item.tag > 15 ||
+          size_code < 0
+        )
+      ) {
+      return Err(
+        diagnostic(
+          index, "invalid_item", "Invalid item type, tag or payload width",
+        ),
+      )
+    }
+    let prefix = (item.tag << 4) | (item.type_code << 2) | size_code
+    if !item.is_long && prefix == 0xfe {
+      return Err(
+        diagnostic(
+          index, "invalid_item", "Short-item prefix collides with the long-item marker",
+        ),
+      )
+    }
+    let header_size = if item.is_long { 3 } else { 1 }
+    if header_size + size > 65536 - output.length() {
+      return Err(
+        diagnostic(index, "descriptor_limit", "Descriptor exceeds 65536 bytes"),
+      )
+    }
+    if item.is_long {
+      output.push(0xfe)
+      output.push(size.to_byte())
+      output.push(item.tag.to_byte())
+    } else {
+      output.push(prefix.to_byte())
+    }
+    for byte in item.data {
+      output.push(byte)
+    }
+  }
+  Ok(Bytes::from_array(output))
+}

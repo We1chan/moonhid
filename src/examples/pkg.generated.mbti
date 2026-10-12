@@ -1,14 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "We1chan/moonhid/examples"
 
+import {
+  "We1chan/moonhid",
+}
+
 // Values
 pub fn all() -> Array[Fixture]
 
 pub fn gamepad() -> Fixture
 
+pub fn gamepad_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
+
 pub fn keyboard() -> Fixture
 
+pub fn keyboard_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
+
 pub fn mouse() -> Fixture
+
+pub fn mouse_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
 
 // Errors
 

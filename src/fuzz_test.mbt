@@ -124,6 +124,29 @@ fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int raise {
     }
     assert_eq(report.values.length(), scalar_count)
     assert_eq(report.opaque_values.length(), opaque_count)
+    let inputs : Array[@moonhid.ReportValue] = []
+    let mut scalar_index = 0
+    let mut opaque_index = 0
+    for field in layout.fields {
+      if field.kind != kind || field.report_id != id || (field.flags & 1) != 0 {
+        continue
+      }
+      for element = 0; element < field.count; element = element + 1 {
+        if field.bit_size <= 32 {
+          inputs.push(@moonhid.Integer(report.values[scalar_index].value))
+          scalar_index = scalar_index + 1
+        } else {
+          inputs.push(@moonhid.Raw(report.opaque_values[opaque_index].bytes))
+          opaque_index = opaque_index + 1
+        }
+      }
+    }
+    let encoded = match
+      @moonhid.encode_report(layout, kind, id, inputs, allow_out_of_range=true) {
+      Ok(encoded) => encoded
+      Err(error) => fail("encode decoded values: \{error.code}")
+    }
+    assert_eq(decode(layout, kind, encoded), report)
     for value in report.values {
       assert_true(
         value.field_index >= 0 && value.field_index < layout.fields.length(),
@@ -219,6 +242,7 @@ fn fuzz_descriptor(bytes : Bytes, rng : FuzzRng) -> Int raise {
         assert_true(end <= bytes.length())
       }
       assert_eq(end, bytes.length())
+      assert_eq(@moonhid.serialize_items(items), Ok(bytes))
       true
     }
     Err(error) => {
