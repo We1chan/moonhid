@@ -10,7 +10,7 @@ priv enum Command {
 
 ///|
 fn usage() -> String {
-  "moonhid inspect <descriptor.hex>\nmoonhid lint <descriptor.hex>\nmoonhid decode --kind input|output|feature <descriptor.hex> <report.hex>\nmoonhid encode --kind input|output|feature --id 0..255 <descriptor.hex> <values.json>\nmoonhid generate mouse|keyboard|gamepad"
+  "moonhid inspect <descriptor.hex>\nmoonhid lint <descriptor.hex>\nmoonhid decode --kind input|output|feature <descriptor.hex> <report.hex>\nmoonhid encode --kind input|output|feature --id 0..255 <descriptor.hex> <values.json>\nmoonhid generate mouse|keyboard|gamepad|consumer|vendor"
 }
 
 ///|
@@ -35,8 +35,10 @@ fn parse_command(args : Array[String]) -> Result[Command, String] {
     ["inspect", path] => Ok(Inspect(path))
     ["lint", path] => Ok(Lint(path))
     ["generate", name] => {
-      if !["mouse", "keyboard", "gamepad"].contains(name) {
-        return Err("template @0: Choose mouse, keyboard or gamepad")
+      if !["mouse", "keyboard", "gamepad", "consumer", "vendor"].contains(name) {
+        return Err(
+          "template @0: Choose mouse, keyboard, gamepad, consumer or vendor",
+        )
       }
       Ok(Generate(name))
     }
@@ -65,9 +67,12 @@ fn parse_command(args : Array[String]) -> Result[Command, String] {
 }
 
 ///|
-fn read_values(
-  path : String,
-) -> Result[Array[@hid.ReportValue], @hid.Diagnostic] {
+fn values_error(offset : Int, message : String) -> @hid.Diagnostic {
+  { offset, code: "values_json", message, }
+}
+
+///|
+fn read_values(path : String) -> Result[Json, @hid.Diagnostic] {
   let text = @fs.read_file_to_string(path) catch {
     _ =>
       return Err({
@@ -77,22 +82,42 @@ fn read_values(
       })
   }
   let json = @json.parse(text) catch {
-    _ =>
-      return Err({
-        offset: 0,
-        code: "values_json",
-        message: "Values file must contain valid JSON",
-      })
+    _ => return Err(values_error(0, "Values file must contain valid JSON"))
   }
-  let items = match json {
-    Array(items) => items
-    _ =>
-      return Err({
-        offset: 0,
-        code: "values_json",
-        message: "Values must be a JSON array",
-      })
+  Ok(json)
+}
+
+///|
+fn json_integer(number : Double, index : Int) -> Result[Int64, @hid.Diagnostic] {
+  if number < -2147483648.0 || number > 4294967295.0 {
+    return Err({
+      offset: index,
+      code: "value_range",
+      message: "Integer exceeds the supported 32-bit domain",
+    })
   }
+  let value = number.to_int64()
+  if value.to_double() != number {
+    return Err(
+      values_error(index, "Report integers cannot have fractional values"),
+    )
+  }
+  Ok(value)
+}
+
+///|
+fn raw_value(hex : String) -> Result[@hid.ReportValue, @hid.Diagnostic] {
+  match @hid.parse_hex(hex) {
+    Ok(bytes) => Ok(@hid.Raw(bytes))
+    Err(error) => Err(error)
+  }
+}
+
+///|
+/// The positional form: every non-Constant element in field/element order.
+fn positional_values(
+  items : Array[Json],
+) -> Result[Array[@hid.ReportValue], @hid.Diagnostic] {
   if items.length() > 65536 {
     return Err({
       offset: 0,
@@ -103,48 +128,160 @@ fn read_values(
   let values : Array[@hid.ReportValue] = []
   for index = 0; index < items.length(); index = index + 1 {
     match items[index] {
-      Number(number, ..) => {
-        if number < -2147483648.0 || number > 4294967295.0 {
-          return Err({
-            offset: index,
-            code: "value_range",
-            message: "Integer exceeds the supported 32-bit domain",
-          })
+      Number(number, ..) =>
+        match json_integer(number, index) {
+          Ok(value) => values.push(@hid.Integer(value))
+          Err(error) => return Err(error)
         }
-        let value = number.to_int64()
-        if value.to_double() != number {
-          return Err({
-            offset: index,
-            code: "values_json",
-            message: "Report integers cannot have fractional values",
-          })
-        }
-        values.push(@hid.Integer(value))
-      }
       Object(object) => {
         let hex = match object.get("hex") {
           Some(String(hex)) if object.length() == 1 => hex
           _ =>
-            return Err({
-              offset: index,
-              code: "values_json",
-              message: "Raw values require an object containing only a hex string",
-            })
+            return Err(
+              values_error(
+                index, "Raw values require an object containing only a hex string",
+              ),
+            )
         }
-        match @hid.parse_hex(hex) {
-          Ok(bytes) => values.push(@hid.Raw(bytes))
+        match raw_value(hex) {
+          Ok(value) => values.push(value)
           Err(error) => return Err(error)
         }
       }
       _ =>
-        return Err({
-          offset: index,
-          code: "values_json",
-          message: "Values must be integers or raw hex objects",
-        })
+        return Err(
+          values_error(index, "Values must be integers or raw hex objects"),
+        )
     }
   }
   Ok(values)
+}
+
+///|
+fn usage_part(object : Map[String, Json], name : String) -> Int? {
+  match object.get(name) {
+    Some(Number(number, ..)) if number >= 0.0 &&
+      number <= 65535.0 &&
+      number.to_int().to_double() == number => Some(number.to_int())
+    _ => None
+  }
+}
+
+///|
+/// Reads {"page": 0..65535, "id": 0..65535} plus the listed extra keys.
+fn json_usage(
+  entry : Json,
+  index : Int,
+  extra : Array[String],
+) -> Result[(@hid.Usage, Map[String, Json]), @hid.Diagnostic] {
+  let object = match entry {
+    Object(object) => object
+    _ => return Err(values_error(index, "Usage entries must be JSON objects"))
+  }
+  for key, _ in object {
+    if key != "page" && key != "id" && !extra.contains(key) {
+      return Err(values_error(index, "Unknown key in Usage entry: \{key}"))
+    }
+  }
+  match (usage_part(object, "page"), usage_part(object, "id")) {
+    (Some(page), Some(id)) => Ok(({ page, id, }, object))
+    _ => Err(values_error(index, "Usage page and id must be integers 0..65535"))
+  }
+}
+
+///|
+fn usage_list(
+  object : Map[String, Json],
+  key : String,
+) -> Result[Array[Json], @hid.Diagnostic] {
+  match object.get(key) {
+    None => Ok([])
+    Some(Array(entries)) => Ok(entries)
+    Some(_) => Err(values_error(0, "\{key} must be a JSON array"))
+  }
+}
+
+///|
+/// The Usage form starts from new_report, then applies "values"
+/// (integers or raw hex), "physical" quantities and "active" on/off Usages.
+fn usage_report(
+  layout : @hid.Layout,
+  kind : @hid.ReportKind,
+  id : Int,
+  object : Map[String, Json],
+) -> Result[Bytes, @hid.Diagnostic] {
+  for key, _ in object {
+    if !["values", "physical", "active"].contains(key) {
+      return Err(values_error(0, "Unknown top-level key: \{key}"))
+    }
+  }
+  let mut wire = match @hid.new_report(layout, kind, id) {
+    Ok(wire) => wire
+    Err(error) => return Err(error)
+  }
+  let values = match usage_list(object, "values") {
+    Ok(entries) => entries
+    Err(error) => return Err(error)
+  }
+  for index, entry in values {
+    let (usage, fields) = match json_usage(entry, index, ["value", "hex"]) {
+      Ok(parsed) => parsed
+      Err(error) => return Err(error)
+    }
+    let value = match (fields.get("value"), fields.get("hex")) {
+      (Some(Number(number, ..)), None) =>
+        match json_integer(number, index) {
+          Ok(value) => @hid.Integer(value)
+          Err(error) => return Err(error)
+        }
+      (None, Some(String(hex))) =>
+        match raw_value(hex) {
+          Ok(value) => value
+          Err(error) => return Err(error)
+        }
+      _ =>
+        return Err(
+          values_error(
+            index, "Value entries need an integer value or a hex string",
+          ),
+        )
+    }
+    wire = match @hid.set_usage_value(layout, kind, wire, usage, value) {
+      Ok(wire) => wire
+      Err(error) => return Err(error)
+    }
+  }
+  let physical = match usage_list(object, "physical") {
+    Ok(entries) => entries
+    Err(error) => return Err(error)
+  }
+  for index, entry in physical {
+    let (usage, fields) = match json_usage(entry, index, ["value"]) {
+      Ok(parsed) => parsed
+      Err(error) => return Err(error)
+    }
+    let quantity = match fields.get("value") {
+      Some(Number(number, ..)) => number
+      _ =>
+        return Err(values_error(index, "Physical entries need a numeric value"))
+    }
+    wire = match @hid.set_physical_value(layout, kind, wire, usage, quantity) {
+      Ok(wire) => wire
+      Err(error) => return Err(error)
+    }
+  }
+  let active = match usage_list(object, "active") {
+    Ok(entries) => entries
+    Err(error) => return Err(error)
+  }
+  let usages : Array[@hid.Usage] = []
+  for index, entry in active {
+    match json_usage(entry, index, []) {
+      Ok((usage, _)) => usages.push(usage)
+      Err(error) => return Err(error)
+    }
+  }
+  @hid.set_usages(layout, kind, wire, usages)
 }
 
 ///|
@@ -170,7 +307,9 @@ fn execute(command : Command) -> Result[(String, Int), @hid.Diagnostic] {
       let result = match name {
         "mouse" => @examples.mouse_descriptor()
         "keyboard" => @examples.keyboard_descriptor()
-        _ => @examples.gamepad_descriptor()
+        "gamepad" => @examples.gamepad_descriptor()
+        "consumer" => @examples.consumer_descriptor()
+        _ => @examples.vendor_descriptor()
       }
       match result {
         Ok(bytes) => Ok((@hid.format_hex(bytes), 0))
@@ -186,11 +325,17 @@ fn execute(command : Command) -> Result[(String, Int), @hid.Diagnostic] {
         Ok(layout) => layout
         Err(error) => return Err(error)
       }
-      let values = match read_values(values_path) {
-        Ok(values) => values
-        Err(error) => return Err(error)
+      let encoded = match read_values(values_path) {
+        Ok(Array(items)) =>
+          match positional_values(items) {
+            Ok(values) => @hid.encode_report(layout, kind, id, values)
+            Err(error) => Err(error)
+          }
+        Ok(Object(object)) => usage_report(layout, kind, id, object)
+        Ok(_) => Err(values_error(0, "Values must be a JSON array or object"))
+        Err(error) => Err(error)
       }
-      match @hid.encode_report(layout, kind, id, values) {
+      match encoded {
         Ok(bytes) => Ok((@hid.format_hex(bytes), 0))
         Err(error) => Err(error)
       }

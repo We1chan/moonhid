@@ -6,7 +6,11 @@ import {
 }
 
 // Values
+pub fn active_usages(Layout, ReportKind, Bytes) -> Result[Array[Usage], Diagnostic]
+
 pub fn array_selector(Field, Usage) -> Result[Int64, Diagnostic]
+
+pub fn clear_usages(Layout, ReportKind, Bytes, Array[Usage]) -> Result[Bytes, Diagnostic]
 
 pub fn compile_descriptor(Bytes) -> Result[Layout, Diagnostic]
 
@@ -32,6 +36,10 @@ pub fn find_fields(Layout, ReportKind, Int, Usage) -> Result[Array[FieldRef], Di
 
 pub fn format_hex(Bytes) -> String
 
+pub fn get_physical_value(Layout, ReportKind, Bytes, Usage) -> Result[Double, Diagnostic]
+
+pub fn get_usage_value(Layout, ReportKind, Bytes, Usage) -> Result[ReportValue, Diagnostic]
+
 pub fn insert_bits(Bytes, Int, Int, Int64, signed? : Bool) -> Result[Bytes, Diagnostic]
 
 pub fn insert_bytes(Bytes, Int, Int, Bytes) -> Result[Bytes, Diagnostic]
@@ -42,9 +50,17 @@ pub fn lint_descriptor(Bytes) -> Result[Array[Lint], Diagnostic]
 
 pub fn lint_to_json(Lint) -> Json
 
+pub fn list_reports(Layout) -> Result[Array[ReportInfo], Diagnostic]
+
+pub fn logical_from_physical(Field, Double) -> Result[Int64, Diagnostic]
+
+pub fn new_report(Layout, ReportKind, Int) -> Result[Bytes, Diagnostic]
+
 pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
 pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
+
+pub fn physical_value(Field, Int64) -> Result[Double, Diagnostic]
 
 pub fn read_field(Layout, ReportKind, Bytes, Int, Int) -> Result[ReportValue, Diagnostic]
 
@@ -55,6 +71,12 @@ pub fn report_length(Layout, ReportKind, Int) -> Result[Int, Diagnostic]
 pub fn report_to_json(DecodedReport) -> Json
 
 pub fn serialize_items(Array[Item]) -> Result[Bytes, Diagnostic]
+
+pub fn set_physical_value(Layout, ReportKind, Bytes, Usage, Double) -> Result[Bytes, Diagnostic]
+
+pub fn set_usage_value(Layout, ReportKind, Bytes, Usage, ReportValue, allow_out_of_range? : Bool) -> Result[Bytes, Diagnostic]
+
+pub fn set_usages(Layout, ReportKind, Bytes, Array[Usage]) -> Result[Bytes, Diagnostic]
 
 pub fn signed_value(Bytes) -> Result[Int64, Diagnostic]
 
@@ -226,6 +248,17 @@ pub(all) struct OpaqueValue {
 pub fn OpaqueValue::equal(Self, Self) -> Bool
 pub fn OpaqueValue::not_equal(Self, Self) -> Bool
 pub fn OpaqueValue::to_repr(Self) -> @debug.Repr
+
+pub(all) struct ReportInfo {
+  kind : ReportKind
+  report_id : Int
+  payload_bits : Int
+  byte_length : Int
+  data_count : Int
+} derive(Eq, @debug.Debug)
+pub fn ReportInfo::equal(Self, Self) -> Bool
+pub fn ReportInfo::not_equal(Self, Self) -> Bool
+pub fn ReportInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ReportKind {
   Input

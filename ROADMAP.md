@@ -23,7 +23,8 @@
 - 仓库新增描述符 lint 核心、JSON v2 `lints` 和 native/Node CLI `lint`，有规则依据及正反例；归入 0.3.0 发布。
 - 仓库 0.4.0 新增三方向报告编码、Integer/Raw、范围与 Null 校验、跨字节写入和零填充。
 - 新增字段 read/write、Variable Usage 查询、Array 选择器、低层位/字节插入。
-- 新增描述符构建器、Item 序列化、三种设备模板与 CLI `encode` / `generate`。
+- 新增描述符构建器、Item 序列化、五种设备模板与 CLI `encode` / `generate`；媒体键与厂商数据模板与 TinyUSB 宏展开逐字节相同，构建器的 Maximum 编码不再触发 `logical_max_sign`。
+- 新增参照 Windows HID 解析库（`hidpi.h`）的 Usage 级接口：报告目录与初始化、按键/按钮置位与列出、按 Usage 读写数值、物理量换算；CLI `encode` 支持按 Usage 描述的值文件，并经 hid-tools 独立对照。
 - 既有模糊语料加入 Item 无损往返与报告往返性质，约定见 [codec](docs/codec.md)。
 - 0.4.0 尚未发布；0.3.0 在线检查器和已发布包尚不包含这些新接口。
 
@@ -35,7 +36,7 @@
 - 增加非字节对齐手柄、带多个 ID 的复合设备、Feature 报告和异常描述符样例。
 - 七份本机真实描述符已公开、通过结构回归和 hid-tools 0.12 独立布局对照。
 - 已有确定性模糊测试与资源上限回归；已加入七份真实描述符及资源上限的可复现性能基准。
-- 后续补完整 Usage 名称数据包、物理量换算与可选自动填充/ID，逐项增加独立语义回归。
+- 后续补完整 Usage 名称数据包、单位制转换与可选自动填充/ID，逐项增加独立语义回归。
 
 ## 设备传输适配阶段
 

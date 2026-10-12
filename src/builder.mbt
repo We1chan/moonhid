@@ -141,9 +141,7 @@ pub fn DescriptorBuilder::logical_range(
       "logical_range", "Logical Maximum is below Logical Minimum",
     )
   }
-  self
-  .short_item(1, 1, minimum, signed=true)
-  .short_item(1, 2, maximum, signed=minimum < 0)
+  self.short_item(1, 1, minimum, signed=true).maximum_item(2, minimum, maximum)
 }
 
 ///|
@@ -152,9 +150,31 @@ pub fn DescriptorBuilder::physical_range(
   minimum : Int64,
   maximum : Int64,
 ) -> DescriptorBuilder {
-  self
-  .short_item(1, 3, minimum, signed=true)
-  .short_item(1, 4, maximum, signed=minimum < 0)
+  self.short_item(1, 3, minimum, signed=true).maximum_item(4, minimum, maximum)
+}
+
+///|
+/// With a non-negative Minimum, Linux reads Maximum as unsigned while other
+/// parsers may read it as signed. Below 2^31 a width where both readings
+/// agree is chosen (255 becomes 26 ff 00, see lint logical_max_sign); larger
+/// unsigned values need all four bytes.
+fn DescriptorBuilder::maximum_item(
+  self : DescriptorBuilder,
+  tag : Int,
+  minimum : Int64,
+  maximum : Int64,
+) -> DescriptorBuilder {
+  if minimum >= 0L && maximum < 0L {
+    return self.reject(
+      "item_value", "A negative Maximum needs a negative Minimum",
+    )
+  }
+  self.short_item(
+    1,
+    tag,
+    maximum,
+    signed=minimum < 0L || maximum <= 2147483647L,
+  )
 }
 
 ///|
