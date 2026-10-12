@@ -1,6 +1,6 @@
 # 报告编解码、字段读写与描述符生成
 
-以下接口来自仓库 0.4.0，尚未发布到 mooncakes.io。核心不依赖操作系统 HID API，
+以下接口从 0.4.0 提供，安装方式见 [发布说明](release-0.4.0.md)。核心不依赖操作系统 HID API，
 可在 wasm、wasm-gc、JS、native 使用。JSON schema 保持 v2。
 
 接口分三层，可以混用：
