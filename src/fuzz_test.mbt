@@ -147,6 +147,34 @@ fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int raise {
       Err(error) => fail("encode decoded values: \{error.code}")
     }
     assert_eq(decode(layout, kind, encoded), report)
+    // new_report leaves each Variable at its Null value or zero.
+    let idle = match @moonhid.new_report(layout, kind, id) {
+      Ok(idle) => idle
+      Err(error) => fail("new_report: \{error.code}")
+    }
+    assert_eq(idle.length(), length)
+    for value in decode(layout, kind, idle).values {
+      if !value.is_array {
+        assert_true(value.is_null || value.value == 0L)
+      }
+    }
+    // Every active Usage is declared by a Data field of the same report.
+    let active = match @moonhid.active_usages(layout, kind, wire) {
+      Ok(active) => active
+      Err(error) => fail("active_usages: \{error.code}")
+    }
+    for usage in active {
+      assert_true(
+        layout.fields.any(f => {
+          f.kind == kind &&
+          f.report_id == id &&
+          (f.flags & 1) == 0 &&
+          f.usage_spans.any(s => {
+            s.page == usage.page && s.min <= usage.id && usage.id <= s.max
+          })
+        }),
+      )
+    }
     for value in report.values {
       assert_true(
         value.field_index >= 0 && value.field_index < layout.fields.length(),

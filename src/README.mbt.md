@@ -2,24 +2,27 @@
 
 [![CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml/badge.svg)](https://github.com/We1chan/moonhid/actions/workflows/ci.yml)
 
-面向 MoonBit 的通用 HID 报告工具库：描述符生成与解析、字段布局、报告编解码、字段读写和描述符检查。
+面向 MoonBit 的通用 HID 报告工具库：描述符生成与解析、字段布局、报告编解码、
+按 Usage 读写报告、物理量换算和描述符检查。
 
 HID 描述符告诉程序一段设备数据中的哪些位表示按键、鼠标位移或手柄摇杆。
 MoonHID 将这些二进制定义转换为可复用的布局，也能从声明生成描述符、从字段值编码报告，
-或在已有报告中修改单个字段。核心为纯 MoonBit，可用于设备工具、嵌入式固件回归、
-自定义协议实现和浏览器分析器。完整功能范围与各阶段验收见 [功能范围](../docs/features.md)。
+或直接按“按下 A 键”“X 轴设为 -1”“Hat 指向 90 度”这样的 Usage 语义读写报告。
+核心为纯 MoonBit，可用于设备工具、嵌入式固件回归、自定义协议实现和浏览器分析器。
+完整功能范围与各阶段验收见 [功能范围](../docs/features.md)。
 
 ## 预期使用场景
 
-1. 自制键盘：生成按键数组和 LED 描述符，编码 Output 报告，按 LED Usage 查询并修改位值。
-2. 鼠标与手柄：生成并解释按钮、相对位移、摇杆轴和带 Report ID 的报告，制作输入回归数据。
-3. 自定义设备协议：读写厂商 Usage，编码 Feature 配置和超过 32 位的原始数据字段。
+1. 自制键盘：生成按键数组和 LED 描述符，按 Usage 按下/释放按键得到 Input 报告，读取主机发来的 LED Output。
+2. 鼠标与手柄：生成并解释按钮、相对位移、摇杆轴、Hat 和带 Report ID 的报告，按物理量读写角度等数值。
+3. 媒体键与自定义设备：用 Consumer Control 模板发送音量、播放键；读写厂商 Usage、Feature 配置和超过 32 位的原始数据。
 4. 固件与设备工具：在 CI 检查描述符、验证报告往返，在浏览器查看字段布局和真实设备输入。
 
 ## 当前状态
 
 仓库版本为 **0.4.0，尚未发布到 mooncakes.io**：新增报告编码、描述符构建器、原始 item 序列化、
-字段读写与 Usage 查询，以及 CLI `encode` / `generate`。这些新接口请从本仓库源码运行；
+字段读写，参照 Windows HID 解析库提供的 Usage 级接口（报告初始化、按键/按钮置位、按 Usage 读写、
+物理量换算），媒体键与厂商数据模板，以及 CLI `encode` / `generate`。这些新接口请从本仓库源码运行；
 安装已发布版本尚不包含它们，使用约定见 [编解码与生成](../docs/codec.md)。
 本次四后端与 hid-tools 独立对照结果见 [0.4.0 验收记录](../docs/codec-validation.md)。
 
@@ -33,26 +36,39 @@ MoonHID 将这些二进制定义转换为可复用的布局，也能从声明生
 
 ## 与成熟 HID 库的功能对比
 
-下表以 2026-10-12 查阅的公开接口为依据；“调用方处理”表示库传递原始报告，字段解释需要额外实现。
+HID 生态的成熟库分三类：根据描述符解释与构造报告的解析库（Windows `hidpi.h`、hid-tools），
+在固件中生成描述符和固定报告结构的设备端库（TinyUSB、Rust usbd-hid、Microsoft Waratah），
+以及只收发原始字节的通信库（HIDAPI、node-hid）。MoonHID 属于第一类，同时提供第二类的描述符生成，
+不包含第三类的设备通信。
+
+下表以 2026-10-12 查阅的公开接口为依据；“—”表示该库不提供，需要调用方自行实现。
 MoonHID 的功能状态对应仓库 0.4.0 源码。
 
-| 能力 | HIDAPI（C） | node-hid（JS） | hid-tools（Python） | Waratah（C#） | MoonHID（MoonBit） |
-| --- | --- | --- | --- | --- | --- |
-| 主要用途 | 跨平台设备通信 | Node.js 设备通信 | Linux HID 分析、录制与重放 | 固件描述符创作 | 通用报告模型、编解码与生成 |
-| 二进制描述符解析、位布局 | 调用方处理；可获取描述符 | 调用方处理 | 支持 | 从声明源编译模型 | 支持，明确协议子集 |
-| 描述符生成 | 调用方处理 | 调用方处理 | 人类可读声明转字节 | 声明编译、优化、自动填充 | 构建器、三种设备模板、原始 item 序列化 |
-| 报告编码与解码 | 原始字节 I/O | 原始字节 I/O | `create_report`、字段提取/填入 | 可生成 C++ 报告结构 | Input / Output / Feature，整数与原始字节 |
-| 按字段读写 | 调用方处理 | 调用方处理 | `get_values` / `fill_values` | 通过生成结构访问 | `read_field` / `write_field`，保留相邻位 |
-| Usage 查询与数组映射 | 设备 Usage 信息 | 设备 Usage 信息 | Usage 名称及数组映射 | 公共 Usage 数据库 | 数字 Usage 查询、Array 选择器；网页补充常见名称 |
-| 实际设备传输 | 枚举、Input / Output / Feature | 枚举、Input / Output / Feature | Linux hidraw / UHID | 不提供传输 | 可选 WebHID Input；核心离线处理 |
-| 运行形态 | 操作系统原生库 | Node.js 与原生绑定 | Python / Linux 工具 | .NET 工具与库 | wasm / wasm-gc / JS / native |
+| 能力 | Windows HID 解析库（C，`hidpi.h`） | hid-tools（Python） | TinyUSB（C） | usbd-hid（Rust） | HIDAPI / node-hid | MoonHID（MoonBit） |
+| --- | --- | --- | --- | --- | --- | --- |
+| 主要用途 | Windows 驱动与应用解析报告 | Linux HID 分析、录制与重放 | 嵌入式 USB 设备栈 | 嵌入式 USB HID 设备 | 跨平台设备通信 | 通用报告模型、编解码与生成 |
+| 描述符解析、位布局 | 预解析数据、按钮/数值能力表、集合节点 | 支持 | — | — | 可读取描述符，不解析 | `compile_descriptor`，Collection 树与 Unit/Physical 元数据 |
+| 描述符生成 | — | 人类可读声明转字节 | `TUD_HID_REPORT_DESC_*` 宏与 10 种模板 | `gen_hid_descriptor` 宏与预定义报告 | — | 构建器、五种模板（含媒体键、厂商数据）、原始 item 序列化 |
+| 报告初始化 | `HidP_InitializeReportForID`：Null 值或零 | — | 固定报告结构体 | 固定报告结构体 | — | `new_report`：Null 值、Array 空值或零 |
+| 按 Usage 置位按钮与按键数组 | `HidP_SetUsages` / `UnsetUsages` / `GetUsagesEx` | 按 Usage 名称填入数组 | 调用方填写键码，如 `tud_hid_keyboard_report` | 调用方填写 `KeyboardReport` 等字段 | — | `set_usages` / `clear_usages` / `active_usages` |
+| 按 Usage 读写数值 | `HidP_GetUsageValue` / `SetUsageValue` | 按字段 `get_values` / `fill_values` | 结构体字段 | 结构体字段 | — | `get_usage_value` / `set_usage_value`；按字段 `read_field` / `write_field` |
+| 物理量换算 | `HidP_GetScaledUsageValue` / `SetScaledUsageValue` | — | — | — | — | `physical_value` / `logical_from_physical` 等，含 Unit Exponent |
+| 完整报告编解码 | `HidP_GetData` / `SetData` | `create_report`、字段提取 | 发送固定结构体 | `AsInputReport` 序列化 | 原始字节 I/O | `encode_report` / `decode_report`，三方向、多 ID、超宽原始值 |
+| 实际设备传输 | 配合 `HidD_*` 与文件 I/O | Linux hidraw / UHID | 设备端 USB 栈 | 配合 usb-device | 枚举、Input / Output / Feature | 可选 WebHID Input；核心离线处理 |
+| 运行形态 | Windows 系统库 | Python / Linux 工具 | MCU 固件 | 嵌入式 Rust | 原生库 / Node.js 绑定 | wasm / wasm-gc / JS / native |
 
-依据：[HIDAPI 官方头文件](https://github.com/libusb/hidapi/blob/master/hidapi/hidapi.h)、
-[node-hid 官方 API](https://github.com/node-hid/node-hid#complete-async-api)、
+依据：[Windows hidpi.h 参考](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/hidpi/)、
 [hid-tools 报告与字段实现](https://github.com/bentiss/hid-tools/blob/master/hidtools/hid.py)、
-[Microsoft Waratah 功能说明](https://github.com/microsoft/hidtools#waratah)。
+[TinyUSB hid_device.h](https://github.com/hathach/tinyusb/blob/master/src/class/hid/hid_device.h)、
+[usbd-hid descriptor 模块](https://docs.rs/usbd-hid/latest/usbd_hid/descriptor/index.html)、
+[HIDAPI 官方头文件](https://github.com/libusb/hidapi/blob/master/hidapi/hidapi.h)、
+[node-hid 官方 API](https://github.com/node-hid/node-hid#complete-async-api)。
 hid-tools 的 Python 内部 API 不保证稳定，见 [官方说明](https://github.com/bentiss/hid-tools#hidtools-python-module)。
-MoonHID 可与设备通信适配层组合；原生枚举和 Output/Feature 传输属于后续阶段，详见功能范围。
+各接口与 MoonHID 的逐一对应见 [编解码文档](../docs/codec.md)。
+
+与这些库相比，MoonHID 目前**不提供**：原生设备枚举与 Output/Feature 收发（HIDAPI、node-hid），
+完整 Usage 名称数据库（hid-tools、[Waratah](https://github.com/microsoft/hidtools#waratah)），
+以及 Waratah 的描述符自动填充与优化。这些项目及验收条件见 [功能范围](../docs/features.md)。
 
 ## 安装
 
@@ -98,6 +114,7 @@ moon run src/cmd/moonhid --target js -- inspect descriptor.hex
 moon run src/cmd/moonhid --target native -- generate keyboard
 moon run src/cmd/moonhid --target native -- encode --kind output --id 0 examples/codec/keyboard.hex examples/codec/keyboard-led-values.json
 moon run src/cmd/moonhid --target js -- encode --kind feature --id 7 examples/codec/vendor-feature.hex examples/codec/vendor-feature-values.json
+moon run src/cmd/moonhid --target native -- encode --kind input --id 0 examples/codec/keyboard.hex examples/codec/keyboard-usages.json
 ```
 
 `inspect` 输出完整描述符 JSON v2；`decode` 输出带 `schema_version: 2` 的
@@ -111,9 +128,11 @@ moon run src/cmd/moonhid --target js -- encode --kind feature --id 7 examples/co
 `inspect` 的 JSON v2 新增 `lints` 数组，有 Warning 仍成功退出 0。
 这些功能从 0.3.0 提供；使用 0.2.0 时需要升级。
 
-仓库 0.4.0 的 `generate` 从 MoonBit 构建器生成 mouse / keyboard / gamepad 描述符，stdout 为十六进制。
-`encode` 读取按字段、元素顺序排列的 JSON 数组，例如 `[1, 1, 0, 0, 0]` 编码键盘 LED Output 为 `03`；
-超宽字段用 `{"hex": "ff ff ff ff 01"}`。`--id 0` 用于不带 ID 的报告。
+仓库 0.4.0 的 `generate` 从 MoonBit 构建器生成 mouse / keyboard / gamepad / consumer / vendor 描述符，
+stdout 为十六进制。`encode` 接受两种值文件：按字段、元素顺序排列的 JSON 数组，例如 `[1, 1, 0, 0, 0]`
+编码键盘 LED Output 为 `03`，超宽字段用 `{"hex": "ff ff ff ff 01"}`；或按 Usage 描述的 JSON 对象，
+例如 `{"active": [{"page": 7, "id": 225}, {"page": 7, "id": 4}]}` 表示按下 Left Shift 与 A，
+未提及的字段保持空闲值。`--id 0` 用于不带 ID 的报告。
 成功时 stdout 只含生成的十六进制；错误码沿用 1/2。示例与完整格式见 [codec 文档](../docs/codec.md)。
 
 固件仓库的 CI 可以构建 native 可执行文件，检查导出的描述符，并根据退出码判断是否需要审阅：
@@ -284,6 +303,109 @@ test "README: generate encode and edit keyboard LEDs" {
 }
 ```
 
+不必知道字段位置：从空闲报告开始，按 Usage 按下、释放按键，按物理量写入 Hat 角度：
+
+```mbt check
+///|
+test "README: press keys and set a hat angle by Usage" {
+  let keyboard = match
+    @moonhid.DescriptorBuilder::new()
+    .usage_page(1)
+    .usage(6)
+    .collection(1)
+    .usage_page(7)
+    .usage_range(0xe0, 0xe7)
+    .logical_range(0L, 1L)
+    .report_size(1)
+    .report_count(8)
+    .input(2)
+    .usage_range(0, 0x65)
+    .logical_range(0L, 0x65L)
+    .report_size(8)
+    .report_count(6)
+    .input(0)
+    .end_collection()
+    .build() {
+    Ok(bytes) => @moonhid.compile_descriptor(bytes)
+    Err(error) => Err(error)
+  }
+  let keyboard = match keyboard {
+    Ok(layout) => layout
+    Err(_) => fail("keyboard rejected")
+  }
+  let idle = match @moonhid.new_report(keyboard, @moonhid.Input, 0) {
+    Ok(bytes) => bytes
+    Err(_) => fail("no Input report")
+  }
+  let shift_a = match
+    @moonhid.set_usages(keyboard, @moonhid.Input, idle, [
+      { page: 7, id: 0xe1, },
+      { page: 7, id: 4, },
+    ]) {
+    Ok(bytes) => bytes
+    Err(_) => fail("keys rejected")
+  }
+  assert_eq(shift_a, b"\x02\x04\x00\x00\x00\x00\x00")
+  assert_eq(
+    @moonhid.active_usages(keyboard, @moonhid.Input, shift_a),
+    Ok([{ page: 7, id: 0xe1, }, { page: 7, id: 4, }]),
+  )
+  assert_eq(
+    @moonhid.clear_usages(keyboard, @moonhid.Input, shift_a, [
+      { page: 7, id: 4, },
+    ]),
+    Ok(b"\x02\x00\x00\x00\x00\x00\x00"),
+  )
+  // Hat switch: 0..7 maps to 0..315 degrees, with a Null State for "centred".
+  let hat = match
+    @moonhid.DescriptorBuilder::new()
+    .usage_page(1)
+    .usage(5)
+    .collection(1)
+    .usage(0x39)
+    .logical_range(0L, 7L)
+    .physical_range(0L, 315L)
+    .unit(0x14)
+    .report_size(4)
+    .report_count(1)
+    .input(0x42)
+    .input(1)
+    .end_collection()
+    .build() {
+    Ok(bytes) => @moonhid.compile_descriptor(bytes)
+    Err(error) => Err(error)
+  }
+  let hat = match hat {
+    Ok(layout) => layout
+    Err(_) => fail("hat rejected")
+  }
+  let centred = match @moonhid.new_report(hat, @moonhid.Input, 0) {
+    Ok(bytes) => bytes
+    Err(_) => fail("no Input report")
+  }
+  assert_eq(centred, b"\x0f")
+  let east = match
+    @moonhid.set_physical_value(
+      hat,
+      @moonhid.Input,
+      centred,
+      { page: 1, id: 0x39, },
+      90.0,
+    ) {
+    Ok(bytes) => bytes
+    Err(_) => fail("angle rejected")
+  }
+  assert_eq(east, b"\x02")
+  assert_eq(
+    @moonhid.get_physical_value(hat, @moonhid.Input, east, {
+      page: 1,
+      id: 0x39,
+    }),
+    Ok(90.0),
+  )
+}
+```
+
 主要接口：
 
 | 接口 | 用途 |
@@ -307,6 +429,12 @@ test "README: generate encode and edit keyboard LEDs" {
 | `encode_report` | 根据布局编码 `Integer` / `Raw` 值，校验数量、类型、范围，自动写 ID 与零填充 |
 | `read_field` / `write_field` | 按字段和元素索引读写单个值，包含报告长度与归属校验 |
 | `find_fields` / `array_selector` | 查询 Variable Usage 的全部字段引用，或把 Array Usage 转为逻辑选择器 |
+| `list_reports` | 列出每个报告的方向、ID、字节长度与编码所需值数量 |
+| `new_report` | 生成空闲报告：写入 ID，Null State 字段取 Null 值，Array 取空值，其余为零 |
+| `set_usages` / `clear_usages` / `active_usages` | 按 Usage 按下、释放、列出按钮与按键；自动处理按键数组的空位 |
+| `get_usage_value` / `set_usage_value` | 按 Usage 读写单个数值控件，例如摇杆轴 |
+| `physical_value` / `logical_from_physical` | Logical 值与物理量互换，应用 Physical 范围和 Unit Exponent |
+| `get_physical_value` / `set_physical_value` | 按 Usage 读写物理量，例如 Hat 角度 |
 
 完整类型签名见 [pkg.generated.mbti](pkg.generated.mbti)。
 
@@ -334,14 +462,18 @@ test "README: generate encode and edit keyboard LEDs" {
   新报告的 Constant 和未用尾位为零；`write_field` 保留它们及所有相邻位。
 - 构建器为有状态、可链式调用的对象，第一项参数错误保留至 `build()`。
   调用方显式定义 Report ID、填充与集合结束；当前不自动分配 ID、补齐字节、推断位宽或优化全局状态。
-  原始序列化可保存未知项，生成可编译描述符须通过 `build()`。
+  Minimum ≥ 0 时 Maximum 采用有符号、无符号读法一致的最短宽度（255 生成 `26 ff 00`），
+  只有 2^31 及以上的值使用 4 字节。原始序列化可保存未知项，生成可编译描述符须通过 `build()`。
 - String / Designator 索引和区间保存为字段与 Collection 元数据，随后清空本地状态；
   Delimiter 按 Linux 的公共 Usage + 第一个集合规则解码，后续集合保存在 `alternate_usages`。
   嵌套、无开启的关闭和未闭合返回 `delimiter`；索引范围错误返回 `local_range`，
   每类索引最多 1024 段（`local_limit`），优选与备选 Usage 合计最多 1024 段（`usage_limit`）。
   长项仅支持原始分词，布局编译会拒绝；保留字也明确报错；Buffered Bytes 返回 `buffered_bytes`。Physical 范围和 Unit 全局项允许存在，
-  解码返回原始整数，不进行物理单位换算。核心保留数字 Usage；页面只补充常见 Usage 名称，
-  不是完整 HID Usage Tables 数据库。
+  解码返回原始整数；需要时用 `physical_value` 等接口按 Physical 范围与 Unit Exponent 换算为双精度物理量。
+  核心保留数字 Usage；页面只补充常见 Usage 名称，不是完整 HID Usage Tables 数据库。
+- Usage 级接口把 Logical 0..1 的 Data Variable 元素视为开关；Array 元素在范围外、超出 Usage 列表或选中
+  Usage ID 0 时视为空。多个元素共用同一 Usage 时返回 `ambiguous_usage`，Array 已满返回 `array_full`；
+  完整规则见 [编解码文档](../docs/codec.md#报告初始化与-usage-级访问)。
 - 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，整数每值 1..32 位，超过 32 位的 Data Variable 字段按原始字节解码，
   Constant 字段也允许超宽；Data Array 位宽仍限 1..32。
   每报告最多 65536 位，字段元素数量由报告总位数约束（最多 65536 个值），Usage 最多 1024 个区间，单区间可覆盖同一 page 的全部 65536 个 ID，
@@ -401,7 +533,8 @@ moon fmt --check
 ```
 
 CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
-Physical/Unit、完整 uint32 和错误路径。CLI 进程回归额外验证三种模板的生成、编码与解码、LED Output 和超宽 Feature。
+Physical/Unit、完整 uint32 和错误路径。CLI 进程回归额外验证五种模板的生成、编码与解码、Usage 形式的值文件、LED Output 和超宽 Feature；
+hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码。
 独立 hid-tools 对照与 headless Chrome DOM 检查也纳入 JS CI，验证真实描述符布局与界面。
 四后端还运行固定种子的随机字节、结构化有效描述符与真实描述符突变；
 语料、资源边界及解码性质见 [模糊测试验收](../docs/fuzz-validation.md)。

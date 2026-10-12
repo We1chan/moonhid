@@ -87,3 +87,51 @@ pub fn gamepad_descriptor() -> Result[Bytes, @hid.Diagnostic] {
   .end_collection()
   .build()
 }
+
+///|
+/// Consumer Control (media keys): one 16-bit Array over Usages 0..0x3FF.
+/// Same bytes as TinyUSB TUD_HID_REPORT_DESC_CONSUMER without a Report ID.
+pub fn consumer_descriptor() -> Result[Bytes, @hid.Diagnostic] {
+  @hid.DescriptorBuilder::new()
+  .usage_page(0x0c)
+  .usage(1)
+  .collection(1)
+  .logical_range(0L, 0x3ffL)
+  .usage_range(0, 0x3ff)
+  .report_count(1)
+  .report_size(16)
+  .input(0)
+  .end_collection()
+  .build()
+}
+
+///|
+/// Vendor-defined raw Input and Output of report_bytes bytes each (1..8192).
+/// Same bytes as TinyUSB TUD_HID_REPORT_DESC_GENERIC_INOUT(report_bytes).
+pub fn vendor_descriptor(
+  report_bytes? : Int = 64,
+) -> Result[Bytes, @hid.Diagnostic] {
+  if report_bytes < 1 || report_bytes > 8192 {
+    return Err({
+      offset: 0,
+      code: "report_count",
+      message: "Vendor reports must be 1..8192 bytes",
+    })
+  }
+  @hid.DescriptorBuilder::new()
+  .usage_page(0xff00)
+  .usage(1)
+  .collection(1)
+  .usage(2)
+  .logical_range(0L, 255L)
+  .report_size(8)
+  .report_count(report_bytes)
+  .input(2)
+  .usage(3)
+  .logical_range(0L, 255L)
+  .report_size(8)
+  .report_count(report_bytes)
+  .output(2)
+  .end_collection()
+  .build()
+}

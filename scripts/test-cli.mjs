@@ -35,7 +35,12 @@ try {
     const name = (await readdir(directory)).find(name => target === 'js' ? name.endsWith('.js') : name.endsWith('.exe'));
     assert.ok(name, `CLI output missing for ${target}`);
     const path = join(directory, name);
-    const run = args => spawnSync(target === 'js' ? process.execPath : path, target === 'js' ? [path, ...args] : args, { cwd: scratch, encoding: 'utf8' });
+    // Native stdout uses CRLF on Windows; compare text with LF line endings.
+    const lf = text => (text ?? '').replace(/\r\n/g, '\n');
+    const run = args => {
+      const result = spawnSync(target === 'js' ? process.execPath : path, target === 'js' ? [path, ...args] : args, { cwd: scratch, encoding: 'utf8' });
+      return { ...result, stdout: lf(result.stdout), stderr: lf(result.stderr) };
+    };
     const inspect = run(['inspect', descriptor]);
     assert.equal(inspect.status, 0, inspect.stderr);
     assert.equal(inspect.stderr, '');
@@ -58,6 +63,8 @@ try {
       ['mouse', 0, [1, 0, 1, -1, 2, -2], '05 ff 02 fe'],
       ['keyboard', 0, [0, 1, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0], '02 00 04 06 00 00 00 00'],
       ['gamepad', 7, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -32768, 32767], '07 01 08 00 80 ff 7f'],
+      ['consumer', 0, [0xe9], 'e9 00'],
+      ['vendor', 0, Array.from({ length: 64 }, (_, i) => i), Array.from({ length: 64 }, (_, i) => i).map(i => i.toString(16).padStart(2, '0')).join(' ')],
     ]) {
       const generated = run(['generate', template]);
       assert.equal(generated.status, 0, generated.stderr);
@@ -78,6 +85,41 @@ try {
         assert.equal(leds.stdout, '03\n');
       }
     }
+    // Usage form: start from new_report, then set values and on/off Usages.
+    const usage = (page, id, extra = {}) => ({ page, id, ...extra });
+    for (const [template, kind, id, edits, hex] of [
+      ['keyboard', 'input', 0, { active: [usage(7, 0xe1), usage(7, 4), usage(7, 6)] }, '02 00 04 06 00 00 00 00'],
+      ['keyboard', 'output', 0, { active: [usage(8, 1), usage(8, 2)] }, '03'],
+      ['keyboard', 'input', 0, {}, '00 00 00 00 00 00 00 00'],
+      ['gamepad', 'input', 7, { values: [usage(1, 0x30, { value: -32768 }), usage(1, 0x31, { value: 32767 })], active: [usage(9, 1), usage(9, 12)] }, '07 01 08 00 80 ff 7f'],
+      ['mouse', 'input', 0, { values: [usage(1, 0x30, { value: -1 }), usage(1, 0x31, { value: 2 }), usage(1, 0x38, { value: -2 })], active: [usage(9, 1), usage(9, 3)] }, '05 ff 02 fe'],
+      ['mouse', 'input', 0, { physical: [usage(1, 0x30, { value: -1.4 })] }, '00 ff 00 00'],
+      ['consumer', 'input', 0, { active: [usage(12, 0xcd)] }, 'cd 00'],
+    ]) {
+      await writeFile(generatedPath, run(['generate', template]).stdout);
+      await writeFile(valuesPath, JSON.stringify(edits));
+      const encoded = run(['encode', '--kind', kind, '--id', String(id), generatedPath, valuesPath]);
+      assert.equal(encoded.status, 0, encoded.stderr);
+      assert.equal(encoded.stdout, `${hex}\n`);
+    }
+    await writeFile(generatedPath, run(['generate', 'keyboard']).stdout);
+    for (const [edits, code] of [
+      ['{"extra":[]}', 'values_json'],
+      ['{"active":{}}', 'values_json'],
+      ['{"active":[{"page":7,"id":4,"x":1}]}', 'values_json'],
+      ['{"active":[{"page":7,"id":70000}]}', 'values_json'],
+      ['{"active":[{"page":7,"id":4.5}]}', 'values_json'],
+      ['{"active":[{"page":7,"id":300}]}', 'unknown_usage'],
+      ['{"values":[{"page":7,"id":4,"value":1}]}', 'unknown_usage'],
+      ['{"values":[{"page":7,"id":225}]}', 'values_json'],
+      [JSON.stringify({ active: [4, 5, 6, 7, 8, 9, 10].map(i => usage(7, i)) }), 'array_full'],
+    ]) {
+      await writeFile(valuesPath, edits);
+      const error = run(['encode', '--kind', 'input', '--id', '0', generatedPath, valuesPath]);
+      assert.equal(error.status, 1, error.stderr);
+      assert.equal(error.stdout, '');
+      assert.match(error.stderr, new RegExp(`^${code} @`));
+    }
     await writeFile(generatedPath, '85 07 75 03 95 01 b1 01 75 21 b1 02');
     await writeFile(valuesPath, '[{"hex":"ff ff ff ff 01"}]');
     const raw = run(['encode', '--kind', 'feature', '--id', '7', generatedPath, valuesPath]);
@@ -88,7 +130,7 @@ try {
     assert.equal(badRaw.status, 1);
     assert.match(badRaw.stderr, /value_range @/);
     assert.equal(badRaw.stdout, '');
-    for (const [json, code] of [['{}', 'values_json'], ['[1.5]', 'values_json'], ['[true]', 'values_json'], ['[', 'values_json'], ['[]', 'value_count'], ['[128]', 'value_range'], ['[-128]', 'logical_range'], ['[4294967296]', 'value_range'], ['[{"hex":"00","extra":1}]', 'values_json'], ['[{"hex":"zz"}]', 'invalid_hex']]) {
+    for (const [json, code] of [['true', 'values_json'], ['[1.5]', 'values_json'], ['[true]', 'values_json'], ['[', 'values_json'], ['[]', 'value_count'], ['[128]', 'value_range'], ['[-128]', 'logical_range'], ['[4294967296]', 'value_range'], ['[{"hex":"00","extra":1}]', 'values_json'], ['[{"hex":"zz"}]', 'invalid_hex']]) {
       await writeFile(valuesPath, json);
       const error = run(['encode', '--kind', 'input', '--id', '0', descriptor, valuesPath]);
       assert.equal(error.status, 1, error.stderr);
@@ -143,8 +185,8 @@ try {
     assert.equal(help.status, 0);
     assert.match(help.stdout, /moonhid lint <descriptor\.hex>/);
     assert.match(help.stdout, /moonhid encode --kind/);
-    assert.match(help.stdout, /moonhid generate mouse/);
-    console.log(`CLI ${target}: inspect/decode/lint/encode/generate, Unicode paths, raw Feature and exit codes 0/1/2/3 passed.`);
+    assert.match(help.stdout, /moonhid generate mouse\|keyboard\|gamepad\|consumer\|vendor/);
+    console.log(`CLI ${target}: inspect/decode/lint/encode (positional and Usage form)/generate (five templates), Unicode paths, raw Feature and exit codes 0/1/2/3 passed.`);
   }
 } finally {
   await rm(scratch, { recursive: true, force: true });

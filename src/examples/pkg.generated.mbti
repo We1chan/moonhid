@@ -8,6 +8,8 @@ import {
 // Values
 pub fn all() -> Array[Fixture]
 
+pub fn consumer_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
+
 pub fn gamepad() -> Fixture
 
 pub fn gamepad_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
@@ -19,6 +21,8 @@ pub fn keyboard_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
 pub fn mouse() -> Fixture
 
 pub fn mouse_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
+
+pub fn vendor_descriptor(report_bytes? : Int) -> Result[Bytes, @moonhid.Diagnostic]
 
 // Errors
 
