@@ -46,9 +46,65 @@ try {
     assert.equal(decoded.status, 0, decoded.stderr);
     assert.equal(decoded.stderr, '');
     assert.equal(JSON.parse(decoded.stdout).decoded.values[0].value, -1);
+    const valuesPath = join(scratch, '编码值 with spaces.json');
+    await writeFile(valuesPath, '[-1]');
+    const encoded = run(['encode', '--kind', 'input', '--id', '0', descriptor, valuesPath]);
+    assert.equal(encoded.status, 0, encoded.stderr);
+    assert.equal(encoded.stdout, 'ff\n');
+    assert.equal(encoded.stderr, '');
+    const generatedPath = join(scratch, 'generated.hex');
+    const generatedWire = join(scratch, 'generated-report.hex');
+    for (const [template, id, values, hex] of [
+      ['mouse', 0, [1, 0, 1, -1, 2, -2], '05 ff 02 fe'],
+      ['keyboard', 0, [0, 1, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0], '02 00 04 06 00 00 00 00'],
+      ['gamepad', 7, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -32768, 32767], '07 01 08 00 80 ff 7f'],
+    ]) {
+      const generated = run(['generate', template]);
+      assert.equal(generated.status, 0, generated.stderr);
+      assert.equal(generated.stderr, '');
+      await writeFile(generatedPath, generated.stdout);
+      await writeFile(valuesPath, JSON.stringify(values));
+      const encoded = run(['encode', '--kind', 'input', '--id', String(id), generatedPath, valuesPath]);
+      assert.equal(encoded.status, 0, encoded.stderr);
+      assert.equal(encoded.stdout, `${hex}\n`);
+      await writeFile(generatedWire, encoded.stdout);
+      const roundtrip = run(['decode', '--kind', 'input', generatedPath, generatedWire]);
+      assert.equal(roundtrip.status, 0, roundtrip.stderr);
+      assert.deepEqual(JSON.parse(roundtrip.stdout).decoded.values.map(v => v.value), values);
+      if (template === 'keyboard') {
+        await writeFile(valuesPath, '[1,1,0,0,0]');
+        const leds = run(['encode', '--kind', 'output', '--id', '0', generatedPath, valuesPath]);
+        assert.equal(leds.status, 0, leds.stderr);
+        assert.equal(leds.stdout, '03\n');
+      }
+    }
+    await writeFile(generatedPath, '85 07 75 03 95 01 b1 01 75 21 b1 02');
+    await writeFile(valuesPath, '[{"hex":"ff ff ff ff 01"}]');
+    const raw = run(['encode', '--kind', 'feature', '--id', '7', generatedPath, valuesPath]);
+    assert.equal(raw.status, 0, raw.stderr);
+    assert.equal(raw.stdout, '07 f8 ff ff ff 0f\n');
+    await writeFile(valuesPath, '[{"hex":"ff ff ff ff 02"}]');
+    const badRaw = run(['encode', '--kind', 'feature', '--id', '7', generatedPath, valuesPath]);
+    assert.equal(badRaw.status, 1);
+    assert.match(badRaw.stderr, /value_range @/);
+    assert.equal(badRaw.stdout, '');
+    for (const [json, code] of [['{}', 'values_json'], ['[1.5]', 'values_json'], ['[true]', 'values_json'], ['[', 'values_json'], ['[]', 'value_count'], ['[128]', 'value_range'], ['[-128]', 'logical_range'], ['[4294967296]', 'value_range'], ['[{"hex":"00","extra":1}]', 'values_json'], ['[{"hex":"zz"}]', 'invalid_hex']]) {
+      await writeFile(valuesPath, json);
+      const error = run(['encode', '--kind', 'input', '--id', '0', descriptor, valuesPath]);
+      assert.equal(error.status, 1, error.stderr);
+      assert.equal(error.stdout, '');
+      assert.match(error.stderr, new RegExp(`^${code} @`));
+    }
+    await writeFile(valuesPath, '[-1]');
     for (const [args, status, message] of [
       [[], 2, /arguments @0/],
       [['decode', '--kind', 'invalid', descriptor, wire], 2, /report_kind @0/],
+      [['generate', 'invalid'], 2, /template @0/],
+      [['encode', '--kind', 'invalid', '--id', '0', descriptor, valuesPath], 2, /report_kind @0/],
+      [['encode', '--kind', 'input', '--id', '256', descriptor, valuesPath], 2, /report_id @0/],
+      [['encode', '--kind', 'input', '--id', 'abc', descriptor, valuesPath], 2, /report_id @0/],
+      [['encode', '--kind', 'input', '--id', '1', descriptor, valuesPath], 1, /unknown_report @0/],
+      [['encode', '--kind', 'input', '--id', '0', descriptor, join(scratch, 'missing.json')], 1, /file_read @0/],
       [['inspect', bad], 1, /invalid_hex @3/],
       [['inspect', join(scratch, 'missing.hex')], 1, /file_read @0/],
       [['decode', '--kind', 'input', descriptor, length], 1, /report_length @2/],
@@ -86,7 +142,9 @@ try {
     const help = run(['--help']);
     assert.equal(help.status, 0);
     assert.match(help.stdout, /moonhid lint <descriptor\.hex>/);
-    console.log(`CLI ${target}: inspect/decode/lint, Unicode paths, stderr and exit codes 0/1/2/3 passed.`);
+    assert.match(help.stdout, /moonhid encode --kind/);
+    assert.match(help.stdout, /moonhid generate mouse/);
+    console.log(`CLI ${target}: inspect/decode/lint/encode/generate, Unicode paths, raw Feature and exit codes 0/1/2/3 passed.`);
   }
 } finally {
   await rm(scratch, { recursive: true, force: true });

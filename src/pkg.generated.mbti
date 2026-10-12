@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn array_selector(Field, Usage) -> Result[Int64, Diagnostic]
+
 pub fn compile_descriptor(Bytes) -> Result[Layout, Diagnostic]
 
 pub fn decode_report(Layout, ReportKind, Bytes) -> Result[DecodedReport, Diagnostic]
@@ -18,13 +20,21 @@ pub fn diagnostic_to_json(Diagnostic) -> Json
 
 pub fn effective_physical_range(Field) -> (Int64, Int64)
 
+pub fn encode_report(Layout, ReportKind, Int, Array[ReportValue], allow_out_of_range? : Bool) -> Result[Bytes, Diagnostic]
+
 pub fn extract_bits(Bytes, Int, Int, signed? : Bool) -> Result[Int64, Diagnostic]
 
 pub fn extract_bytes(Bytes, Int, Int) -> Result[Bytes, Diagnostic]
 
 pub fn field_usage(Field, Int) -> Usage?
 
+pub fn find_fields(Layout, ReportKind, Int, Usage) -> Result[Array[FieldRef], Diagnostic]
+
 pub fn format_hex(Bytes) -> String
+
+pub fn insert_bits(Bytes, Int, Int, Int64, signed? : Bool) -> Result[Bytes, Diagnostic]
+
+pub fn insert_bytes(Bytes, Int, Int, Bytes) -> Result[Bytes, Diagnostic]
 
 pub fn layout_to_json(Layout) -> Json
 
@@ -36,15 +46,21 @@ pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
 pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
 
+pub fn read_field(Layout, ReportKind, Bytes, Int, Int) -> Result[ReportValue, Diagnostic]
+
 pub fn report_kind_name(ReportKind) -> String
 
 pub fn report_length(Layout, ReportKind, Int) -> Result[Int, Diagnostic]
 
 pub fn report_to_json(DecodedReport) -> Json
 
+pub fn serialize_items(Array[Item]) -> Result[Bytes, Diagnostic]
+
 pub fn signed_value(Bytes) -> Result[Int64, Diagnostic]
 
 pub fn unsigned_value(Bytes) -> Result[Int64, Diagnostic]
+
+pub fn write_field(Layout, ReportKind, Bytes, Int, Int, ReportValue, allow_out_of_range? : Bool) -> Result[Bytes, Diagnostic]
 
 // Errors
 
@@ -87,6 +103,31 @@ pub fn DecodedValue::equal(Self, Self) -> Bool
 pub fn DecodedValue::not_equal(Self, Self) -> Bool
 pub fn DecodedValue::to_repr(Self) -> @debug.Repr
 
+pub struct DescriptorBuilder {
+  // private fields
+}
+pub fn DescriptorBuilder::build(Self) -> Result[Bytes, Diagnostic]
+pub fn DescriptorBuilder::collection(Self, Int) -> Self
+pub fn DescriptorBuilder::end_collection(Self) -> Self
+pub fn DescriptorBuilder::extended_usage(Self, Usage) -> Self
+pub fn DescriptorBuilder::feature(Self, Int) -> Self
+pub fn DescriptorBuilder::input(Self, Int) -> Self
+pub fn DescriptorBuilder::logical_range(Self, Int64, Int64) -> Self
+pub fn DescriptorBuilder::new() -> Self
+pub fn DescriptorBuilder::output(Self, Int) -> Self
+pub fn DescriptorBuilder::physical_range(Self, Int64, Int64) -> Self
+pub fn DescriptorBuilder::pop(Self) -> Self
+pub fn DescriptorBuilder::push(Self) -> Self
+pub fn DescriptorBuilder::report_count(Self, Int) -> Self
+pub fn DescriptorBuilder::report_id(Self, Int) -> Self
+pub fn DescriptorBuilder::report_size(Self, Int) -> Self
+pub fn DescriptorBuilder::short_item(Self, Int, Int, Int64, signed? : Bool) -> Self
+pub fn DescriptorBuilder::unit(Self, Int64) -> Self
+pub fn DescriptorBuilder::unit_exponent(Self, Int) -> Self
+pub fn DescriptorBuilder::usage(Self, Int) -> Self
+pub fn DescriptorBuilder::usage_page(Self, Int) -> Self
+pub fn DescriptorBuilder::usage_range(Self, Int, Int) -> Self
+
 pub(all) struct Diagnostic {
   offset : Int
   code : String
@@ -119,6 +160,14 @@ pub(all) struct Field {
 pub fn Field::equal(Self, Self) -> Bool
 pub fn Field::not_equal(Self, Self) -> Bool
 pub fn Field::to_repr(Self) -> @debug.Repr
+
+pub(all) struct FieldRef {
+  field_index : Int
+  element_index : Int
+} derive(Eq, @debug.Debug)
+pub fn FieldRef::equal(Self, Self) -> Bool
+pub fn FieldRef::not_equal(Self, Self) -> Bool
+pub fn FieldRef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct IndexSpan {
   min : Int64
@@ -186,6 +235,14 @@ pub(all) enum ReportKind {
 pub fn ReportKind::equal(Self, Self) -> Bool
 pub fn ReportKind::not_equal(Self, Self) -> Bool
 pub fn ReportKind::to_repr(Self) -> @debug.Repr
+
+pub(all) enum ReportValue {
+  Integer(Int64)
+  Raw(Bytes)
+} derive(Eq, @debug.Debug)
+pub fn ReportValue::equal(Self, Self) -> Bool
+pub fn ReportValue::not_equal(Self, Self) -> Bool
+pub fn ReportValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct UnitDimensions {
   raw : Int64

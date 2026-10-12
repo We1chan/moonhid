@@ -2,27 +2,57 @@
 
 [![CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml/badge.svg)](https://github.com/We1chan/moonhid/actions/workflows/ci.yml)
 
-面向 MoonBit 的 HID 报告描述符解析、字段布局计算与离线报告解码工具库。
+面向 MoonBit 的通用 HID 报告工具库：描述符生成与解析、字段布局、报告编解码、字段读写和描述符检查。
 
 HID 描述符告诉程序一段设备数据中的哪些位表示按键、鼠标位移或手柄摇杆。
-MoonHID 的目标是将这些二进制定义转换为可检查、可复用的数据结构，帮助设备工具、
-嵌入式调试程序和浏览器分析器解释报告。
+MoonHID 将这些二进制定义转换为可复用的布局，也能从声明生成描述符、从字段值编码报告，
+或在已有报告中修改单个字段。核心为纯 MoonBit，可用于设备工具、嵌入式固件回归、
+自定义协议实现和浏览器分析器。完整功能范围与各阶段验收见 [功能范围](../docs/features.md)。
 
 ## 预期使用场景
 
-1. 自制键盘：检查按键数组、修饰键和 LED 输出报告的布局。
-2. 鼠标与手柄：解释按钮、相对位移、摇杆轴和带 Report ID 的报告。
-3. 通用设备工具：在 CI 或浏览器中检查保存的描述符与报告样例，复现解析问题。
+1. 自制键盘：生成按键数组和 LED 描述符，编码 Output 报告，按 LED Usage 查询并修改位值。
+2. 鼠标与手柄：生成并解释按钮、相对位移、摇杆轴和带 Report ID 的报告，制作输入回归数据。
+3. 自定义设备协议：读写厂商 Usage，编码 Feature 配置和超过 32 位的原始数据字段。
+4. 固件与设备工具：在 CI 检查描述符、验证报告往返，在浏览器查看字段布局和真实设备输入。
 
 ## 当前状态
 
-0.3.0 已发布到 mooncakes.io，并通过独立项目的四后端安装验收。JSON schema 为 v2，新增 lint API、CLI 与中文网页提示，见
+仓库版本为 **0.4.0，尚未发布到 mooncakes.io**：新增报告编码、描述符构建器、原始 item 序列化、
+字段读写与 Usage 查询，以及 CLI `encode` / `generate`。这些新接口请从本仓库源码运行；
+安装已发布版本尚不包含它们，使用约定见 [编解码与生成](../docs/codec.md)。
+本次四后端与 hid-tools 独立对照结果见 [0.4.0 验收记录](../docs/codec-validation.md)。
+
+0.3.0 已发布到 mooncakes.io，并通过独立项目的四后端安装验收。JSON schema 保持 v2，已有 lint API、CLI 与中文网页提示，见
 [0.3.0 发布说明](../docs/release-0.3.0.md)。0.2.0 的独立四后端安装验收仍保留在
 [历史发布说明](../docs/release-0.2.0.md)。核心库为纯 MoonBit，
 已实现十六进制输入、短项/长项分词、布局编译、Collection 层级、Physical/Unit 元数据和报告解码。
 仓库提供合成的鼠标、键盘和手柄样例，以及 [七份真实设备描述符回归](../docs/real-devices.md)，运行时不依赖 USB 权限、真实设备或网络服务。
 浏览器检查器直接运行 MoonBit 编译的 JS 模块，提供字段布局、解码值与版本化 JSON 导出。
 后续协议覆盖与实机验收计划见 [开发路线](../ROADMAP.md)。
+
+## 与成熟 HID 库的功能对比
+
+下表以 2026-10-12 查阅的公开接口为依据；“调用方处理”表示库传递原始报告，字段解释需要额外实现。
+MoonHID 的功能状态对应仓库 0.4.0 源码。
+
+| 能力 | HIDAPI（C） | node-hid（JS） | hid-tools（Python） | Waratah（C#） | MoonHID（MoonBit） |
+| --- | --- | --- | --- | --- | --- |
+| 主要用途 | 跨平台设备通信 | Node.js 设备通信 | Linux HID 分析、录制与重放 | 固件描述符创作 | 通用报告模型、编解码与生成 |
+| 二进制描述符解析、位布局 | 调用方处理；可获取描述符 | 调用方处理 | 支持 | 从声明源编译模型 | 支持，明确协议子集 |
+| 描述符生成 | 调用方处理 | 调用方处理 | 人类可读声明转字节 | 声明编译、优化、自动填充 | 构建器、三种设备模板、原始 item 序列化 |
+| 报告编码与解码 | 原始字节 I/O | 原始字节 I/O | `create_report`、字段提取/填入 | 可生成 C++ 报告结构 | Input / Output / Feature，整数与原始字节 |
+| 按字段读写 | 调用方处理 | 调用方处理 | `get_values` / `fill_values` | 通过生成结构访问 | `read_field` / `write_field`，保留相邻位 |
+| Usage 查询与数组映射 | 设备 Usage 信息 | 设备 Usage 信息 | Usage 名称及数组映射 | 公共 Usage 数据库 | 数字 Usage 查询、Array 选择器；网页补充常见名称 |
+| 实际设备传输 | 枚举、Input / Output / Feature | 枚举、Input / Output / Feature | Linux hidraw / UHID | 不提供传输 | 可选 WebHID Input；核心离线处理 |
+| 运行形态 | 操作系统原生库 | Node.js 与原生绑定 | Python / Linux 工具 | .NET 工具与库 | wasm / wasm-gc / JS / native |
+
+依据：[HIDAPI 官方头文件](https://github.com/libusb/hidapi/blob/master/hidapi/hidapi.h)、
+[node-hid 官方 API](https://github.com/node-hid/node-hid#complete-async-api)、
+[hid-tools 报告与字段实现](https://github.com/bentiss/hid-tools/blob/master/hidtools/hid.py)、
+[Microsoft Waratah 功能说明](https://github.com/microsoft/hidtools#waratah)。
+hid-tools 的 Python 内部 API 不保证稳定，见 [官方说明](https://github.com/bentiss/hid-tools#hidtools-python-module)。
+MoonHID 可与设备通信适配层组合；原生枚举和 Output/Feature 传输属于后续阶段，详见功能范围。
 
 ## 安装
 
@@ -65,6 +95,9 @@ moon run src/cmd/moonhid --target native -- inspect descriptor.hex
 moon run src/cmd/moonhid --target native -- lint descriptor.hex
 moon run src/cmd/moonhid --target native -- decode --kind input descriptor.hex report.hex
 moon run src/cmd/moonhid --target js -- inspect descriptor.hex
+moon run src/cmd/moonhid --target native -- generate keyboard
+moon run src/cmd/moonhid --target native -- encode --kind output --id 0 examples/codec/keyboard.hex examples/codec/keyboard-led-values.json
+moon run src/cmd/moonhid --target js -- encode --kind feature --id 7 examples/codec/vendor-feature.hex examples/codec/vendor-feature-values.json
 ```
 
 `inspect` 输出完整描述符 JSON v2；`decode` 输出带 `schema_version: 2` 的
@@ -77,6 +110,11 @@ moon run src/cmd/moonhid --target js -- inspect descriptor.hex
 1 表示文件/输入/编译错误，2 表示参数错误，3 表示存在 Warning；详细规则见 [lint 说明](../docs/lint.md)。
 `inspect` 的 JSON v2 新增 `lints` 数组，有 Warning 仍成功退出 0。
 这些功能从 0.3.0 提供；使用 0.2.0 时需要升级。
+
+仓库 0.4.0 的 `generate` 从 MoonBit 构建器生成 mouse / keyboard / gamepad 描述符，stdout 为十六进制。
+`encode` 读取按字段、元素顺序排列的 JSON 数组，例如 `[1, 1, 0, 0, 0]` 编码键盘 LED Output 为 `03`；
+超宽字段用 `{"hex": "ff ff ff ff 01"}`。`--id 0` 用于不带 ID 的报告。
+成功时 stdout 只含生成的十六进制；错误码沿用 1/2。示例与完整格式见 [codec 文档](../docs/codec.md)。
 
 固件仓库的 CI 可以构建 native 可执行文件，检查导出的描述符，并根据退出码判断是否需要审阅：
 
@@ -178,12 +216,82 @@ test "README: decode one relative axis" {
 }
 ```
 
+生成 LED 描述符，编码报告，再按 Usage 定位并修改字段：
+
+```mbt check
+///|
+test "README: generate encode and edit keyboard LEDs" {
+  let descriptor = match
+    @moonhid.DescriptorBuilder::new()
+    .usage_page(1)
+    .usage(6)
+    .collection(1)
+    .usage_page(8)
+    .usage_range(1, 5)
+    .logical_range(0L, 1L)
+    .report_size(1)
+    .report_count(5)
+    .output(2)
+    .report_size(3)
+    .report_count(1)
+    .output(1)
+    .end_collection()
+    .build() {
+    Ok(bytes) => bytes
+    Err(_) => fail("generated descriptor rejected")
+  }
+  let layout = match @moonhid.compile_descriptor(descriptor) {
+    Ok(layout) => layout
+    Err(_) => fail("layout rejected")
+  }
+  let wire = match
+    @moonhid.encode_report(
+      layout,
+      @moonhid.Output,
+      0,
+      [1L, 1L, 0L, 0L, 0L].map(value => @moonhid.Integer(value)),
+    ) {
+    Ok(bytes) => bytes
+    Err(_) => fail("encoding rejected")
+  }
+  assert_eq(wire, b"\x03")
+  let caps_lock = match
+    @moonhid.find_fields(layout, @moonhid.Output, 0, { page: 8, id: 2, }) {
+    Ok([reference]) => reference
+    _ => fail("LED Usage not found")
+  }
+  assert_eq(
+    @moonhid.read_field(
+      layout,
+      @moonhid.Output,
+      wire,
+      caps_lock.field_index,
+      caps_lock.element_index,
+    ),
+    Ok(@moonhid.Integer(1L)),
+  )
+  assert_eq(
+    @moonhid.write_field(
+      layout,
+      @moonhid.Output,
+      wire,
+      caps_lock.field_index,
+      caps_lock.element_index,
+      @moonhid.Integer(0L),
+    ),
+    Ok(b"\x01"),
+  )
+}
+```
+
 主要接口：
 
 | 接口 | 用途 |
 | --- | --- |
 | `parse_hex` | 严格解析连续或 ASCII 空白分隔的十六进制字节对 |
 | `parse_items` | 保留 item 类型、tag、原始数据和字节位置 |
+| `serialize_items` | 原始短项/长项序列化，保留宽度与数据，可与分词无损往返 |
+| `DescriptorBuilder` | 生成描述符；Usage、范围、集合、ID、三方向、Physical/Unit、Push/Pop；`build()` 校验 |
 | `unsigned_value` / `signed_value` | 小端短项数值，完整保留 32 位范围 |
 | `field_usage` | 按序查询 Usage；Variable 越界重复最后一项，Array 越界返回 None |
 | `compile_descriptor` | 计算 Main 字段、集合树、元数据、报告 ID 与位偏移 |
@@ -194,7 +302,11 @@ test "README: decode one relative axis" {
 | `report_length` | 查询指定方向和 ID 的完整报告字节长度 |
 | `extract_bytes` | 按 LSB 位序提取原始字节，支持非字节对齐 |
 | `extract_bits` | 提取跨字节、带符号或无符号的位字段 |
+| `insert_bits` / `insert_bytes` | 在副本中写入整数或原始位字段，保留其他位 |
 | `decode_report` | 校验长度并返回变量值、数组 Usage 与 Null State 标记 |
+| `encode_report` | 根据布局编码 `Integer` / `Raw` 值，校验数量、类型、范围，自动写 ID 与零填充 |
+| `read_field` / `write_field` | 按字段和元素索引读写单个值，包含报告长度与归属校验 |
+| `find_fields` / `array_selector` | 查询 Variable Usage 的全部字段引用，或把 Array Usage 转为逻辑选择器 |
 
 完整类型签名见 [pkg.generated.mbti](pkg.generated.mbti)。
 
@@ -216,6 +328,13 @@ test "README: decode one relative axis" {
   通过 `in_logical_range` 和 `is_null` 区分异常值与声明的 Null State。
 - 字段位偏移从报告载荷的第 0 位计算，不含 Report ID 字节；解码输入必须包含
   描述符要求的 ID 前缀，并且长度必须精确匹配，不能带额外传输层前缀或尾部字节。
+- 编码按非 Constant 字段、元素顺序要求完整值列表，省略填充字段；不会截断、钳制或自动补齐缺少的数据。
+  1..32 位用 `Integer`，超宽字段用 `Raw`，末字节高位须为零。默认检查 Logical 范围，
+  声明 Null State 时接受可表示的范围外值；显式 `allow_out_of_range=true` 可重放其他范围外原值。
+  新报告的 Constant 和未用尾位为零；`write_field` 保留它们及所有相邻位。
+- 构建器为有状态、可链式调用的对象，第一项参数错误保留至 `build()`。
+  调用方显式定义 Report ID、填充与集合结束；当前不自动分配 ID、补齐字节、推断位宽或优化全局状态。
+  原始序列化可保存未知项，生成可编译描述符须通过 `build()`。
 - String / Designator 索引和区间保存为字段与 Collection 元数据，随后清空本地状态；
   Delimiter 按 Linux 的公共 Usage + 第一个集合规则解码，后续集合保存在 `alternate_usages`。
   嵌套、无开启的关闭和未闭合返回 `delimiter`；索引范围错误返回 `local_range`，
@@ -282,7 +401,8 @@ moon fmt --check
 ```
 
 CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
-Physical/Unit、完整 uint32 和错误路径。独立 hid-tools 对照与 headless Chrome DOM 检查也纳入 JS CI，验证真实描述符布局与界面。
+Physical/Unit、完整 uint32 和错误路径。CLI 进程回归额外验证三种模板的生成、编码与解码、LED Output 和超宽 Feature。
+独立 hid-tools 对照与 headless Chrome DOM 检查也纳入 JS CI，验证真实描述符布局与界面。
 四后端还运行固定种子的随机字节、结构化有效描述符与真实描述符突变；
 语料、资源边界及解码性质见 [模糊测试验收](../docs/fuzz-validation.md)。
 浏览器人工和自动验收记录见

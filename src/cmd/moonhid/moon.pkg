@@ -1,7 +1,10 @@
 import {
   "We1chan/moonhid" @hid,
+  "We1chan/moonhid/examples",
   "moonbitlang/core/env",
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
   "moonbitlang/x/fs",
   "moonbitlang/x/sys",
 }

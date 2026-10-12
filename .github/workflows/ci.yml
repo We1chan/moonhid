@@ -65,6 +65,7 @@ jobs:
         run: |
           python -m pip install hid-tools==0.12
           python scripts/compare-hid-tools.py
+          python scripts/compare-codec-hid-tools.py
       - name: Verify inspector DOM in headless Chrome
         if: matrix.target == 'js'
         run: node scripts/test-inspector.mjs

@@ -123,26 +123,9 @@ pub fn decode_report(
   kind : ReportKind,
   bytes : Bytes,
 ) -> Result[DecodedReport, Diagnostic] {
-  let report_id = if layout.has_report_ids {
-    if bytes.is_empty() {
-      return Err(diagnostic(0, "short_report", "Missing Report ID"))
-    }
-    bytes[0].to_int()
-  } else {
-    0
-  }
-  let length = match report_length(layout, kind, report_id) {
-    Ok(length) => length
+  let report_id = match validate_wire(layout, kind, bytes) {
+    Ok(id) => id
     Err(error) => return Err(error)
-  }
-  if bytes.length() != length {
-    return Err(
-      diagnostic(
-        bytes.length(),
-        "report_length",
-        "Wire report length does not match the descriptor",
-      ),
-    )
   }
   let prefix_bits = if layout.has_report_ids { 8 } else { 0 }
   let values : Array[DecodedValue] = []
