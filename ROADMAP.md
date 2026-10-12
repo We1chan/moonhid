@@ -26,7 +26,7 @@
 - 新增描述符构建器、Item 序列化、五种设备模板与 CLI `encode` / `generate`；媒体键与厂商数据模板与 TinyUSB 宏展开逐字节相同，构建器的 Maximum 编码不再触发 `logical_max_sign`。
 - 新增参照 Windows HID 解析库（`hidpi.h`）的 Usage 级接口：报告目录与初始化、按键/按钮置位与列出、按 Usage 读写数值、物理量换算；CLI `encode` 支持按 Usage 描述的值文件，并经 hid-tools 独立对照。
 - 既有模糊语料加入 Item 无损往返与报告往返性质，约定见 [codec](docs/codec.md)。
-- 0.4.0 的版本内容与安装验收见 [发布说明](docs/release-0.4.0.md)；网页继续提供解析与解码，编码接口通过库与 CLI 使用。
+- 0.4.0 已发布到 mooncakes.io，独立项目四后端各 6/6 安装验收通过，见 [发布说明](docs/release-0.4.0.md)；网页继续提供解析与解码，编码接口通过库与 CLI 使用。
 
 ## 下一阶段：协议覆盖与验证
 

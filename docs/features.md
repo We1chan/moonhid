@@ -67,4 +67,4 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 4. native / Node.js CLI 真进程执行生成→编码→解码、LED Output / Raw Feature，以及 Usage 形式的值文件。
 5. hid-tools 0.12 独立解析五个模板，独立填入位置值与 Usage 值并比较字节。
 6. 原有 browser bridge、WebHID 模拟和真实布局回归通过，边界与发布状态同步记录。
-7. 发布后在独立目录按版本安装验收并更新 [发布说明](release-0.4.0.md)。
+7. 0.4.0 已发布；独立目录从注册表下载，四后端各 6/6 安装验收通过，56 份源码与配置匹配发布提交，见 [发布说明](release-0.4.0.md)。
