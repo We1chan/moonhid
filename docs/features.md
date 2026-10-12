@@ -3,7 +3,7 @@
 MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 使用链路为：声明生成描述符 → 编译布局 → 初始化报告 → 按 Usage 或字段读写 → 编码或解码报告 → 交给设备传输层。
 核心负责报告协议，CLI 和浏览器负责检查与复现，设备连接由独立适配层接入。
-状态以代码和测试为准；已发布版本为 0.3.0，仓库 0.4.0 新增能力尚未发布。
+状态以代码和测试为准；下表覆盖 0.4.0，发布入口与独立安装验收见 [发布说明](release-0.4.0.md)。
 
 功能范围参照三类成熟库确定：报告解析库（Windows `hidpi.h`、hid-tools）、
 设备端描述符库（TinyUSB、Rust usbd-hid、Microsoft Waratah）和设备通信库（HIDAPI、node-hid）。
@@ -67,4 +67,4 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 4. native / Node.js CLI 真进程执行生成→编码→解码、LED Output / Raw Feature，以及 Usage 形式的值文件。
 5. hid-tools 0.12 独立解析五个模板，独立填入位置值与 Usage 值并比较字节。
 6. 原有 browser bridge、WebHID 模拟和真实布局回归通过，边界与发布状态同步记录。
-7. 发布后在独立目录按版本安装验收并更新发布说明；这一步尚未执行。
+7. 发布后在独立目录按版本安装验收并更新 [发布说明](release-0.4.0.md)。
