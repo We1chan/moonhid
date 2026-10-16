@@ -121,7 +121,7 @@ fn lint_encodings(
     } else if item.type_code == 0 &&
       (item.tag == 8 || item.tag == 9 || item.tag == 11) {
       let field = fields[field_index]
-      if (field.flags & 1) == 0 {
+      if (field.flags & 257) == 0 {
         lint_maximum(
           globals.logical_max,
           field.logical_min >= 0,
@@ -152,7 +152,7 @@ fn lint_field(field : Field, index : Int, lints : Array[Lint]) -> Unit {
   if (field.flags & 1) != 0 {
     return
   }
-  if (field.flags & 64) != 0 && field.bit_size <= 32 {
+  if (field.flags & 256) == 0 && (field.flags & 64) != 0 && field.bit_size <= 32 {
     let minimum = if field.logical_min < 0 {
       -(1L << (field.bit_size - 1))
     } else {
@@ -182,6 +182,9 @@ fn lint_field(field : Field, index : Int, lints : Array[Lint]) -> Unit {
       message: "Data field has no primary Usage; a host may ignore it as padding",
       field_index: Some(index),
     })
+  } else if (field.flags & 256) != 0 {
+    // A buffer has no numeric selectors or per-element Usage count.
+    return
   } else if (field.flags & 2) != 0 {
     if usages > field.count {
       lints.push({

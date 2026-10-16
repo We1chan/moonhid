@@ -171,6 +171,13 @@ pub fn report_to_json(report : DecodedReport) -> Json {
   {
     "kind": Json::string(report_kind_name(report.kind)),
     "report_id": Json(report.report_id),
+    "buffered_values": Json::array(
+      report.buffered_values.map(v => {
+        "field_index": Json(v.field_index),
+        "bit_offset": Json(v.bit_offset),
+        "hex": Json::string(format_hex(v.bytes)),
+      }),
+    ),
     "opaque_values": Json::array(
       report.opaque_values.map(v => {
         "field_index": Json(v.field_index),
