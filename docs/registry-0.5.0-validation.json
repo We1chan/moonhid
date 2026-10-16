@@ -1,0 +1,393 @@
+{
+  "module": "We1chan/moonhid",
+  "installed_version": "0.5.0",
+  "validated_at": "2026-10-16T05:50:35.148488+00:00",
+  "release_commit": "839aa3961f5e2586a5da637d3a01a4538ed011a1",
+  "merged_pr": 34,
+  "release_preparation_pr": 35,
+  "main_ci_run": 38857326409,
+  "main_ci_url": "https://github.com/We1chan/moonhid/actions/runs/38857326409",
+  "pages_run": 38857431421,
+  "pages_url": "https://github.com/We1chan/moonhid/actions/runs/38857431421",
+  "environment": {
+    "platform": "macOS arm64",
+    "node": "v24.19.0"
+  },
+  "toolchain": {
+    "moonbit": "0.10.14+7d59c7ec9",
+    "moon": "0.1.20260920",
+    "node": "22",
+    "hid_tools": "0.12"
+  },
+  "installation": "independent moon new project outside repository; moon add We1chan/moonhid@0.5.0 downloaded from registry; no local dependency override",
+  "install_tests": {
+    "wasm": {
+      "passed": 9,
+      "failed": 0
+    },
+    "wasm-gc": {
+      "passed": 9,
+      "failed": 0
+    },
+    "js": {
+      "passed": 9,
+      "failed": 0
+    },
+    "native": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "publish": {
+    "server_status": "200 OK",
+    "archive_sha256": "b0e67a66879eb342a30a6c2ec511d5be6b4afd805c69578e0d6aa7fcb0ba8d96"
+  },
+  "package_checks": [
+    {
+      "path": "moon.mod",
+      "sha256": "7722ee2f6b60de25327955c6458785652acfe60c359e2fd98f3d5d990f708ddb",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/README.mbt.md",
+      "sha256": "9bf87e7ae20bda039fa53ce218a09f7fbd9fc8227f0133a51720a24b715425b9",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/access.mbt",
+      "sha256": "d1d75c65eeb9a22c0e43d4ad7271b5d7b8b7200d6b445f51fe5d57e931b4e6bf",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/access_test.mbt",
+      "sha256": "17eccc3976c5bbc41ddf4a22b4f31e5eab027b6af361b313b377eae87c2c40bf",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/bits.mbt",
+      "sha256": "425ebc2c2ca9d88030bd6cc894b43379356d00d5b285f3de0456d604f0602eb1",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/bits_test.mbt",
+      "sha256": "fe2b750eb24ffa3b40a055939f13c088505f04cb1ce7128eff4789e1a22dc56e",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/browser/bridge.mbt",
+      "sha256": "375a1781910e3f4603d9b4150ce0ac8fdccf9609043e151e79fdbaff90d5c4c7",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/browser/moon.pkg",
+      "sha256": "639d64b9ea9374b29e00c62089d24c5df3832a6252fedb9934b9253a6d7cc12b",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/browser/pkg.generated.mbti",
+      "sha256": "d869a94e3fe4b3afa02e52030d11e14d9dd69183f9bde54e6c071c25440fe911",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/buffered_test.mbt",
+      "sha256": "1d1dfacdef34e9ff2df588639b2025ece12c7c6cf2fb7734ca3d4baedf1b33d3",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/builder.mbt",
+      "sha256": "6f044d476c676f8952313cca86f7615ff9586ab212ec6eb8d99863fe4fc99560",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/builder_test.mbt",
+      "sha256": "c1b71a7b948252c3097f607f0f5fe1ea3cedc24f676605798e461c4910fb71c5",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/main/main.mbt",
+      "sha256": "782b24fb9a936ae4beb8031f687f689d9645d1601d09c852eb9047673d0a58c0",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/main/moon.pkg",
+      "sha256": "f714c2f053adfdf2799180c1b749e8bf253b31710713af9f0e350a5792858eda",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/main/pkg.generated.mbti",
+      "sha256": "be7e2b1325515f19bcc9b44a240208253e4c468a6d320ff220367ed1e8cf5c60",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/moonhid/io_js.mbt",
+      "sha256": "af45631a7820ac0500860c5c0e9c025a521f27523dbf593b1fe9a242a1fe97fd",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/moonhid/io_native.mbt",
+      "sha256": "a6f27af4ac93a7e3f6ac1b1f7df7b355f04b9d0d44e1947bfc75829b4c0f349f",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/moonhid/main.mbt",
+      "sha256": "a6e01c322a0bf9a88dc382abf5974b38009f2558ee23d6e25286ea0d2ac6f6e5",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/moonhid/moon.pkg",
+      "sha256": "92f893ccbcf2516b849df96f0d3ad6e136d5a20afb202c9d5cbcc7e72ad37ec4",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/cmd/moonhid/stderr_native.c",
+      "sha256": "fff4679f18098eb389205e86fad7b2841b214e9bbdfaaa5c1d9d08c9124edab7",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/decode.mbt",
+      "sha256": "eb73f07bd3b2396ef6a759cef68bf899050036d5bd063facb9bfa70a75e135d9",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/decode_test.mbt",
+      "sha256": "3401e7911b410f64c9c0e5ee157ec431daa33195d4e3d0624e9c5e0e58d77434",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/encode.mbt",
+      "sha256": "06a62d33cf568c30bdb58b772d48f39152bab4fe7b9b2dc9299b4fe62880701c",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/encode_test.mbt",
+      "sha256": "1c7eed784e17ed4b9a1104bd690e5f3f2696f69452338759ba0ce6b8e9312f1a",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/examples/fixtures.mbt",
+      "sha256": "828ac8a3d609ec73b1acf3b8be4e9ca05fe47bb8ec8d98166b856d1378a7be07",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/examples/fixtures_test.mbt",
+      "sha256": "1efe67901bf660556f9796993ee107d3137088f2d371e4200d06b0a8d226925b",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/examples/moon.pkg",
+      "sha256": "f157675bda9934ca2f7bd6efcd5dd2fe0003305aaa94f8d4068ec05aa48be38a",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/examples/pkg.generated.mbti",
+      "sha256": "78e95b32c05e9c5850a69e99aa63535ceae8e8d986b675747e508b67acde5413",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/examples/templates.mbt",
+      "sha256": "3eb0ea82bc0e4f51c9d18e1dfd2707671d702a0bb95fe0976004647d63dcc2de",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/examples/templates_test.mbt",
+      "sha256": "f1cb7928f77764c03a0ad4e91a3e118385f4624ba448fb906117254a0cd06281",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/fuzz_test.mbt",
+      "sha256": "412e4a0eaabea037253588dc592a618c8c659ac7594c14f0d0a1d480d76fef0f",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/global_stack_test.mbt",
+      "sha256": "cdc9d0fddecf26d803f3ab2ab5633145e056146861dbcd7cad0adf43581daec7",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/hex.mbt",
+      "sha256": "5ff6b251fed1455b2918c740a0c5c3bb0085ebdb9654b0e0494e95ea7eb23deb",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/hex_test.mbt",
+      "sha256": "aea894c18b61573f22ab8f6c5db3db8438f41a1d6a69b645bb80f654dd5d3529",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/items.mbt",
+      "sha256": "09d881f3a446f58b5feb2d86cb4eafa57e7bd7fcad212b0e0afe8279db9e87e1",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/items_test.mbt",
+      "sha256": "ffabb6861e08f282f296948c682c30e74c7d0f25725b84f57b466634b8f8e121",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/json.mbt",
+      "sha256": "cac7f351fbbf8bd7d1de8f14e1b504c8fe0d17cd14fa53e62a55ed5686c89e4c",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/json_test.mbt",
+      "sha256": "8a88a2703d97ced26c87bbbd9d4ff897b9a1e36f7f7dc438540e79df71b067dd",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/layout.mbt",
+      "sha256": "d2e8729a0fc5ae32cb3fbcf295fa700e7ed0465a521773dd94283a7e5650da5d",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/layout_test.mbt",
+      "sha256": "c88427c1d164311b39c656884988e08330315ef6bddf4d96a7ac986b1e3782c9",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/limits_test.mbt",
+      "sha256": "9d675c94e59cf0898ebb2eadc1edec2b2c44cd8feff7de882fe58ebf7037349d",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/lint.mbt",
+      "sha256": "394a9a85575323edc617fc55112e5e3b36895c59ce68a38cae8d9c3989656dcf",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/lint_test.mbt",
+      "sha256": "826ae8e4b3a0eee754270fb7337dc980e94151cd98ff9e52e211fd843afc0db3",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/local_metadata_test.mbt",
+      "sha256": "2c972f914a24b8035cf2a905e29541df0643565a19f5a10745981e88850fe121",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/metadata_test.mbt",
+      "sha256": "6e91e57ce40881ca5466363defbb9d43093bfc5d64f729073eb7bfeb5cba0cd8",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/moon.pkg",
+      "sha256": "48e6a187fb7b272da459f191307517054e68ffcb00bd928b2729bb76d5e92bd5",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/opaque_test.mbt",
+      "sha256": "144e47cdaf42d528c70e1c0a63779e953b123205cd1de6f4709def3167ee760e",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/pkg.generated.mbti",
+      "sha256": "a4ba527ccc2f463fd355ce24c9eecff2e277e2248ee2c619ef92d0f19c4400af",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/real_devices_test.mbt",
+      "sha256": "674fe72177a07113c5b70f37babb6ff26947bd36b264dd92ab321962235191ec",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/report_count_test.mbt",
+      "sha256": "98fbe98cceda93baf5b0af40b7b98b4c233ac3b8cb2a365e9536e948851368ad",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/report_id_test.mbt",
+      "sha256": "9c94b018eae32c7a2de05b924c122340f19866398845dc656e542c2670fda5db",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/units.mbt",
+      "sha256": "7d6a3312afc0ad744e7ef8238476fd7dd9f50a3cebf20591292634ab75a3fed9",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/usage_spans_test.mbt",
+      "sha256": "c72436c48545751938156e8af115e20dbe2cb6798b610e087f1d52b57662f205",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/values.mbt",
+      "sha256": "c745a82ac3717e98d97c50257e57975994a1711349e2b84cacaca45d288c7433",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/values_test.mbt",
+      "sha256": "0a2ce03f69bf8a5e0be9d73d91b0f32593529c811f230a26c211175a1fd38e4c",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/xbox_bluetooth_test.mbt",
+      "sha256": "b3432e159bb4d92b8e0ac97bc4624bd6b2e430f338c39af0f987ea89e12b3731",
+      "matches_release_commit": true
+    },
+    {
+      "path": "src/zero_length_test.mbt",
+      "sha256": "302e03e7fbec2a1655ab2ef9f288ee3c47edce7edb80658616279b9b31e4164d",
+      "matches_release_commit": true
+    }
+  ],
+  "offline_release": {
+    "filename": "moonhid-inspector-v0.5.0.zip",
+    "sha256": "5d739d9b730f045e8d94603294e70085e467c89b5988aba2a8a8d34aede06b73",
+    "matches_uploaded_asset": true,
+    "build": {
+      "commit": "839aa3961f5e2586a5da637d3a01a4538ed011a1",
+      "built_at": "2026-10-16T05:45:12.409Z",
+      "node": "v24.19.0"
+    },
+    "node_only_startup_check": true,
+    "buffered_bytes_directions": [
+      "input",
+      "output",
+      "feature"
+    ]
+  },
+  "online_inspector": {
+    "url": "https://we1chan.github.io/moonhid/",
+    "core_sha256": "272a08bbf1058b904c1a5e1668c505a93a07078996e938ccc6696c058309d407",
+    "matches_release_bundle": true,
+    "http_status": 200
+  },
+  "github_release": {
+    "url": "https://github.com/We1chan/moonhid/releases/tag/v0.5.0",
+    "tagName": "v0.5.0",
+    "publishedAt": "2026-10-16T05:50:01Z",
+    "targetCommitish": "839aa3961f5e2586a5da637d3a01a4538ed011a1",
+    "public_http_status": 200
+  },
+  "main_ci_jobs": [
+    {
+      "name": "latest-toolchain (js)",
+      "conclusion": "success"
+    },
+    {
+      "name": "check-build-test (native)",
+      "conclusion": "success"
+    },
+    {
+      "name": "check-build-test (wasm-gc)",
+      "conclusion": "success"
+    },
+    {
+      "name": "check-build-test (wasm)",
+      "conclusion": "success"
+    },
+    {
+      "name": "check-build-test (js)",
+      "conclusion": "success"
+    }
+  ],
+  "pages_jobs": [
+    {
+      "name": "build",
+      "conclusion": "success"
+    },
+    {
+      "name": "deploy",
+      "conclusion": "success"
+    }
+  ]
+}

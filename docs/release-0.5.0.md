@@ -1,5 +1,10 @@
 # MoonHID 0.5.0
 
+2026-10-16 已发布到 Mooncakes 和 GitHub Release。
+发布提交为 `839aa3961f5e2586a5da637d3a01a4538ed011a1`，
+[发布提交 CI](https://github.com/We1chan/moonhid/actions/runs/38857326409) 的五项任务全部成功，
+[Pages 部署](https://github.com/We1chan/moonhid/actions/runs/38857431421) 已完成。
+
 0.5.0 将 HID 1.11 Main item bit 8 的 Buffered Bytes 纳入报告编解码，
 修复 0.4.0 拒绝标准已定义字节流的问题。[PR #34](https://github.com/We1chan/moonhid/pull/34)
 已经审阅并合并，标准条款与三方向案例见 [HID 1.11 兼容目标](hid-compatibility.md)，
@@ -43,6 +48,19 @@ PR 审阅复验通过四后端无警告检查、每后端 112 项测试，以及
 browser bridge、WebHID 参考描述符与原有设备回归；[源码验收](buffered-bytes-validation.md)
 另记录浏览器、固件、离线包和既有 hid-tools 对照。
 Buffered Bytes 的案例来自标准语义和离线合成数据，不包含新硬件采集或 Output/Feature 实机发送。
+
+仓库外的独立项目实际从注册表下载 0.5.0，未设置本地依赖覆盖；
+wasm、wasm-gc、JS、native 每后端九项安装验收全部通过。
+57 份模块配置、源码、测试、可执行文档和接口与发布提交逐字节一致，
+[验证记录](registry-0.5.0-validation.json) 保存文件 SHA-256、CI、Pages 与 GitHub 资产信息。
+
+离线包从 GitHub 重新下载后，校验值、Node-only 启动、三方向 Buffered Bytes 解码均通过；
+在线检查器的 JS 模块与下载的发布包逐字节一致。
+`moonhid-inspector-v0.5.0.zip` 的 SHA-256：
+
+```text
+5d739d9b730f045e8d94603294e70085e467c89b5988aba2a8a8d34aede06b73
+```
 
 ## 独立安装复现
 
