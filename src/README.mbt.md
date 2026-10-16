@@ -19,8 +19,7 @@ Input / Output / Feature、Report ID、Variable、Array、Constant、Null State�
 整段字节流以一个 `Raw(Bytes)` 编码，解码放入 `buffered_values`，不套用整数范围、Array 选择器或物理量换算。
 标准条款、资源边界与三方向可复现案例见 [标准兼容目标](../docs/hid-compatibility.md)。
 
-Buffered Bytes 属于当前仓库源码修订，**已发布的 0.4.0 不含此支持**；
-运行新案例需使用包含此修订的源码。报名补充说明见 [初审反馈回复](../docs/hackathon-review-response.md)。
+Buffered Bytes 从 **0.5.0** 提供；0.4.0 不含此支持。报名补充说明见 [初审反馈回复](../docs/hackathon-review-response.md)。
 
 ## 使用场景
 
@@ -35,7 +34,7 @@ Buffered Bytes 属于当前仓库源码修订，**已发布的 0.4.0 不含此�
 
 ## 已实现功能
 
-仓库源码提供以下能力，接口约定及与 0.4.0 的区别见 [编解码与生成](../docs/codec.md)：
+仓库源码提供以下能力，接口约定及版本区别见 [编解码与生成](../docs/codec.md)：
 
 | 能力 | 内容与入口 |
 | --- | --- |
@@ -61,7 +60,7 @@ HID 生态的成熟库分三类：根据描述符解释与构造报告的解析�
 不包含第三类的设备通信。
 
 下表以 2026-10-12 查阅的公开接口为依据；“—”表示该库不提供，需要调用方自行实现。
-MoonHID 的功能状态对应当前仓库源码；Buffered Bytes 为 0.4.0 之后新增。
+MoonHID 的功能状态对应 0.5.0；Buffered Bytes 从此版本新增。
 
 | 能力 | Windows HID 解析库（C，`hidpi.h`） | hid-tools（Python） | TinyUSB（C） | usbd-hid（Rust） | HIDAPI / node-hid | MoonHID（MoonBit） |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -95,12 +94,13 @@ MoonHID 在一个库中同时提供解析库的报告访问和设备端库的描
 在现有 MoonBit 模块目录中执行：
 
 ```sh
-moon add We1chan/moonhid@0.4.0
+moon add We1chan/moonhid@0.5.0
 ```
 
-0.4.0 包含下方生成、编码、字段读写与 Usage 级接口，JSON schema 保持 v2。
-发布入口和独立安装验收见 [0.4.0 发布说明](../docs/release-0.4.0.md)。
-历史版本记录保留在 [0.3.0](../docs/release-0.3.0.md) 与 [0.2.0 发布说明](../docs/release-0.2.0.md)。
+0.5.0 包含生成、编码、字段读写、Usage 级接口与 Buffered Bytes，JSON schema 保持 v2。
+发布入口与安装验收见 [0.5.0 发布说明](../docs/release-0.5.0.md)。
+从 0.4.0 升级时，手工构造 `DecodedReport` 的代码需增加 `buffered_values: []`。
+历史版本记录保留在 [0.4.0](../docs/release-0.4.0.md)、[0.3.0](../docs/release-0.3.0.md) 与 [0.2.0 发布说明](../docs/release-0.2.0.md)。
 
 在使用库的包的 `moon.pkg` 中声明导入，别名与下方 API 示例一致：
 
@@ -304,7 +304,7 @@ test "README: decode one relative axis" {
 }
 ```
 
-Buffered Bytes 示例（需使用当前源码）：
+Buffered Bytes 示例（0.5.0 起）：
 
 ```mbt check
 ///|
@@ -438,7 +438,7 @@ moon build src/cmd/moonhid --target native --release
 通过上面的库接口与 CLI 使用，网页端的字段编辑与编码导出见 [开发路线](../ROADMAP.md)。
 
 直接打开 [在线检查器](https://we1chan.github.io/moonhid/)。
-[Release](https://github.com/We1chan/moonhid/releases/tag/v0.4.0) 提供编译好的离线包：
+[Release](https://github.com/We1chan/moonhid/releases/tag/v0.5.0) 提供编译好的离线包：
 解压后只需 Node.js 22+，Windows 双击 `start-inspector.cmd`，
 其他系统运行 `node scripts/serve-offline.mjs`，不需要 MoonBit 或 Python。
 
