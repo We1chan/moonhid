@@ -204,6 +204,36 @@ try {
   await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
   for (const width of [1440, 1100, 390]) {
     await call('Emulation.setDeviceMetricsOverride', { width, height: width === 390 ? 844 : 900, deviceScaleFactor: 1, mobile: false });
+    await setText('descriptor', '06 00 ff 09 01 a1 01 85 05 15 00 25 01 75 08 96 01 02 09 02 82 42 01 c0');
+    await setText('report', '05 ' + 'a5 '.repeat(513).trim());
+    assert.match(await text('report-status'), /1 段 Buffered Bytes/);
+    assert.doesNotMatch(await text('report-status'), /越界|Null State/);
+    assert.match(await text('values'), /Buffered Bytes/);
+    assert.match(await text('values'), /共 513 字节/);
+    assert.match(await text('field-detail'), /固定长度字节流/);
+    assert.equal(await evaluate('document.querySelectorAll("#values tbody tr").length'), 1);
+    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true, `Buffered Bytes overflow at ${width}`);
+    const bufferedExport = await evaluate(`(async () => {
+      let blob;
+      const create = URL.createObjectURL;
+      const click = HTMLAnchorElement.prototype.click;
+      URL.createObjectURL = value => { blob = value; return create(value); };
+      HTMLAnchorElement.prototype.click = () => {};
+      try { document.getElementById('export').click(); }
+      finally { URL.createObjectURL = create; HTMLAnchorElement.prototype.click = click; }
+      return JSON.parse(await blob.text());
+    })()`);
+    assert.equal(bufferedExport.decoded.buffered_values[0].hex.split(' ').length, 513);
+    assert.deepEqual(bufferedExport.decoded.values, []);
+    if (process.env.MOONHID_SCREENSHOTS) {
+      await mkdir(process.env.MOONHID_SCREENSHOTS, { recursive: true });
+      await evaluate(`document.getElementById('values').scrollIntoView({ block: 'center' })`);
+      const { data } = await call('Page.captureScreenshot', { format: 'png' });
+      await writeFile(join(process.env.MOONHID_SCREENSHOTS, `buffered-${width}.png`), Buffer.from(data, 'base64'));
+    }
+    await setText('descriptor', '75 01 95 01 82 02 01');
+    assert.match(await text('descriptor-status'), /buffered_alignment/);
+    assert.doesNotMatch(await text('values'), /a5 a5/);
     for (const [, label, descriptor] of fixtures) {
       await setText('descriptor', descriptor);
       assert.equal(await evaluate('document.getElementById("export").disabled'), false, `${label} descriptor`);

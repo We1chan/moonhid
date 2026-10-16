@@ -39,7 +39,7 @@ pub fn list_reports(layout : Layout) -> Result[Array[ReportInfo], Diagnostic] {
         if field.kind == kind && field.report_id == report_id {
           payload_bits = payload_bits + field.bit_size * field.count
           if (field.flags & 1) == 0 {
-            data_count = data_count + field.count
+            data_count = data_count + field_value_count(field)
           }
         }
       }
@@ -102,7 +102,7 @@ fn array_empty_value(field : Field) -> Int64? {
 ///|
 /// Data Variable controls with Logical 0..1, such as buttons and LEDs.
 fn is_switch(field : Field) -> Bool {
-  (field.flags & 3) == 2 &&
+  (field.flags & 259) == 2 &&
   field.bit_size <= 32 &&
   field.logical_min == 0L &&
   field.logical_max == 1L
@@ -150,7 +150,7 @@ pub fn new_report(
   for field in layout.fields {
     if field.kind != kind ||
       field.report_id != report_id ||
-      (field.flags & 1) != 0 ||
+      (field.flags & 257) != 0 ||
       field.bit_size > 32 {
       continue
     }
@@ -280,7 +280,7 @@ pub fn active_usages(
   for field in layout.fields {
     if field.kind != kind ||
       field.report_id != id ||
-      (field.flags & 1) != 0 ||
+      (field.flags & 257) != 0 ||
       field.bit_size > 32 {
       continue
     }
@@ -363,10 +363,13 @@ fn change_usages(
     let switches : Array[(Field, Int)] = []
     let mut variable = false
     for field in layout.fields {
-      if field.kind != kind || field.report_id != id || (field.flags & 3) != 2 {
+      if field.kind != kind ||
+        field.report_id != id ||
+        (field.flags & 1) != 0 ||
+        ((field.flags & 2) == 0 && (field.flags & 256) == 0) {
         continue
       }
-      for element = 0; element < field.count; element = element + 1 {
+      for element = 0; element < field_value_count(field); element = element + 1 {
         if field_usage(field, element) == Some(usage) {
           variable = true
           if is_switch(field) {
@@ -405,7 +408,7 @@ fn change_usages(
       }
       if field.kind != kind ||
         field.report_id != id ||
-        (field.flags & 3) != 0 ||
+        (field.flags & 259) != 0 ||
         field.bit_size > 32 {
         continue
       }

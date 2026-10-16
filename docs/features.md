@@ -3,7 +3,8 @@
 MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 使用链路为：声明生成描述符 → 编译布局 → 初始化报告 → 按 Usage 或字段读写 → 编码或解码报告 → 交给设备传输层。
 核心负责报告协议，CLI 和浏览器负责检查与复现，设备连接由独立适配层接入。
-状态以代码和测试为准；下表覆盖 0.4.0，发布入口与独立安装验收见 [发布说明](release-0.4.0.md)。
+状态以当前源码和测试为准；Buffered Bytes 为 0.4.0 之后的源码修订，尚未发布到注册表。
+0.4.0 发布与安装验收见 [发布说明](release-0.4.0.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
 
 功能范围参照三类成熟库确定：报告解析库（Windows `hidpi.h`、hid-tools）、
 设备端描述符库（TinyUSB、Rust usbd-hid、Microsoft Waratah）和设备通信库（HIDAPI、node-hid）。
@@ -23,6 +24,7 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 | 物理量换算 | Logical 与 Physical 线性映射，应用 Unit Exponent，统一取整 | `physical_value`、`logical_from_physical`、`get/set_physical_value`（对应 `HidP_Get/SetScaledUsageValue`） |
 | 报告解码 | Variable/Array、Null、有符号/无符号、跨字节、超宽原始值 | `decode_report`；真实输入、样例与模糊报告 |
 | 报告编码 | 三方向、多 ID、整数/原始值、类型/范围/数量校验、零填充 | `encode_report`；独立 wire 与解码往返 |
+| Buffered Bytes | HID 1.11 bit 8；整段固定字节流、字节对齐、三方向、Raw 编码与 `buffered_values` 解码 | [案例与边界](hid-compatibility.md)；CLI、JSON、浏览器与混合字段回归 |
 | 字段定位与读写 | Variable Usage 全部引用、Array 选择器；单元素读写、保留相邻位 | `find_fields`、`array_selector`、`read_field`、`write_field` |
 | 原始位操作 | LSB 位提取/插入，有符号整数与原始字节 | `extract_bits` / `insert_bits`、`extract_bytes` / `insert_bytes` |
 | 协议检查 | 十项 lint、稳定诊断、版本化 JSON | `lint_descriptor`、JSON v2；正反例与 CLI 退出码 |
@@ -48,7 +50,7 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 ## 明确边界
 
 - 核心解析 HID Report Descriptor，不解析 USB 设备/配置描述符或独立 Physical Descriptor。
-- 编译长项、保留项、Buffered Bytes 明确报错；原始分词/序列化仍保留它们。
+- 编译长项与保留项明确报错；原始分词/序列化仍保留它们。Buffered Bytes 已纳入编解码目标。
 - 整数每元素 1..32 位；更宽 Variable 用 Raw；Data Array 限 1..32 位。
   物理量换算返回双精度值，不做单位制之间的转换（例如英寸到厘米），也不包含完整 Usage 名称数据库。
 - Usage 级接口要求 Usage 在报告中唯一；共用 Usage 的元素和无空值的 Array 返回明确错误，

@@ -47,7 +47,16 @@ assert.equal(decode(zero, 'input', '00').decoded.values[0].value, 0);
 assert.equal(inspect('84').error.code, 'report_id');
 assert.equal(inspect('94').error.code, 'report_count');
 assert.equal(inspect('74 95 01 80').error.code, 'missing_dimensions');
-assert.equal(inspect('75 08 95 01 82 00 01').error.code, 'buffered_bytes');
+assert.equal(inspect('75 01 95 01 82 00 01').error.code, 'buffered_alignment');
+const buffered = '06 00 ff 09 01 a1 01 85 05 15 00 25 01 75 08 95 04 09 02 82 02 01 09 03 92 02 01 09 04 b2 02 01 c0';
+assert.deepEqual(inspect(buffered).descriptor.lints, []);
+for (const [index, kind] of ['input', 'output', 'feature'].entries()) {
+  const report = decode(buffered, kind, '05 4d 4f 4f 4e');
+  assert.equal(report.ok, true);
+  assert.deepEqual(report.decoded.values, []);
+  assert.deepEqual(report.decoded.opaque_values, []);
+  assert.deepEqual(report.decoded.buffered_values, [{ field_index: index, bit_offset: 0, hex: '4d 4f 4f 4e' }]);
+}
 assert.equal(inspect('75 08 95 01 82 00 02').error.code, 'main_flags');
 const opaque = '85 07 75 03 95 01 81 01 75 21 81 02';
 const raw = decode(opaque, 'input', '07 ff ff ff ff ff');

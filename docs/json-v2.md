@@ -75,7 +75,7 @@ Main item 之后清空，不读取设备字符串或物理描述符。
 
 ## 解码组件
 
-`report_to_json` 返回 `{ "kind": ..., "report_id": ..., "values": [...], "opaque_values": [...] }`。
+`report_to_json` 返回 `{ "kind": ..., "report_id": ..., "values": [...], "opaque_values": [...], "buffered_values": [...] }`。
 每个值含 `field_index`、`element_index`、`bit_offset`、`value`、`usage`、`is_array`、
 `in_logical_range`、`is_null`。`field_index` 引用完整 `layout.fields`，不随方向筛选而重新编号。
 Constant 字段不产生解码值。未映射的数组 Usage 为 `null`，整数值仍保留。
@@ -85,6 +85,11 @@ Constant 字段不产生解码值。未映射的数组 Usage 为 `null`，整数
 `hex` 为小写空格分隔字节；按 LSB 位序打包，与源载荷是否字节对齐无关，
 最后一个字节的未使用高位补 0。字段偏移仍不包含 Report ID。
 Constant 字段不产生整数或原始字节值；Data Array 位宽仍限制 1..32 位。
+
+HID 1.11 Main bit 8 的 Buffered Bytes 放入新增的 `buffered_values`，每个 Main item 一个对象，
+含 `field_index`、`bit_offset`、`hex`，偏移不含 Report ID，`hex` 长度精确为 `bit_size * count / 8`。
+这些字节不进入 `values` 或 `opaque_values`，不带整数值、Array Usage、逻辑范围或 Null 判定。
+新数组遵循 v2 的新增字段规则；旧 v2 无此字段时按空数组处理。已发布的 0.4.0 不支持 Buffered Bytes。
 
 整数范围为有符号或无符号 32 位；所有 HID 数值序列化为 JSON **number**，
 包括 `4294967295`，可由 JavaScript 精确表示。内部计算使用 Int64，但不使用其默认字符串 JSON 编码。

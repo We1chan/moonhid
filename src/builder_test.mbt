@@ -227,7 +227,7 @@ test "builder returns precise validation errors and retains its first error" {
     .report_count(1)
     .input(256)
     .build()
-    is Err({ code: "buffered_bytes", .. }),
+    is Err({ code: "buffered_alignment", .. }),
   )
   assert_true(
     @moonhid.DescriptorBuilder::new()

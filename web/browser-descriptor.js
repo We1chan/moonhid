@@ -33,16 +33,17 @@ export function descriptorFromCollections(collections, { rawValues = false } = {
       for (const report of collection[kind + 'Reports'] ?? []) {
         if (report.reportId !== 0) item(0x84, report.reportId, false, 1);
         for (const field of report.items) {
-          if (!rawValues && !field.isConstant && field.logicalMaximum < field.logicalMinimum) throw new Error('浏览器逻辑范围不完整；提供原始描述符，或明确选择按位宽查看原始值');
-          const minimum = rawValues ? (field.logicalMinimum < 0 && field.reportSize <= 32 ? -(2 ** (field.reportSize - 1)) : 0) : field.logicalMinimum;
-          const maximum = rawValues ? (field.reportSize <= 32 ? 2 ** (field.reportSize - (minimum < 0 ? 1 : 0)) - 1 : 0) : field.logicalMaximum;
+          const rawField = rawValues && !field.isBufferedBytes;
+          if (!rawValues && !field.isConstant && !field.isBufferedBytes && field.logicalMaximum < field.logicalMinimum) throw new Error('浏览器逻辑范围不完整；提供原始描述符，或明确选择按位宽查看原始值');
+          const minimum = rawField ? (field.logicalMinimum < 0 && field.reportSize <= 32 ? -(2 ** (field.reportSize - 1)) : 0) : field.logicalMinimum;
+          const maximum = rawField ? (field.reportSize <= 32 ? 2 ** (field.reportSize - (minimum < 0 ? 1 : 0)) - 1 : 0) : field.logicalMaximum;
           item(0x14, minimum, true);
           item(0x24, maximum, minimum < 0);
           item(0x74, field.reportSize); item(0x94, field.reportCount);
-          if (!rawValues || !field.isArray) usages(field);
-          const flags = Number(field.isConstant) | (rawValues || !field.isArray ? 2 : 0) | (!field.isAbsolute ? 4 : 0) |
+          if (!rawField || !field.isArray) usages(field);
+          const flags = Number(field.isConstant) | (rawField || !field.isArray ? 2 : 0) | (!field.isAbsolute ? 4 : 0) |
             (field.wrap ? 8 : 0) | (!field.isLinear ? 16 : 0) | (!field.hasPreferredState ? 32 : 0) |
-            (!rawValues && field.hasNull ? 64 : 0) | (field.isVolatile ? 128 : 0) | (field.isBufferedBytes ? 256 : 0);
+            (!rawField && field.hasNull ? 64 : 0) | (field.isVolatile ? 128 : 0) | (field.isBufferedBytes ? 256 : 0);
           item(prefix, flags);
         }
       }
