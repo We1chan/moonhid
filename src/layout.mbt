@@ -117,11 +117,34 @@ fn usage_at(
 ///|
 /// Variable indices repeat the last Usage; Array selector indices never repeat.
 /// For Arrays, pass value-logical_min after checking the logical range.
+/// Buffered Bytes expose the first Usage at index 0 for the complete stream.
 pub fn field_usage(field : Field, index : Int) -> Usage? {
   if (field.flags & 1) != 0 {
     return None
   }
+  if (field.flags & 256) != 0 {
+    return if index == 0 { usage_at(field.usage_spans, 0, false) } else { None }
+  }
   usage_at(field.usage_spans, index, (field.flags & 2) != 0)
+}
+
+///|
+// A Buffered Bytes Main item is one fixed-size stream, not Count scalars.
+fn field_value_count(field : Field) -> Int {
+  if (field.flags & 256) != 0 {
+    1
+  } else {
+    field.count
+  }
+}
+
+///|
+fn field_value_bits(field : Field) -> Int {
+  if (field.flags & 256) != 0 {
+    field.bit_size * field.count
+  } else {
+    field.bit_size
+  }
 }
 
 ///|
@@ -621,16 +644,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
           }
         }
         8 | 9 | 11 => {
-          if (value & 256L) != 0 {
-            return Err(
-              diagnostic(
-                item.offset,
-                "buffered_bytes",
-                "Buffered Bytes are not supported",
-              ),
-            )
-          }
-          if value > 255L {
+          if value > 511L {
             return Err(
               diagnostic(
                 item.offset,
@@ -675,12 +689,23 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
               ),
             )
           }
+          let buffered = (value & 256L) != 0
+          if buffered &&
+            (offset % 8 != 0 || global.size * global.count % 8 != 0) {
+            return Err(
+              diagnostic(
+                item.offset,
+                "buffered_alignment",
+                "Buffered Bytes require a byte-aligned offset and whole-byte length",
+              ),
+            )
+          }
           let maximum = if global.logical_min < 0 {
             global.logical_max_signed
           } else {
             global.logical_max_unsigned
           }
-          if (value & 3L) == 0 && global.size > 32 {
+          if !buffered && (value & 3L) == 0 && global.size > 32 {
             return Err(
               diagnostic(
                 item.offset,
@@ -689,7 +714,7 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
               ),
             )
           }
-          if (value & 1L) == 0 {
+          if !buffered && (value & 1L) == 0 {
             if maximum < global.logical_min {
               return Err(
                 diagnostic(

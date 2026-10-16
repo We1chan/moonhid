@@ -29,7 +29,7 @@ fn fuzz_diagnostic(error : @moonhid.Diagnostic, length : Int) -> Unit raise {
       "descriptor_limit", "truncated_item", "unsupported_item", "usage_page", "unit_exponent",
       "report_size", "report_id", "report_count", "global_stack", "unsupported_global",
       "usage_range", "local_range", "local_limit", "delimiter", "unsupported_local",
-      "usage_limit", "collection", "buffered_bytes", "main_flags", "missing_dimensions",
+      "usage_limit", "collection", "buffered_alignment", "main_flags", "missing_dimensions",
       "field_limit", "report_limit", "logical_range", "unsupported_main", "dangling_local",
       "mixed_report_ids", "empty_layout",
     ].contains(error.code),
@@ -113,9 +113,12 @@ fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int raise {
     assert_eq((report.kind, report.report_id), (kind, id))
     let mut scalar_count = 0
     let mut opaque_count = 0
+    let mut buffered_count = 0
     for field in layout.fields {
       if field.kind == kind && field.report_id == id && (field.flags & 1) == 0 {
-        if field.bit_size <= 32 {
+        if (field.flags & 256) != 0 {
+          buffered_count = buffered_count + 1
+        } else if field.bit_size <= 32 {
           scalar_count = scalar_count + field.count
         } else {
           opaque_count = opaque_count + field.count
@@ -124,11 +127,18 @@ fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int raise {
     }
     assert_eq(report.values.length(), scalar_count)
     assert_eq(report.opaque_values.length(), opaque_count)
+    assert_eq(report.buffered_values.length(), buffered_count)
     let inputs : Array[@moonhid.ReportValue] = []
     let mut scalar_index = 0
     let mut opaque_index = 0
+    let mut buffered_index = 0
     for field in layout.fields {
       if field.kind != kind || field.report_id != id || (field.flags & 1) != 0 {
+        continue
+      }
+      if (field.flags & 256) != 0 {
+        inputs.push(@moonhid.Raw(report.buffered_values[buffered_index].bytes))
+        buffered_index = buffered_index + 1
         continue
       }
       for element = 0; element < field.count; element = element + 1 {
@@ -147,6 +157,16 @@ fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int raise {
       Err(error) => fail("encode decoded values: \{error.code}")
     }
     assert_eq(decode(layout, kind, encoded), report)
+    for value in report.buffered_values {
+      let field = layout.fields[value.field_index]
+      assert_eq((field.flags & 257, value.bit_offset % 8), (256, 0))
+      assert_eq(value.bit_offset, field.bit_offset)
+      assert_eq(value.bytes.length() * 8, field.bit_size * field.count)
+      assert_eq(
+        @moonhid.read_field(layout, kind, wire, value.field_index, 0),
+        Ok(@moonhid.Raw(value.bytes)),
+      )
+    }
     // new_report leaves each Variable at its Null value or zero.
     let idle = match @moonhid.new_report(layout, kind, id) {
       Ok(idle) => idle
@@ -405,6 +425,66 @@ test "fuzz seed 13579bdf: 500 valid structured layouts and 1500 reports" {
     assert_eq(fuzz_descriptor(bytes, rng), 3)
   }
   assert_true(opaque_fields > 500 && scalar_fields > 500 && array_fields > 500)
+}
+
+///|
+test "fuzz seed b00f1234: 128 Buffered layouts and 384 mixed reports" {
+  let rng : FuzzRng = { state: 0xb00f1234U, }
+  for iteration = 0; iteration < 128; iteration = iteration + 1 {
+    let builder = @moonhid.DescriptorBuilder::new()
+      .usage_page(65280)
+      .usage(1)
+      .collection(1)
+      .logical_range(0L, 1L)
+    if iteration % 2 == 0 {
+      ignore(builder.report_id(5))
+    }
+    // A scalar, an application byte stream, and an opaque Variable in each direction.
+    ignore(
+      builder
+      .report_size(8)
+      .report_count(1)
+      .usage(2)
+      .input(2)
+      .usage(2)
+      .output(2)
+      .usage(2)
+      .feature(2),
+    )
+    let size = [1, 2, 4, 8, 16, 24, 40, 256][rng.below(8)]
+    let count = (1 + rng.below(16)) * (if size < 8 { 8 / size } else { 1 })
+    let flags = 256 |
+      (if iteration % 2 == 0 { 2 } else { 0 }) |
+      (if iteration % 3 == 0 { 64 } else { 0 })
+    ignore(
+      builder
+      .report_size(size)
+      .report_count(count)
+      .usage(3)
+      .input(flags)
+      .usage(3)
+      .output(flags)
+      .usage(3)
+      .feature(flags),
+    )
+    ignore(
+      builder
+      .report_size(40)
+      .report_count(1)
+      .usage(4)
+      .input(2)
+      .usage(4)
+      .output(2)
+      .usage(4)
+      .feature(2)
+      .end_collection(),
+    )
+    let bytes = match builder.build() {
+      Ok(bytes) => bytes
+      Err(error) => fail(error.code)
+    }
+    assert_eq(fuzz_descriptor(bytes, rng), 3)
+  }
 }
 
 ///|

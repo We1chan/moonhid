@@ -31,7 +31,7 @@ test "zero values preserve dimension ID and stack diagnostics" {
       (b"\x74\x95\x01\x80", "missing_dimensions"),
       (b"\xb5\x00", "global_stack"),
       (b"\xa5\x00", "global_stack"),
-      (b"\x75\x08\x95\x01\x82\x00\x01", "buffered_bytes"),
+      (b"\x75\x01\x95\x01\x82\x00\x01", "buffered_alignment"),
       (b"\x75\x08\x95\x01\x82\x00\x02", "main_flags"),
     ] {
     match @moonhid.compile_descriptor(bytes) {

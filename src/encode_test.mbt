@@ -330,7 +330,7 @@ test "Usage lookup returns repeated Variable matches and Array logical selectors
   let array = layout.fields[1]
   for
     invalid in [
-      { ..array, flags: 256, },
+      { ..array, flags: 512, },
       { ..array, bit_size: 0, },
       { ..array, bit_size: 33, },
       { ..array, logical_min: -9223372036854775808L, },

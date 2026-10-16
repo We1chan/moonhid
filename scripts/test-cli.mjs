@@ -130,6 +130,33 @@ try {
     assert.equal(badRaw.status, 1);
     assert.match(badRaw.stderr, /value_range @/);
     assert.equal(badRaw.stdout, '');
+    const bufferedPath = join(root, 'examples/codec/buffered-bytes.hex');
+    const bufferedValues = join(root, 'examples/codec/buffered-bytes-values.json');
+    const bufferedWire = join(root, 'examples/codec/buffered-bytes-report.hex');
+    const bufferedLint = run(['lint', bufferedPath]);
+    assert.deepEqual([bufferedLint.status, bufferedLint.stdout, bufferedLint.stderr], [0, '', '']);
+    for (const [index, kind] of ['input', 'output', 'feature'].entries()) {
+      const encoded = run(['encode', '--kind', kind, '--id', '5', bufferedPath, bufferedValues]);
+      assert.deepEqual([encoded.status, encoded.stdout, encoded.stderr], [0, '05 4d 4f 4f 4e\n', '']);
+      const decoded = run(['decode', '--kind', kind, bufferedPath, bufferedWire]);
+      assert.equal(decoded.status, 0, decoded.stderr);
+      assert.equal(decoded.stderr, '');
+      const data = JSON.parse(decoded.stdout).decoded;
+      assert.deepEqual(data.values, []);
+      assert.deepEqual(data.opaque_values, []);
+      assert.deepEqual(data.buffered_values, [{ field_index: index, bit_offset: 0, hex: '4d 4f 4f 4e' }]);
+      await writeFile(valuesPath, JSON.stringify({ values: [{ page: 0xff00, id: index + 2, hex: '4d 4f 4f 4e' }] }));
+      const usageEncoded = run(['encode', '--kind', kind, '--id', '5', bufferedPath, valuesPath]);
+      assert.equal(usageEncoded.status, 0, usageEncoded.stderr);
+      assert.equal(usageEncoded.stdout, '05 4d 4f 4f 4e\n');
+    }
+    for (const [values, code] of [[[{ hex: '4d 4f' }], 'value_range'], [[1], 'value_type'], [[1, 2, 3, 4], 'value_count']]) {
+      await writeFile(valuesPath, JSON.stringify(values));
+      const error = run(['encode', '--kind', 'input', '--id', '5', bufferedPath, valuesPath]);
+      assert.equal(error.status, 1);
+      assert.equal(error.stdout, '');
+      assert.match(error.stderr, new RegExp(`^${code} @`));
+    }
     for (const [json, code] of [['true', 'values_json'], ['[1.5]', 'values_json'], ['[true]', 'values_json'], ['[', 'values_json'], ['[]', 'value_count'], ['[128]', 'value_range'], ['[-128]', 'logical_range'], ['[4294967296]', 'value_range'], ['[{"hex":"00","extra":1}]', 'values_json'], ['[{"hex":"zz"}]', 'invalid_hex']]) {
       await writeFile(valuesPath, json);
       const error = run(['encode', '--kind', 'input', '--id', '0', descriptor, valuesPath]);
@@ -186,7 +213,7 @@ try {
     assert.match(help.stdout, /moonhid lint <descriptor\.hex>/);
     assert.match(help.stdout, /moonhid encode --kind/);
     assert.match(help.stdout, /moonhid generate mouse\|keyboard\|gamepad\|consumer\|vendor/);
-    console.log(`CLI ${target}: inspect/decode/lint/encode (positional and Usage form)/generate (five templates), Unicode paths, raw Feature and exit codes 0/1/2/3 passed.`);
+    console.log(`CLI ${target}: inspect/decode/lint/encode (positional and Usage form)/generate (five templates), Buffered Bytes in three directions, Unicode paths, raw Feature and exit codes 0/1/2/3 passed.`);
   }
 } finally {
   await rm(scratch, { recursive: true, force: true });

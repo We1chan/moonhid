@@ -33,11 +33,27 @@ pub extend OpaqueValue with @debug.Debug::{to_repr}
 pub extend OpaqueValue with Eq::{equal, not_equal}
 
 ///|
+/// A complete HID 1.11 Buffered Bytes Main item, with a payload bit offset.
+/// Contents are application-defined and have no integer, Array or Null meaning.
+pub(all) struct BufferedValue {
+  field_index : Int
+  bit_offset : Int
+  bytes : Bytes
+} derive(Debug, Eq)
+
+///|
+pub extend BufferedValue with @debug.Debug::{to_repr}
+
+///|
+pub extend BufferedValue with Eq::{equal, not_equal}
+
+///|
 pub(all) struct DecodedReport {
   kind : ReportKind
   report_id : Int
   values : Array[DecodedValue]
   opaque_values : Array[OpaqueValue]
+  buffered_values : Array[BufferedValue]
 } derive(Debug, Eq)
 
 ///|
@@ -65,7 +81,7 @@ pub fn report_length(
     found = true
     if field.bit_size < 1 ||
       field.bit_size > 65536 ||
-      ((field.flags & 3) == 0 && field.bit_size > 32) ||
+      ((field.flags & 259) == 0 && field.bit_size > 32) ||
       field.count < 1 ||
       field.count > 65536 ||
       field.bit_offset != bits {
@@ -92,7 +108,11 @@ pub fn report_length(
       !valid_index_spans(field.designator_spans) ||
       !valid_alternate_usages(field.usage_spans, field.alternate_usages) ||
       field.flags < 0 ||
-      field.flags > 255 {
+      field.flags > 511 ||
+      (
+        (field.flags & 256) != 0 &&
+        (field.bit_offset % 8 != 0 || field.bit_size * field.count % 8 != 0)
+      ) {
       return Err(
         diagnostic(
           field.descriptor_offset,
@@ -130,6 +150,7 @@ pub fn decode_report(
   let prefix_bits = if layout.has_report_ids { 8 } else { 0 }
   let values : Array[DecodedValue] = []
   let opaque_values : Array[OpaqueValue] = []
+  let buffered_values : Array[BufferedValue] = []
   for field_index = 0
       field_index < layout.fields.length()
       field_index = field_index + 1 {
@@ -137,6 +158,23 @@ pub fn decode_report(
     if field.kind != kind ||
       field.report_id != report_id ||
       (field.flags & 1) != 0 {
+      continue
+    }
+    if (field.flags & 256) != 0 {
+      let packed = match
+        extract_bytes(
+          bytes,
+          prefix_bits + field.bit_offset,
+          field_value_bits(field),
+        ) {
+        Ok(packed) => packed
+        Err(error) => return Err(error)
+      }
+      buffered_values.push({
+        field_index,
+        bit_offset: field.bit_offset,
+        bytes: packed,
+      })
       continue
     }
     for element_index = 0
@@ -195,5 +233,5 @@ pub fn decode_report(
       })
     }
   }
-  Ok({ kind, report_id, values, opaque_values, })
+  Ok({ kind, report_id, values, opaque_values, buffered_values, })
 }
