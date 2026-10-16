@@ -4,8 +4,8 @@ MoonHID 的目标是 **USB-IF HID 1.11 Report Descriptor 驱动的离线 Report 
 报告级接口覆盖 Input、Output、Feature、Report ID、数值字段、Array、Constant、Null State 和
 Buffered Bytes。此目标受下面明确列出的资源与语义边界约束，不表示整个 USB HID 设备栈获得认证。
 
-Buffered Bytes 已加入本次源码修订；已发布的 **0.4.0 不支持此语义**。
-本文案例需使用包含修订的仓库源码；原发布记录保留在 [0.4.0 发布说明](release-0.4.0.md)。
+Buffered Bytes 从 **0.5.0** 提供，安装入口见 [0.5.0 发布说明](release-0.5.0.md)；
+**0.4.0 不支持此语义**，原发布记录保留在 [0.4.0 发布说明](release-0.4.0.md)。
 
 ## 标准依据与范围
 
