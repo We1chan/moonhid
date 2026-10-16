@@ -18,4 +18,5 @@ Buffered Bytes 是内容由应用解释的固定字节流。本次实现保留�
 
 [验收记录](buffered-bytes-validation.md) 覆盖四后端、混合数值与字节流、多 ID、长度与对齐错误、
 native/JS CLI、JSON 和浏览器展示。样例为离线合成协议数据；Buffered Bytes 的实机验证单独列为后续工作。
-已发布的 0.4.0 不含本次修订，复核应使用包含修订的仓库源码及对应测试。
+本次修订已随 [0.5.0](release-0.5.0.md) 提供，可通过 `moon add We1chan/moonhid@0.5.0` 安装复核。
+0.4.0 不含此修订；兼容目标、案例与源码测试可用于补充申报。

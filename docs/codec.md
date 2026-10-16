@@ -1,8 +1,8 @@
 # 报告编解码、字段读写与描述符生成
 
-以下接口从 0.4.0 提供，安装方式见 [发布说明](release-0.4.0.md)。核心不依赖操作系统 HID API，
+基础接口从 0.4.0 提供，安装方式见 [0.5.0 发布说明](release-0.5.0.md)。核心不依赖操作系统 HID API，
 可在 wasm、wasm-gc、JS、native 使用。JSON schema 保持 v2。
-Buffered Bytes 的支持是 0.4.0 之后的源码修订，需从当前源码运行；已发布的 0.4.0 会拒绝此标志。
+Buffered Bytes 从 0.5.0 提供；0.4.0 会拒绝此标志。
 标准兼容目标、三方向案例与资源边界见 [HID 1.11 兼容说明](hid-compatibility.md)。
 `DecodedReport` 新增公开字段 `buffered_values`；手工构造该结构体的调用方需补上此数组（无缓冲区时为 `[]`）。
 既有函数签名和整数、超宽值的返回语义不变。

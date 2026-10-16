@@ -3,8 +3,8 @@
 MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 使用链路为：声明生成描述符 → 编译布局 → 初始化报告 → 按 Usage 或字段读写 → 编码或解码报告 → 交给设备传输层。
 核心负责报告协议，CLI 和浏览器负责检查与复现，设备连接由独立适配层接入。
-状态以当前源码和测试为准；Buffered Bytes 为 0.4.0 之后的源码修订，尚未发布到注册表。
-0.4.0 发布与安装验收见 [发布说明](release-0.4.0.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
+状态以 0.5.0 源码和测试为准；Buffered Bytes 从 0.5.0 提供。
+发布与安装验收见 [发布说明](release-0.5.0.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
 
 功能范围参照三类成熟库确定：报告解析库（Windows `hidpi.h`、hid-tools）、
 设备端描述符库（TinyUSB、Rust usbd-hid、Microsoft Waratah）和设备通信库（HIDAPI、node-hid）。
