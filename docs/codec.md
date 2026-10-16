@@ -2,6 +2,10 @@
 
 以下接口从 0.4.0 提供，安装方式见 [发布说明](release-0.4.0.md)。核心不依赖操作系统 HID API，
 可在 wasm、wasm-gc、JS、native 使用。JSON schema 保持 v2。
+Buffered Bytes 的支持是 0.4.0 之后的源码修订，需从当前源码运行；已发布的 0.4.0 会拒绝此标志。
+标准兼容目标、三方向案例与资源边界见 [HID 1.11 兼容说明](hid-compatibility.md)。
+`DecodedReport` 新增公开字段 `buffered_values`；手工构造该结构体的调用方需补上此数组（无缓冲区时为 `[]`）。
+既有函数签名和整数、超宽值的返回语义不变。
 
 接口分三层，可以混用：
 
@@ -18,6 +22,7 @@
 `logical_range`、`report_size`、`report_count` 和 `input` / `output` / `feature` 定义字段。
 Main flags 是 HID 位标志：`1` 为 Constant，`2` 为 Data Variable Absolute，
 `6` 为 Data Variable Relative，`0` 为 Data Array Absolute，`0x42` 带 Null State。
+bit 8（`0x100`）为 Buffered Bytes；例如 `0x102` 声明 Data Variable Buffered Bytes。
 
 `collection` / `end_collection` 定义集合；`report_id` 定义 1..255 的 ID；
 `physical_range`、`unit`、`unit_exponent` 保存元数据，`push` / `pop` 保存与恢复全局状态。
@@ -67,6 +72,7 @@ set_usage_value(layout, kind, wire, usage, value, allow_out_of_range=false)
 
 `list_reports` 按 Input、Output、Feature 和递增 ID 列出每个报告：载荷位数、含 ID 前缀的
 `byte_length`，以及 `encode_report` 需要的值数量 `data_count`。适配层可据此分配缓冲区。
+Buffered Bytes 每个 Main item 的 `data_count` 为 1，`new_report` 将整段缓冲区置零。
 
 `new_report` 与 `HidP_InitializeReportForID` 相同：写入 Report ID；带 Null State 的 Variable
 写入 Null 值，Array 元素写入空值，其他位为零。Null 值依次尝试 0、该位宽可表示的最小值和最大值，
@@ -126,6 +132,9 @@ encode_report(layout, kind, report_id, values, allow_out_of_range=false)
   支持 signed32 与完整 uint32，跨字节按 LSB 位序写入。
 - `Raw(Bytes)` 对应超过 32 位的 Variable 字段；每元素长 `ceil(bit_size / 8)`，
   末字节未用高位须为零，不应用整数逻辑范围或单位换算。
+- Buffered Bytes 每个 Main item 对应 **一个** `Raw(Bytes)`，长度精确为 `bit_size * count / 8`。
+  即使总宽度不超过 32 位也不能使用 `Integer`；字节内容不受 Logical 范围、Array 或 Null 标志解释。
+  非字节对齐的起点或总长度在编译时返回 `buffered_alignment`。
 - 默认检查 Logical 范围。Null State 允许可表示的范围外整数，解码时标记 `is_null`。
   显式 `allow_out_of_range=true` 可重放其他异常原值，但仍检查位宽与类型，不截断。
 - 自动添加所需 ID；新报告的 Constant 与未用尾位为零。每报告仍遵守 65536 位上限。
@@ -153,6 +162,9 @@ find_fields(layout, kind, report_id, usage)
 `find_fields` 返回匹配 Data Variable Usage 的全部引用，包括重复末项 Usage；
 Array 没有固定的 Usage 元素位置，应使用 `set_usages`、`array_selector` 或查看解码结果。
 超宽字段 read/write 仍用 `Raw`。
+Buffered Bytes 的 `element_index` 仅允许 0，read/write 一次处理整段流；`find_fields` 将首个 Usage
+映射到这一引用，`get/set_usage_value` 同样传递 `Raw`。其余 Usage 保留为元数据。
+缓冲区不参与 `active_usages`；`set/clear_usages` 与物理量换算不能解释其内容。
 
 低层 `insert_bits` / `insert_bytes` 对应 `extract_bits` / `extract_bytes`，
 按绝对位偏移在副本中写入，不解释 ID、Usage 或 Logical 范围。整数需显式 `signed=true`。
@@ -180,6 +192,7 @@ moon run src/cmd/moonhid --target js -- encode --kind input --id 7 examples/code
 
 - **位置形式**：JSON 数组，按字段、元素顺序列出全部 Data 元素。普通字段为整数，
   超宽字段为仅有 `hex` 字符串键的对象，例如 `[{"hex":"ff ff ff ff 01"}]` 表示一个 33 位原始元素。
+  Buffered Bytes 同样使用 `hex` 对象，每个 Main item 只提供一个对象，含整段流。
   顺序、数量与 Null 规则同 `encode_report`。
 - **Usage 形式**：JSON 对象，从 `new_report` 开始，依次应用三个可选数组，未提及的字段保持初始值：
   `values` 的元素为 `{"page", "id", "value"}` 或 `{"page", "id", "hex"}`，经 `set_usage_value` 写入；

@@ -11,6 +11,17 @@ MoonHID 将这些二进制定义转换为可复用的布局，也能从声明生
 核心为纯 MoonBit，可用于设备工具、嵌入式固件回归、自定义协议实现和浏览器分析器。
 完整功能范围与各阶段验收见 [功能范围](../docs/features.md)。
 
+## HID 1.11 兼容目标
+
+目标为 **HID 1.11 Report Descriptor 驱动的离线 Report Protocol 编解码**：
+Input / Output / Feature、Report ID、Variable、Array、Constant、Null State，
+以及 Main item bit 8 的 **Buffered Bytes 固定长度字节流**。
+整段字节流以一个 `Raw(Bytes)` 编码，解码放入 `buffered_values`，不套用整数范围、Array 选择器或物理量换算。
+标准条款、资源边界与三方向可复现案例见 [标准兼容目标](../docs/hid-compatibility.md)。
+
+Buffered Bytes 属于当前仓库源码修订，**已发布的 0.4.0 不含此支持**；
+运行新案例需使用包含此修订的源码。报名补充说明见 [初审反馈回复](../docs/hackathon-review-response.md)。
+
 ## 使用场景
 
 1. 自制键盘：生成按键数组和 LED 描述符，按 Usage 按下/释放按键得到 Input 报告，读取主机发来的 LED Output。
@@ -24,7 +35,7 @@ MoonHID 将这些二进制定义转换为可复用的布局，也能从声明生
 
 ## 已实现功能
 
-仓库 0.4.0 源码提供以下能力，接口约定见 [编解码与生成](../docs/codec.md)：
+仓库源码提供以下能力，接口约定及与 0.4.0 的区别见 [编解码与生成](../docs/codec.md)：
 
 | 能力 | 内容与入口 |
 | --- | --- |
@@ -50,7 +61,7 @@ HID 生态的成熟库分三类：根据描述符解释与构造报告的解析�
 不包含第三类的设备通信。
 
 下表以 2026-10-12 查阅的公开接口为依据；“—”表示该库不提供，需要调用方自行实现。
-MoonHID 的功能状态对应仓库 0.4.0 源码。
+MoonHID 的功能状态对应当前仓库源码；Buffered Bytes 为 0.4.0 之后新增。
 
 | 能力 | Windows HID 解析库（C，`hidpi.h`） | hid-tools（Python） | TinyUSB（C） | usbd-hid（Rust） | HIDAPI / node-hid | MoonHID（MoonBit） |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -61,7 +72,7 @@ MoonHID 的功能状态对应仓库 0.4.0 源码。
 | 按 Usage 置位按钮与按键数组 | `HidP_SetUsages` / `UnsetUsages` / `GetUsagesEx` | 按 Usage 名称填入数组 | 调用方填写键码，如 `tud_hid_keyboard_report` | 调用方填写 `KeyboardReport` 等字段 | — | `set_usages` / `clear_usages` / `active_usages` |
 | 按 Usage 读写数值 | `HidP_GetUsageValue` / `SetUsageValue` | 按字段 `get_values` / `fill_values` | 结构体字段 | 结构体字段 | — | `get_usage_value` / `set_usage_value`；按字段 `read_field` / `write_field` |
 | 物理量换算 | `HidP_GetScaledUsageValue` / `SetScaledUsageValue` | — | — | — | — | `physical_value` / `logical_from_physical` 等，含 Unit Exponent |
-| 完整报告编解码 | `HidP_GetData` / `SetData` | `create_report`、字段提取 | 发送固定结构体 | `AsInputReport` 序列化 | 原始字节 I/O | `encode_report` / `decode_report`，三方向、多 ID、超宽原始值 |
+| 报告级编解码 | `HidP_GetData` / `SetData` | `create_report`、字段提取 | 发送固定结构体 | `AsInputReport` 序列化 | 原始字节 I/O | `encode_report` / `decode_report`，三方向、多 ID、超宽原始值、Buffered Bytes |
 | 实际设备传输 | 配合 `HidD_*` 与文件 I/O | Linux hidraw / UHID | 设备端 USB 栈 | 配合 usb-device | 枚举、Input / Output / Feature | 可选 WebHID Input；核心离线处理 |
 | 运行形态 | Windows 系统库 | Python / Linux 工具 | MCU 固件 | 嵌入式 Rust | 原生库 / Node.js 绑定 | wasm / wasm-gc / JS / native |
 
@@ -293,6 +304,39 @@ test "README: decode one relative axis" {
 }
 ```
 
+Buffered Bytes 示例（需使用当前源码）：
+
+```mbt check
+///|
+test "README: Buffered Bytes remain one application stream" {
+  let descriptor = match
+    @moonhid.DescriptorBuilder::new()
+    .report_id(5)
+    .report_size(8)
+    .report_count(4)
+    .input(0x102)
+    .build() {
+    Ok(bytes) => bytes
+    Err(_) => fail("descriptor rejected")
+  }
+  let layout = match @moonhid.compile_descriptor(descriptor) {
+    Ok(layout) => layout
+    Err(_) => fail("layout rejected")
+  }
+  assert_eq(
+    @moonhid.encode_report(layout, @moonhid.Input, 5, [@moonhid.Raw(b"MOON")]),
+    Ok(b"\x05MOON"),
+  )
+  let report = match
+    @moonhid.decode_report(layout, @moonhid.Input, b"\x05MOON") {
+    Ok(report) => report
+    Err(_) => fail("report rejected")
+  }
+  assert_eq(report.values, [])
+  assert_eq(report.buffered_values[0].bytes, b"MOON")
+}
+```
+
 主要接口：
 
 | 类别 | 接口 | 用途 |
@@ -308,7 +352,7 @@ test "README: decode one relative axis" {
 | | `new_report` | 生成空闲报告：写入 ID，Null State 字段取 Null 值，Array 取空值，其余为零 |
 | | `encode_report` | 根据布局编码 `Integer` / `Raw` 值，校验数量、类型、范围，自动写 ID 与零填充 |
 | 报告解码 | `report_length` | 查询指定方向和 ID 的完整报告字节长度 |
-| | `decode_report` | 校验长度并返回变量值、数组 Usage 与 Null State 标记 |
+| | `decode_report` | 校验长度并返回变量值、数组 Usage、Null State、超宽值与 Buffered Bytes |
 | 字段读写 | `find_fields` / `array_selector` | 查询 Variable Usage 的全部字段引用，或把 Array Usage 转为逻辑选择器 |
 | | `read_field` / `write_field` | 按字段和元素索引读写单个值，包含报告长度与归属校验 |
 | Usage 级访问 | `set_usages` / `clear_usages` / `active_usages` | 按 Usage 按下、释放、列出按钮与按键；自动处理按键数组的空位 |
@@ -480,6 +524,10 @@ WebHID 不暴露完整原始项，String/Designator/Delimiter 等元数据不参
   1..32 位用 `Integer`，超宽字段用 `Raw`，末字节高位须为零。默认检查 Logical 范围，
   声明 Null State 时接受可表示的范围外值；显式 `allow_out_of_range=true` 可重放其他范围外原值。
   新报告的 Constant 和未用尾位为零；`write_field` 保留它们及所有相邻位。
+- Buffered Bytes 按整个 Main 字段消费一个 `Raw`，长为 `Report Size × Report Count / 8`；
+  起始偏移与总长度必须按 8 位对齐，否则返回 `buffered_alignment`。
+  解码输出 `buffered_values`，保留 `00`、`ff` 和顺序；不解释 Logical、Physical、Array 或 Null。
+  字段读写使用元素索引 0；按 Usage 访问整段缓冲区时使用首个 Usage。
 - 构建器为有状态、可链式调用的对象，第一项参数错误保留至 `build()`。
   调用方显式定义 Report ID、填充与集合结束；当前不自动分配 ID、补齐字节、推断位宽或优化全局状态。
   Minimum ≥ 0 时 Maximum 采用有符号、无符号读法一致的最短宽度（255 生成 `26 ff 00`），
@@ -488,7 +536,8 @@ WebHID 不暴露完整原始项，String/Designator/Delimiter 等元数据不参
   Delimiter 按 Linux 的公共 Usage + 第一个集合规则解码，后续集合保存在 `alternate_usages`。
   嵌套、无开启的关闭和未闭合返回 `delimiter`；索引范围错误返回 `local_range`，
   每类索引最多 1024 段（`local_limit`），优选与备选 Usage 合计最多 1024 段（`usage_limit`）。
-  长项仅支持原始分词，布局编译会拒绝；保留字也明确报错；Buffered Bytes 返回 `buffered_bytes`。Physical 范围和 Unit 全局项允许存在，
+  长项仅支持原始分词，布局编译会拒绝；保留字也明确报错。Buffered Bytes 的 bit 8 已支持，bit 9..31 仍为保留位。
+  Physical 范围和 Unit 全局项允许存在，
   解码返回原始整数；需要时用 `physical_value` 等接口按 Physical 范围与 Unit Exponent 换算为双精度物理量。
   核心保留数字 Usage；页面只补充常见 Usage 名称，不是完整 HID Usage Tables 数据库。
 - Usage 级接口把 Logical 0..1 的 Data Variable 元素视为开关；Array 元素在范围外、超出 Usage 列表或选中

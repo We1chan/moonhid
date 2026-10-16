@@ -74,6 +74,23 @@ assert.throws(() => descriptorFromCollections(incomplete), /逻辑范围不完�
 const rawReference = descriptorFromCollections(incomplete, { rawValues: true });
 assert.equal(inspect(rawReference).descriptor.layout.fields[0].logical_max, 65535);
 assert.deepEqual(JSON.parse(decode_wire(rawReference, 'input', '00 80 ff ff')).decoded.values.map(v => v.value), [32768, 65535]);
+// A browser-visible Buffered Bytes item keeps its stream semantics in both modes.
+for (const kind of ['input', 'output', 'feature']) {
+  for (const rawValues of [false, true]) {
+    const item = { ...axis, reportSize: 8, reportCount: 4, logicalMaximum: 1, isBufferedBytes: true,
+      isArray: true, hasNull: true, usages: [0xff000002] };
+    const visible = [{ usagePage: 0xff00, usage: 1, type: 1, [kind + 'Reports']: [{ reportId: 5, items: [item] }] }];
+    const reference = descriptorFromCollections(visible, { rawValues });
+    const result = inspect(reference);
+    assert.equal(result.ok, true);
+    assert.deepEqual(compareCollections(result.descriptor.layout, visible).differences, []);
+    const decoded = JSON.parse(decode_wire(reference, kind, '05 00 ff 01 80'));
+    assert.deepEqual(decoded.decoded.values, []);
+    assert.deepEqual(decoded.decoded.buffered_values, [{ field_index: 0, bit_offset: 0, hex: '00 ff 01 80' }]);
+  }
+}
+const bufferedIncomplete = [{ ...collections[0], inputReports: [{ reportId: 0, items: [{ ...axis, isBufferedBytes: true, logicalMaximum: -1 }] }] }];
+assert.equal(inspect(descriptorFromCollections(bufferedIncomplete)).ok, true);
 const xbox = JSON.parse(await readFile(new URL('../examples/device-cases/xbox-bluetooth.json', import.meta.url), 'utf8'));
 assert.equal(xbox.reports.length, 42);
 for (const report of xbox.reports) {

@@ -87,6 +87,15 @@ pub fn write_field(Layout, ReportKind, Bytes, Int, Int, ReportValue, allow_out_o
 // Errors
 
 // Types and methods
+pub(all) struct BufferedValue {
+  field_index : Int
+  bit_offset : Int
+  bytes : Bytes
+} derive(Eq, @debug.Debug)
+pub fn BufferedValue::equal(Self, Self) -> Bool
+pub fn BufferedValue::not_equal(Self, Self) -> Bool
+pub fn BufferedValue::to_repr(Self) -> @debug.Repr
+
 pub(all) struct Collection {
   descriptor_offset : Int
   end_offset : Int
@@ -106,6 +115,7 @@ pub(all) struct DecodedReport {
   report_id : Int
   values : Array[DecodedValue]
   opaque_values : Array[OpaqueValue]
+  buffered_values : Array[BufferedValue]
 } derive(Eq, @debug.Debug)
 pub fn DecodedReport::equal(Self, Self) -> Bool
 pub fn DecodedReport::not_equal(Self, Self) -> Bool

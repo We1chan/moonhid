@@ -1,5 +1,6 @@
 ///|
 /// Integer values use the field's signedness; Raw values are packed LSB-first.
+/// A Buffered Bytes Main item takes one Raw value of Size * Count / 8 bytes.
 pub(all) enum ReportValue {
   Integer(Int64)
   Raw(Bytes)
@@ -111,6 +112,27 @@ fn writable_value(
   value : ReportValue,
   allow_out_of_range : Bool,
 ) -> Result[Unit, Diagnostic] {
+  if (field.flags & 256) != 0 {
+    return match value {
+      Raw(bytes) if bytes.length() == field_value_bits(field) / 8 => Ok(())
+      Raw(_) =>
+        Err(
+          diagnostic(
+            field.descriptor_offset,
+            "value_range",
+            "Buffered Bytes must match the complete fixed-size stream length",
+          ),
+        )
+      Integer(_) =>
+        Err(
+          diagnostic(
+            field.descriptor_offset,
+            "value_type",
+            "Buffered Bytes require one Raw byte stream",
+          ),
+        )
+    }
+  }
   match value {
     Integer(value) => {
       if field.bit_size > 32 {
@@ -182,6 +204,7 @@ fn put_value(
 
 ///|
 /// Encodes every non-Constant element in descriptor order, then element order.
+/// Each Buffered Bytes Main item consumes one Raw value for the entire stream.
 /// Constant and unused final bits are zero. Null State accepts representable
 /// out-of-range values; allow_out_of_range permits replay of other invalid data.
 pub fn encode_report(
@@ -200,7 +223,7 @@ pub fn encode_report(
     if field.kind == kind &&
       field.report_id == report_id &&
       (field.flags & 1) == 0 {
-      expected = expected + field.count
+      expected = expected + field_value_count(field)
     }
   }
   if values.length() != expected {
@@ -224,7 +247,8 @@ pub fn encode_report(
       (field.flags & 1) != 0 {
       continue
     }
-    for element = 0; element < field.count; element = element + 1 {
+    let width = field_value_bits(field)
+    for element = 0; element < field_value_count(field); element = element + 1 {
       let value = values[index]
       match writable_value(field, value, allow_out_of_range) {
         Ok(_) => ()
@@ -233,7 +257,7 @@ pub fn encode_report(
       put_value(
         target,
         prefix + field.bit_offset + element * field.bit_size,
-        field.bit_size,
+        width,
         value,
       )
       index = index + 1
@@ -265,12 +289,12 @@ fn selected_field(
       ),
     )
   }
-  if element_index < 0 || element_index >= field.count {
+  if element_index < 0 || element_index >= field_value_count(field) {
     return Err(
       diagnostic(
         field.descriptor_offset,
         "element_index",
-        "Element index is outside Report Count",
+        "Element index is outside the field's data values (Buffered Bytes use index 0)",
       ),
     )
   }
@@ -288,6 +312,7 @@ fn selected_field(
 
 ///|
 /// Reads one data element using global layout field and within-field indices.
+/// Buffered Bytes use element_index=0 and return the complete Raw stream.
 pub fn read_field(
   layout : Layout,
   kind : ReportKind,
@@ -307,8 +332,9 @@ pub fn read_field(
   let offset = (if layout.has_report_ids { 8 } else { 0 }) +
     field.bit_offset +
     element_index * field.bit_size
-  if field.bit_size > 32 {
-    match extract_bytes(bytes, offset, field.bit_size) {
+  let width = field_value_bits(field)
+  if (field.flags & 256) != 0 || field.bit_size > 32 {
+    match extract_bytes(bytes, offset, width) {
       Ok(raw) => Ok(Raw(raw))
       Err(error) => Err(error)
     }
@@ -349,12 +375,14 @@ pub fn write_field(
   let offset = (if layout.has_report_ids { 8 } else { 0 }) +
     field.bit_offset +
     element_index * field.bit_size
-  put_value(target, offset, field.bit_size, value)
+  put_value(target, offset, field_value_bits(field), value)
   Ok(Bytes::from_array(target.exact_view()))
 }
 
 ///|
-/// Finds all Variable elements with a Usage in one report; Arrays use selectors.
+/// Finds Variable elements or complete Buffered Bytes streams by Usage.
+/// Buffered Bytes associate their first Usage with element_index=0.
+/// Numeric Arrays use selectors.
 /// Repeated Usages intentionally return multiple references.
 pub fn find_fields(
   layout : Layout,
@@ -373,9 +401,10 @@ pub fn find_fields(
     let field = layout.fields[field_index]
     if field.kind == kind &&
       field.report_id == report_id &&
-      (field.flags & 3) == 2 {
+      (field.flags & 1) == 0 &&
+      ((field.flags & 2) != 0 || (field.flags & 256) != 0) {
       for element_index = 0
-          element_index < field.count
+          element_index < field_value_count(field)
           element_index = element_index + 1 {
         if field_usage(field, element_index) == Some(usage) {
           refs.push({ field_index, element_index, })
@@ -404,7 +433,7 @@ pub fn array_selector(
   field : Field,
   usage : Usage,
 ) -> Result[Int64, Diagnostic] {
-  if (field.flags & 3) != 0 {
+  if (field.flags & 259) != 0 {
     return Err(
       diagnostic(
         field.descriptor_offset,

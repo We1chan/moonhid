@@ -87,6 +87,15 @@ pub fn physical_value(
   field : Field,
   logical : Int64,
 ) -> Result[Double, Diagnostic] {
+  if (field.flags & 256) != 0 {
+    return Err(
+      diagnostic(
+        field.descriptor_offset,
+        "value_type",
+        "Buffered Bytes have no numeric physical value",
+      ),
+    )
+  }
   if field.logical_max <= field.logical_min {
     return Err(
       diagnostic(
@@ -128,6 +137,15 @@ pub fn logical_from_physical(
   field : Field,
   physical : Double,
 ) -> Result[Int64, Diagnostic] {
+  if (field.flags & 256) != 0 {
+    return Err(
+      diagnostic(
+        field.descriptor_offset,
+        "value_type",
+        "Buffered Bytes have no numeric physical value",
+      ),
+    )
+  }
   let (physical_min, physical_max) = effective_physical_range(field)
   if field.logical_max <= field.logical_min || physical_max == physical_min {
     return Err(
