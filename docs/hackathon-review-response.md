@@ -41,10 +41,10 @@ GitHub 在仓库首页展示内容时，按首页所在路径解析 `../docs/...
 `node scripts/sync-readme.mjs --check` 检查两份内容同步和本地文档目标存在，已加入 CI。
 可直接复核以下入口：
 
-- [标准兼容目标](https://github.com/We1chan/moonhid/blob/main/docs/hid-compatibility.md)
-- [完整报告案例](https://github.com/We1chan/moonhid/blob/main/docs/report-cases.md)
+- [标准兼容目标](hid-compatibility.md)
+- [完整报告案例](report-cases.md)
 - [在线检查器](https://we1chan.github.io/moonhid/)
-- [0.5.0 发布与安装验收](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)
+- [0.5.0 发布与安装验收](release-0.5.0.md)
 
 可通过 `moon add We1chan/moonhid@0.5.0` 安装核心库。本次补充围绕说明、案例与文档导航，
 未改变核心编解码 API；从源码复核新增案例时请使用包含本次修复的提交。
