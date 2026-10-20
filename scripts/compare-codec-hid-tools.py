@@ -17,6 +17,7 @@ CASES = (
     ("consumer", "input", 0, "consumer-values.json"),
     ("vendor", "input", 0, "vendor-values.json"),
     ("vendor", "output", 0, "vendor-values.json"),
+    ("standard-feature", "feature", 7, "standard-feature-values.json"),
 )
 # Usage-form edits; hid-tools places them with its own Usage lists and bit offsets.
 USAGE_CASES = (
@@ -91,8 +92,9 @@ def main():
         ).stdout.strip()
 
     def parsed_template(template):
-        descriptor_hex = cli("generate", template)
         reference_hex = (ROOT / "examples/codec" / f"{template}.hex").read_text()
+        # The standard Feature is a descriptor fixture, not a CLI template.
+        descriptor_hex = reference_hex if template == "standard-feature" else cli("generate", template)
         if bytes.fromhex(descriptor_hex) != bytes.fromhex(reference_hex):
             raise AssertionError(f"{template}: generated descriptor differs from fixture")
         return descriptor_hex, ReportDescriptor.from_bytes(bytes.fromhex(descriptor_hex))
