@@ -77,6 +77,6 @@ Cross-cutting invariants:
 - MoonBit code is split into blocks separated by `///|`. Deprecated blocks go in `deprecated.mbt`.
 - `moon ide` (`peek-def`, `outline`, `find-references`) navigates code. `moon coverage analyze > uncovered.log` lists uncovered code.
 - Blackbox tests are `*_test.mbt` and refer to the root package as `@moonhid`. Other packages import it as `@hid`. Prefer `assert_eq` or `assert_true(x is Pattern(...))`, and use `debug_inspect` with `derive(Debug)` for structural snapshots.
-- `src/README.mbt.md` is the module readme and the toplevel `README.md` symlinks to it. Its ` ```mbt check ` blocks run as tests under `moon test`.
+- `src/README.mbt.md` is the module readme; its ` ```mbt check ` blocks run as tests under `moon test`. The toplevel `README.md` is a regular file generated with `node scripts/sync-readme.mjs`, which rebases local links for GitHub's repository homepage. Run it after editing the module readme; CI checks synchronization and local documentation links with `--check`.
 - `docs/inspector-validation.md` records manual Chrome checks that CI does not run. Update it when you re-verify UI behavior.
 - `submission/` is gitignored and holds the competition proposal. The README says the contestant must write it themselves, so do not author it.

@@ -7,22 +7,48 @@ Buffered Bytes。此目标受下面明确列出的资源与语义边界约束，
 Buffered Bytes 从 **0.5.0** 提供，安装入口见 [0.5.0 发布说明](release-0.5.0.md)；
 **0.4.0 不支持此语义**，原发布记录保留在 [0.4.0 发布说明](release-0.4.0.md)。
 
+## 完整报告的含义与验收目标
+
+对一份 `compile_descriptor` 接受的描述符，选定 `(Input / Output / Feature, Report ID)` 后：
+
+1. 编码器按描述符顺序接收该报告的全部 Data 值，生成包含所需 ID、全部字段和填充的完整报告。
+   数值字段逐元素提供值；超宽 Variable 每元素提供一个 Raw；Buffered Bytes 每个 Main item 提供一段 Raw。
+2. 解码器接收精确长度的完整报告，依据同一描述符提取该方向和 ID 的全部 Data 字段，
+   返回整数、Usage、范围与 Null 标记，或无损提取原始字节。
+3. 正确性同时以**人工指定的 wire 字节和解码语义**验收。只做本库 encode/decode 往返不足以作为兼容证据。
+   [完整报告案例](report-cases.md) 提供 10 个正例和 7 个反例，清单与预期存放在
+   [compatibility-cases.json](../examples/codec/compatibility-cases.json)，native 与 JS 的 CI 均执行。
+
+Constant 位和未用尾位不属于解码后的 Data 值；新编码把这些位置零，
+因此不承诺对任意非零填充执行 `encode(decode(wire))` 后逐字节不变。
+需要保留原始填充时，用 `write_field` 在原报告副本中修改字段。
+本目标的实现范围以下表为准，资源与语义限制也是契约的一部分。
+
 ## 标准依据与范围
 
 依据 [USB-IF HID 1.11 原文](https://www.usb.org/sites/default/files/documents/hid1_11.pdf)：
 §6.2.2.4 定义 Main 标志；§6.2.2.5 的 bit 8（印刷页 31，PDF 第 41 页）定义 Buffered Bytes；
-§6.2.2.7 定义 Size、Count、ID；第 8 章定义 Report Protocol 的布局与字节格式。
+§6.2.2.7 定义 Size、Count、ID 等 Global items；§6.2.2.8 定义 Local items；
+§6.2.2.9 定义填充；§8.1–8.3 定义报告类型、ID 前缀和数值/Array 格式。
 bit 8 是标准已定义能力，纳入报告编解码目标；bit 9..31 仍保留。
 
-| 语义 | 当前源码的处理 | 验证入口 |
+| HID 1.11 语义 / 条款 | 当前源码的处理与边界 | 可复核证据 |
 | --- | --- | --- |
-| Input、Output、Feature 与 ID | 每个方向和 ID 独立计算偏移与长度，wire 按描述符添加 ID | `report_id_test.mbt`、`encode_test.mbt`、`buffered_test.mbt` |
-| 数值 Variable | 1..32 位有符号或无符号整数，LSB 位序，保留越界原值与 Null 标记 | `decode_test.mbt`、`encode_test.mbt` |
-| 数值 Array | 1..32 位选择器，用 `value - logical_min` 映射 Usage | `values_test.mbt`、`access_test.mbt` |
-| 超宽 Variable | 大于 32 位的每个元素使用 Raw 与 `opaque_values`，不进行整数运算 | `opaque_test.mbt`、`encode_test.mbt` |
-| Buffered Bytes | 一个 Main item 为一段固定原始字节流，所有位宽均使用 Raw 与 `buffered_values` | `buffered_test.mbt`、下方三方向案例 |
-| Constant 与尾部填充 | 布局保留；新编码置零；字段修改保留原始位 | `bits_test.mbt`、`buffered_test.mbt` |
-| Global、Collection、本地元数据 | Push/Pop、Usage 区间、String/Designator 与 Delimiter 元数据 | `global_stack_test.mbt`、`local_metadata_test.mbt` |
+| Input、Output、Feature；§6.2.2.5、§8.1 | 同一描述符的三方向独立布局与完整报告编解码 | 案例的键盘 Input / LED Output / 厂商 Feature；[encode_test](../src/encode_test.mbt) |
+| Report ID、Size、Count；§6.2.2.7、§8.2 | 方向和 ID 分开计算载荷偏移；无 ID 时不加 0，有 ID 时添加一个字节；严格检查报告长度 | 带 ID 手柄与无 ID 键盘；[report_id_test](../src/report_id_test.mbt) |
+| 数值 Variable；§6.2.2.5、§8.2 | 1..32 位有符号/无符号整数；按 LSB 位序提取，支持跨字节，符号由 Logical Minimum 决定 | 鼠标负位移、signed16 手柄；[decode_test](../src/decode_test.mbt)、[encode_test](../src/encode_test.mbt) |
+| 数值 Array；§6.2.2.5、§8.3 | 1..32 位选择器，按 `value - logical_min` 映射 Usage 序列；未映射值保留原数值 | 键盘六键 Array、媒体键；[values_test](../src/values_test.mbt)、[access_test](../src/access_test.mbt) |
+| Constant 与填充；§6.2.2.5、§6.2.2.9 | 保留布局，新编码置零，解码省略 Constant；字段修改保留相邻原始位 | LED 的高三位为零、Feature 的低三位填充；[bits_test](../src/bits_test.mbt) |
+| Null State 与 Logical 范围；§6.2.2.5、§6.2.2.7 | 解码保留越界原值并标记 Null；编码检查位宽与范围，Null 接受可表示的范围外值 | Hat 0..7 的 Null 原值 15；[encode_test](../src/encode_test.mbt) |
+| 超宽 Variable；§6.2.2.7 | 大于 32 位时每元素用 Raw 与 `opaque_values` 保存位数据，不执行整数或物理量运算；超宽数值 Array 未实现 | 33 位 Feature 跨字节原始值；[opaque_test](../src/opaque_test.mbt) |
+| Buffered Bytes；§6.2.2.5 bit 8 | 整个 Main item 为固定、字节对齐的 Raw 流；不解释数值、Array 或 Null | 下方三方向案例；[buffered_test](../src/buffered_test.mbt) |
+| Absolute/Relative、Wrap、Linear、Preferred State、Volatile；§6.2.2.5 | 保留标志；编解码返回本报告原值，不累积相对运动、不进行环绕/非线性映射或设备状态维护 | 鼠标 Relative；[metadata_test](../src/metadata_test.mbt) |
+| Physical、Unit、Unit Exponent；§6.2.2.7 | 保存元数据；通过单独物理量 API 做线性换算与十进制指数，不做单位制转换 | [编解码文档](codec.md#物理量换算)、[access_test](../src/access_test.mbt) |
+| Global 栈、Collection、Local items；§6.2.2.6–8 | 支持平衡 Push/Pop、集合树、Usage 区间、String/Designator；Delimiter 按 Linux 优选分支解释，备选组保留 | [global_stack_test](../src/global_stack_test.mbt)、[local_metadata_test](../src/local_metadata_test.mbt) |
+| 短项与长项；§6.2.2.2–3 | 短项编译；长项/保留项只做无损分词与序列化，编译返回明确错误 | [items_test](../src/items_test.mbt)、[builder_test](../src/builder_test.mbt) |
+
+wire 是报告协议字节。HIDAPI/node-hid 写接口对无 ID 报告要求的额外 `00` 由传输适配层添加；
+WebHID 分开提供 ID 与 payload，适配时再按这里的约定组合。具体接口见 [CLI 前缀说明](codec.md#文件-cli-与样例)。
 
 ## Buffered Bytes 契约
 
