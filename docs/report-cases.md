@@ -109,4 +109,4 @@ moon run src/cmd/moonhid --target js -- decode --kind feature examples/codec/ven
 | `node scripts/test-compatibility.mjs native` | 同上，两种 CLI 的结果一致 |
 | `node scripts/test-cli.mjs` | 既有 native / JS 编码、解码、生成、Unicode 路径与退出码回归通过 |
 | `moon info`、`moon fmt` | 通过，公共 API 未变化 |
-| `node scripts/sync-readme.mjs --check` | 两份 README 同步，184 个本地文档链接目标存在 |
+| `node scripts/sync-readme.mjs --check` | 两份 README 同步，187 个本地文档链接目标存在 |
