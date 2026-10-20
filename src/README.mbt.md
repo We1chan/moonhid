@@ -17,7 +17,16 @@ MoonHID 将这些二进制定义转换为可复用的布局，也能从声明生
 Input / Output / Feature、Report ID、Variable、Array、Constant、Null State，
 以及 Main item bit 8 的 **Buffered Bytes 固定长度字节流**。
 整段字节流以一个 `Raw(Bytes)` 编码，解码放入 `buffered_values`，不套用整数范围、Array 选择器或物理量换算。
-标准条款、资源边界与三方向可复现案例见 [标准兼容目标](../docs/hid-compatibility.md)。
+“完整报告”指一个方向和 Report ID 下的全部 Data 字段，以及 ID、Constant 和尾部填充组成的完整字节序列。
+标准条款、逐项支持与限制见 [标准兼容目标](../docs/hid-compatibility.md)；
+[完整报告案例](../docs/report-cases.md) 附描述符、编码输入、固定报告字节、解码预期与执行命令。
+
+```sh
+node scripts/test-compatibility.mjs
+```
+
+安装 MoonBit 与 Node.js 后，在仓库根目录执行即可复核 10 个案例和 7 个错误案例，
+覆盖键盘 Input、LED Output、鼠标、带 ID 手柄、媒体键、超宽 Feature、Hat Null 和三方向 Buffered Bytes。
 
 Buffered Bytes 从 **0.5.0** 提供；0.4.0 不含此支持。报名补充说明见 [初审反馈回复](../docs/hackathon-review-response.md)。
 
@@ -573,7 +582,7 @@ moonhid/
 ├── web/                     # 检查器页面
 ├── scripts/                 # 构建、验收与打包脚本
 ├── docs/                    # 协议说明与验收记录
-└── README.md                # 指向 src/README.mbt.md
+└── README.md                # 从可执行 README 生成，链接按仓库根目录改写
 ```
 
 包名仍为 `We1chan/moonhid`；`src/` 是源码根目录，不属于导入路径。
@@ -596,10 +605,15 @@ moon test --target js # 需要 Node.js
 node scripts/build-web.mjs
 node scripts/test-web.mjs
 node scripts/test-usability.mjs
+node scripts/test-compatibility.mjs
 node scripts/firmware-ci.mjs
 moon info
 moon fmt --check
+node scripts/sync-readme.mjs --check
 ```
+
+修改 `src/README.mbt.md` 后运行 `node scripts/sync-readme.mjs`，同步仓库首页并改写相对链接。
+CI 检查两份 README 一致及本地文档链接存在；首页使用普通文件，避免 GitHub 通过符号链接展示时把 `../docs/` 解析到错误位置。
 
 CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
 Physical/Unit、完整 uint32 和错误路径。CLI 进程回归额外验证五种模板的生成、编码与解码、Usage 形式的值文件、LED Output 和超宽 Feature；

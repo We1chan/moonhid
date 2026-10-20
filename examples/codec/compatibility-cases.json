@@ -1,0 +1,73 @@
+{
+  "standard": "USB-IF HID 1.11, sections 6.2.2 and 8 (offline Report Protocol)",
+  "cases": [
+    {
+      "name": "keyboard-input",
+      "descriptor": "keyboard.hex", "values": "keyboard-usages.json", "report": "keyboard-report.hex",
+      "kind": "input", "id": 0, "wire_hex": "02 00 04 06 00 00 00 00",
+      "integers": [0, 1, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0],
+      "usages": [{"index": 1, "page": 7, "id": 225, "is_array": false}, {"index": 8, "page": 7, "id": 4, "is_array": true}, {"index": 9, "page": 7, "id": 6, "is_array": true}]
+    },
+    {
+      "name": "keyboard-led-output",
+      "descriptor": "keyboard.hex", "values": "keyboard-led-values.json", "report": "keyboard-led-report.hex",
+      "kind": "output", "id": 0, "wire_hex": "03", "integers": [1, 1, 0, 0, 0],
+      "usages": [{"index": 0, "page": 8, "id": 1, "is_array": false}, {"index": 1, "page": 8, "id": 2, "is_array": false}]
+    },
+    {
+      "name": "mouse-input",
+      "descriptor": "mouse.hex", "values": "mouse-values.json", "report": "mouse-report.hex",
+      "kind": "input", "id": 0, "wire_hex": "05 ff 02 fe", "integers": [1, 0, 1, -1, 2, -2]
+    },
+    {
+      "name": "gamepad-input",
+      "descriptor": "gamepad.hex", "values": "gamepad-values.json", "report": "gamepad-report.hex",
+      "kind": "input", "id": 7, "wire_hex": "07 01 08 00 80 ff 7f",
+      "integers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -32768, 32767]
+    },
+    {
+      "name": "consumer-input",
+      "descriptor": "consumer.hex", "values": "consumer-values.json", "report": "consumer-report.hex",
+      "kind": "input", "id": 0, "wire_hex": "e9 00", "integers": [233],
+      "usages": [{"index": 0, "page": 12, "id": 233, "is_array": true}]
+    },
+    {
+      "name": "vendor-feature",
+      "descriptor": "vendor-feature.hex", "values": "vendor-feature-values.json", "report": "vendor-feature-report.hex",
+      "kind": "feature", "id": 7, "wire_hex": "07 f8 ff ff ff 0f", "integers": [],
+      "opaque_values": [{"field_index": 1, "element_index": 0, "bit_offset": 3, "bit_size": 33, "hex": "ff ff ff ff 01"}]
+    },
+    {
+      "name": "hat-null-input",
+      "descriptor": "hat-null.hex", "values": "hat-null-values.json", "report": "hat-null-report.hex",
+      "kind": "input", "id": 0, "wire_hex": "0f", "integers": [15], "null_indices": [0]
+    },
+    {
+      "name": "buffered-input",
+      "descriptor": "buffered-bytes.hex", "values": "buffered-bytes-values.json", "report": "buffered-bytes-report.hex",
+      "kind": "input", "id": 5, "wire_hex": "05 4d 4f 4f 4e", "integers": [],
+      "buffered_values": [{"field_index": 0, "bit_offset": 0, "hex": "4d 4f 4f 4e"}]
+    },
+    {
+      "name": "buffered-output",
+      "descriptor": "buffered-bytes.hex", "values": "buffered-bytes-values.json", "report": "buffered-bytes-report.hex",
+      "kind": "output", "id": 5, "wire_hex": "05 4d 4f 4f 4e", "integers": [],
+      "buffered_values": [{"field_index": 1, "bit_offset": 0, "hex": "4d 4f 4f 4e"}]
+    },
+    {
+      "name": "buffered-feature",
+      "descriptor": "buffered-bytes.hex", "values": "buffered-bytes-values.json", "report": "buffered-bytes-report.hex",
+      "kind": "feature", "id": 5, "wire_hex": "05 4d 4f 4f 4e", "integers": [],
+      "buffered_values": [{"field_index": 2, "bit_offset": 0, "hex": "4d 4f 4f 4e"}]
+    }
+  ],
+  "rejections": [
+    {"case": "keyboard-input", "operation": "decode", "wire_hex": "02 00", "code": "report_length"},
+    {"case": "keyboard-led-output", "operation": "decode", "wire_hex": "00 03", "code": "report_length"},
+    {"case": "gamepad-input", "operation": "decode", "wire_hex": "08 01 08 00 80 ff 7f", "code": "unknown_report"},
+    {"case": "keyboard-led-output", "operation": "encode", "values": [1, 1], "code": "value_count"},
+    {"case": "mouse-input", "operation": "encode", "values": [1, 0, 1, -128, 2, -2], "code": "logical_range"},
+    {"case": "buffered-input", "operation": "encode", "values": [1], "code": "value_type"},
+    {"case": "buffered-input", "operation": "encode", "values": [{"hex": "4d 4f"}], "code": "value_range"}
+  ]
+}
