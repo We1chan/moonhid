@@ -43,7 +43,7 @@ GitHub 在仓库首页展示内容时，按首页所在路径解析 `../docs/...
 `node scripts/sync-readme.mjs --check` 检查两份内容同步、发布入口、本地文档目标和锚点，已加入 CI。
 独立排查还发现 Mooncakes 把旧版 `src/README.mbt.md` 的相对路径按模块根解析，
 0.5.0 的 25 个文档/接口资产链接因此仍然 404。0.5.1 尝试改用根 README，
-但发布后线上检查发现 Mooncakes 仍优先显示可执行 README，单改配置未生效。
+但发布后线上检查发现 Mooncakes 同时展示模块根 README 和包内可执行 README，后者仍含错误相对链接。
 0.5.2 将源 README 跨页链接改为明确的 GitHub 地址，
 并用线上检查脚本消费两站实际渲染的链接再次验证；仅合并 main 无法更新旧注册表页面。
 可直接复核以下入口：
