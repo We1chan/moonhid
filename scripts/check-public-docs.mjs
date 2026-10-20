@@ -54,23 +54,38 @@ const githubLinks = hrefs(article);
 const registryLinks = hrefs(registry.body);
 assert.ok(githubLinks.some(href => href.includes(`${repositoryPath}/blob/main/docs/`)),
   'GitHub README has no rendered main-branch documentation links.');
-assert.ok(registryLinks.some(href => href.startsWith(assetPrefix)),
-  `Mooncakes ${version} has no rendered README asset links for this module version.`);
 githubLinks.forEach(href => add(href, repository));
 registryLinks.forEach(href => add(href, mooncakes));
 checks.set(inspector, { href: inspector, page: repository, url: inspector });
 
 const entries = [...checks.values()];
 const failures = [];
+const verified = new Set();
 console.log(`Read rendered GitHub README and Mooncakes ${version}; checking ${entries.length} links including inspector.`);
 for (let index = 0; index < entries.length; index += 4) {
   await Promise.all(entries.slice(index, index + 4).map(async source => {
     const result = await get(source.url);
     if (result.status !== 200) failures.push({ ...source, url: result.url, status: result.status });
+    else verified.add(`${source.page}\n${source.href}`);
   }));
 }
 for (const failure of failures) {
   console.error(`${failure.status}: ${failure.href}\n  rendered by ${failure.page}\n  requested ${failure.url}`);
 }
-console.log(`Public documentation ${version}: checked ${entries.length} rendered GitHub/Mooncakes links and inspector; ${failures.length} failed.`);
-if (failures.length) process.exitCode = 1;
+const missing = [];
+for (const file of ['hid-compatibility.md', 'report-cases.md']) {
+  const valid = registryLinks.some(href => {
+    if (!/^https?:\/\//i.test(href) || !verified.has(`${mooncakes}\n${href}`)) return false;
+    const url = new URL(href);
+    const ownFile = url.origin === repositoryUrl.origin && url.pathname.startsWith(`${repositoryPath}/blob/`) &&
+      url.pathname.endsWith(`/docs/${file}`);
+    const assetFile = href.startsWith(assetPrefix) && url.pathname === `${new URL(assetPrefix).pathname}docs/${file}`;
+    return ownFile || assetFile;
+  });
+  if (!valid) missing.push(file);
+}
+for (const file of missing) {
+  console.error(`Mooncakes ${version}: no verified absolute repository or versioned asset link to docs/${file} in the rendered README.`);
+}
+console.log(`Public documentation ${version}: checked ${entries.length} rendered GitHub/Mooncakes links and inspector; ${failures.length} failed; ${missing.length} required registry links absent or invalid.`);
+if (failures.length || missing.length) process.exitCode = 1;
