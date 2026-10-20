@@ -13,9 +13,9 @@ name = "We1chan/moonhid"
 
 source = "src"
 
-version = "0.5.0"
+version = "0.5.1"
 
-readme = "src/README.mbt.md"
+readme = "README.md"
 
 repository = "https://github.com/We1chan/moonhid"
 
