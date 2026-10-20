@@ -7,9 +7,28 @@ const source = 'src/README.mbt.md';
 const check = process.argv.includes('--check');
 const metadata = await readFile(new URL('moon.mod', root), 'utf8');
 assert.equal(metadata.match(/^readme\s*=\s*"([^"]+)"/m)?.[1], 'README.md',
-  'moon.mod readme must be README.md: Mooncakes resolves README links from the module root.');
+  'moon.mod readme must reference the generated README.md.');
+const repository = metadata.match(/^repository\s*=\s*"([^"]+)"/m)?.[1];
+assert.ok(repository, 'moon.mod must declare the repository URL.');
+const ownMain = repository.replace(/\/$/, '') + '/blob/main/';
+const withoutFences = text => {
+  let fence;
+  return text.split(/\r?\n/).map(line => {
+    if (fence) {
+      if (new RegExp(`^ {0,3}${fence[0]}{${fence.length},}\\s*$`).test(line)) fence = undefined;
+      return '';
+    }
+    const opening = line.match(/^ {0,3}(`{3,}|~{3,})/);
+    if (opening) { fence = opening[1]; return ''; }
+    return line;
+  }).join('\n');
+};
 const markdown = (await readFile(new URL(source, root), 'utf8')).replace(/\r\n/g, '\n');
 const localLink = target => !/^(?:[a-z][a-z\d+.-]*:|#|\/\/)/i.test(target);
+for (const [, target] of withoutFences(markdown).matchAll(/\]\(([^\s)]+)\)/g)) {
+  assert.ok(!localLink(target),
+    `${source}: cross-file relative link ${target}; use an absolute GitHub URL so Mooncakes does not rewrite its base.`);
+}
 // GitHub resolves links relative to the displayed README, even for a symlink.
 const generated = '<!-- Generated from src/README.mbt.md by node scripts/sync-readme.mjs. -->\n\n' +
   markdown.replace(/(\]\()([^\s)]+)(\))/g, (match, before, target, after) => {
@@ -28,18 +47,6 @@ if (check) {
 
 const files = ['README.md', source, 'ROADMAP.md',
   ...(await readdir(new URL('docs/', root))).filter(name => name.endsWith('.md')).map(name => 'docs/' + name)];
-const withoutFences = text => {
-  let fence;
-  return text.split(/\r?\n/).map(line => {
-    if (fence) {
-      if (new RegExp(`^ {0,3}${fence[0]}{${fence.length},}\\s*$`).test(line)) fence = undefined;
-      return '';
-    }
-    const opening = line.match(/^ {0,3}(`{3,}|~{3,})/);
-    if (opening) { fence = opening[1]; return ''; }
-    return line;
-  }).join('\n');
-};
 // GitHub heading IDs keep Unicode letters, numbers, hyphens and underscores.
 // A used-ID set also handles collisions between repeated and numbered headings.
 const headingIds = text => {
@@ -69,9 +76,10 @@ const headings = new Map();
 for (const file of files) {
   const text = await readFile(new URL(file, root), 'utf8');
   for (const [, target] of withoutFences(text).matchAll(/\]\(([^\s)]+)\)/g)) {
-    if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target)) continue;
-    const path = decodeURIComponent(target.split(/[?#]/)[0]);
-    const resolved = path ? posix.normalize(posix.join(posix.dirname(file), path)) : file;
+    const ownAbsolute = target.startsWith(ownMain);
+    if (!ownAbsolute && /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target)) continue;
+    const path = decodeURIComponent((ownAbsolute ? target.slice(ownMain.length) : target).split(/[?#]/)[0]);
+    const resolved = ownAbsolute ? posix.normalize(path) : path ? posix.normalize(posix.join(posix.dirname(file), path)) : file;
     assert.ok(!resolved.startsWith('../') && !posix.isAbsolute(resolved), `${file}: link escapes repository: ${target}`);
     const info = await lstat(new URL(resolved, root)).catch(() => assert.fail(`${file}: missing link target ${target}`));
     assert.ok(info.isFile(), `${file}: link target must be a regular file: ${target}`);
