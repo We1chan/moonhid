@@ -3,8 +3,8 @@
 MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 使用链路为：声明生成描述符 → 编译布局 → 初始化报告 → 按 Usage 或字段读写 → 编码或解码报告 → 交给设备传输层。
 核心负责报告协议，CLI 和浏览器负责检查与复现，设备连接由独立适配层接入。
-状态以 0.5.0 源码和测试为准；Buffered Bytes 从 0.5.0 提供。
-发布与安装验收见 [发布说明](release-0.5.0.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
+核心能力与 0.5.0 相同；0.5.1 修复文档发布入口并补齐标准验收说明。Buffered Bytes 从 0.5.0 提供。
+发布与安装验收见 [发布说明](release-0.5.1.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
 
 功能范围参照三类成熟库确定：报告解析库（Windows `hidpi.h`、hid-tools）、
 设备端描述符库（TinyUSB、Rust usbd-hid、Microsoft Waratah）和设备通信库（HIDAPI、node-hid）。
@@ -52,6 +52,8 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 - 核心解析 HID Report Descriptor，不解析 USB 设备/配置描述符或独立 Physical Descriptor。
 - 编译长项与保留项明确报错；原始分词/序列化仍保留它们。Buffered Bytes 已纳入编解码目标。
 - 整数每元素 1..32 位；更宽 Variable 用 Raw；Data Array 限 1..32 位。
+  超宽普通字段和跨越超过四字节的普通元素是超出 HID 1.11 §8.4 的宽松扩展，
+  不计入标准兼容证据；布局编译与 lint 不承担完整 HID 符合性校验。
   物理量换算返回双精度值，不做单位制之间的转换（例如英寸到厘米），也不包含完整 Usage 名称数据库。
 - Usage 级接口要求 Usage 在报告中唯一；共用 Usage 的元素和无空值的 Array 返回明确错误，
   可改用字段级接口。
