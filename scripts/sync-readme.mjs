@@ -5,6 +5,9 @@ import { posix } from 'node:path';
 const root = new URL('../', import.meta.url);
 const source = 'src/README.mbt.md';
 const check = process.argv.includes('--check');
+const metadata = await readFile(new URL('moon.mod', root), 'utf8');
+assert.equal(metadata.match(/^readme\s*=\s*"([^"]+)"/m)?.[1], 'README.md',
+  'moon.mod readme must be README.md: Mooncakes resolves README links from the module root.');
 const markdown = (await readFile(new URL(source, root), 'utf8')).replace(/\r\n/g, '\n');
 const localLink = target => !/^(?:[a-z][a-z\d+.-]*:|#|\/\/)/i.test(target);
 // GitHub resolves links relative to the displayed README, even for a symlink.
@@ -15,7 +18,7 @@ const generated = '<!-- Generated from src/README.mbt.md by node scripts/sync-re
     return before + posix.normalize(posix.join(posix.dirname(source), path)) + suffix + after;
   });
 const destination = new URL('README.md', root);
-assert.equal((await lstat(destination)).isSymbolicLink(), false, 'README.md must be a regular file.');
+assert.ok((await lstat(destination)).isFile(), 'README.md must be a regular file, not a symlink.');
 if (check) {
   const actual = (await readFile(destination, 'utf8')).replace(/\r\n/g, '\n');
   assert.equal(actual, generated, 'Run node scripts/sync-readme.mjs after editing src/README.mbt.md.');
@@ -25,16 +28,60 @@ if (check) {
 
 const files = ['README.md', source, 'ROADMAP.md',
   ...(await readdir(new URL('docs/', root))).filter(name => name.endsWith('.md')).map(name => 'docs/' + name)];
+const withoutFences = text => {
+  let fence;
+  return text.split(/\r?\n/).map(line => {
+    if (fence) {
+      if (new RegExp(`^ {0,3}${fence[0]}{${fence.length},}\\s*$`).test(line)) fence = undefined;
+      return '';
+    }
+    const opening = line.match(/^ {0,3}(`{3,}|~{3,})/);
+    if (opening) { fence = opening[1]; return ''; }
+    return line;
+  }).join('\n');
+};
+// GitHub heading IDs keep Unicode letters, numbers, hyphens and underscores.
+// A used-ID set also handles collisions between repeated and numbered headings.
+const headingIds = text => {
+  const ids = new Set();
+  const lines = withoutFences(text).split(/\r?\n/);
+  for (let index = 0; index < lines.length; index++) {
+    const atx = lines[index].match(/^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$/);
+    const setext = index + 1 < lines.length && /^ {0,3}(?:=+|-+)\s*$/.test(lines[index + 1]);
+    if (!atx && (!setext || !lines[index].trim())) continue;
+    const heading = (atx ? atx[1] : lines[index].trim())
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .replace(/&#(x[\da-f]+|\d+);/gi, (_, value) => String.fromCodePoint(value[0].toLowerCase() === 'x' ? parseInt(value.slice(1), 16) : Number(value)));
+    const base = heading.toLowerCase().replace(/[^\p{L}\p{N}\p{M}_\-\s]/gu, '').replace(/\s/g, '-');
+    let id = base;
+    for (let suffix = 1; ids.has(id); suffix++) id = `${base}-${suffix}`;
+    ids.add(id);
+    if (!atx) index++;
+  }
+  return ids;
+};
 let count = 0;
+let anchors = 0;
+const headings = new Map();
 for (const file of files) {
   const text = await readFile(new URL(file, root), 'utf8');
-  for (const [, target] of text.matchAll(/\]\(([^\s)]+)\)/g)) {
-    if (!localLink(target)) continue;
+  for (const [, target] of withoutFences(text).matchAll(/\]\(([^\s)]+)\)/g)) {
+    if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target)) continue;
     const path = decodeURIComponent(target.split(/[?#]/)[0]);
-    const resolved = posix.normalize(posix.join(posix.dirname(file), path));
+    const resolved = path ? posix.normalize(posix.join(posix.dirname(file), path)) : file;
     assert.ok(!resolved.startsWith('../') && !posix.isAbsolute(resolved), `${file}: link escapes repository: ${target}`);
-    await lstat(new URL(resolved, root)).catch(() => assert.fail(`${file}: missing link target ${target}`));
+    const info = await lstat(new URL(resolved, root)).catch(() => assert.fail(`${file}: missing link target ${target}`));
+    assert.ok(info.isFile(), `${file}: link target must be a regular file: ${target}`);
+    const fragment = target.split('#')[1];
+    if (fragment && /\.md$/i.test(resolved)) {
+      if (!headings.has(resolved)) headings.set(resolved, headingIds(await readFile(new URL(resolved, root), 'utf8')));
+      assert.ok(headings.get(resolved).has(decodeURIComponent(fragment)), `${file}: missing Markdown heading ${target}`);
+      anchors++;
+    }
     count++;
   }
 }
-console.log(`README ${check ? 'sync verified' : 'generated'}; ${count} local documentation links resolve.`);
+console.log(`README ${check ? 'sync verified' : 'generated'}; ${count} local documentation links and ${anchors} heading anchors resolve.`);

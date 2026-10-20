@@ -27,8 +27,10 @@ Input / Output / Feature、Report ID、Variable、Array、Constant、Null State�
 node scripts/test-compatibility.mjs
 ```
 
-安装 MoonBit 与 Node.js 后，在仓库根目录执行即可复核 10 个案例和 7 个错误案例，
-覆盖键盘 Input、LED Output、鼠标、带 ID 手柄、媒体键、超宽 Feature、Hat Null 和三方向 Buffered Bytes。
+安装 MoonBit 与 Node.js 后，在仓库根目录执行即可复核 10 个标准范围案例、1 个宽松扩展案例和 7 个错误案例，
+覆盖键盘 Input、LED Output、鼠标、带 ID 手柄、媒体键、普通 Feature、Hat Null 和三方向 Buffered Bytes。
+HID 1.11 §8.4 要求普通数据字段不得跨越超过四个字节；33 位 Raw 仅作为宽松扩展回归，
+不计入标准兼容证据。编译成功也不表示通过所有 HID 符合性检查。
 
 Buffered Bytes 从 **0.5.0** 提供；0.4.0 不含此支持。报名补充说明见 [初审反馈回复](docs/hackathon-review-response.md)。
 
@@ -105,13 +107,14 @@ MoonHID 在一个库中同时提供解析库的报告访问和设备端库的描
 在现有 MoonBit 模块目录中执行：
 
 ```sh
-moon add We1chan/moonhid@0.5.0
+moon add We1chan/moonhid@0.5.1
 ```
 
-0.5.0 包含生成、编码、字段读写、Usage 级接口与 Buffered Bytes，JSON schema 保持 v2。
-发布入口与安装验收见 [0.5.0 发布说明](docs/release-0.5.0.md)。
+0.5.1 保留生成、编码、字段读写、Usage 级接口与 Buffered Bytes，JSON schema 保持 v2。
+此补丁修复 Mooncakes 文档入口，补充标准约束与可复现案例；核心 API 与 0.5.0 相同。
+发布入口与安装验收见 [0.5.1 发布说明](docs/release-0.5.1.md)。
 从 0.4.0 升级时，手工构造 `DecodedReport` 的代码需增加 `buffered_values: []`。
-历史版本记录保留在 [0.4.0](docs/release-0.4.0.md)、[0.3.0](docs/release-0.3.0.md) 与 [0.2.0 发布说明](docs/release-0.2.0.md)。
+历史版本记录保留在 [0.5.0](docs/release-0.5.0.md)、[0.4.0](docs/release-0.4.0.md)、[0.3.0](docs/release-0.3.0.md) 与 [0.2.0 发布说明](docs/release-0.2.0.md)。
 
 在使用库的包的 `moon.pkg` 中声明导入，别名与下方 API 示例一致：
 
@@ -449,7 +452,7 @@ moon build src/cmd/moonhid --target native --release
 通过上面的库接口与 CLI 使用，网页端的字段编辑与编码导出见 [开发路线](ROADMAP.md)。
 
 直接打开 [在线检查器](https://we1chan.github.io/moonhid/)。
-[Release](https://github.com/We1chan/moonhid/releases/tag/v0.5.0) 提供编译好的离线包：
+[Release](https://github.com/We1chan/moonhid/releases/latest) 提供编译好的离线包：
 解压后只需 Node.js 22+，Windows 双击 `start-inspector.cmd`，
 其他系统运行 `node scripts/serve-offline.mjs`，不需要 MoonBit 或 Python。
 
@@ -556,6 +559,8 @@ WebHID 不暴露完整原始项，String/Designator/Delimiter 等元数据不参
   完整规则见 [编解码文档](docs/codec.md#报告初始化与-usage-级访问)。
 - 限制：描述符最多 65536 字节，最多 4096 个 Main 报告字段，整数每值 1..32 位，超过 32 位的 Data Variable 字段按原始字节解码，
   Constant 字段也允许超宽；Data Array 位宽仍限 1..32。
+  超宽普通字段及跨越超过四个字节的普通元素属于宽松扩展，超出 HID 1.11 §8.4，
+  不计入标准兼容证据；编译器当前不拒绝这些布局，lint 也不是完整的 HID 符合性检查器。
   每报告最多 65536 位，字段元素数量由报告总位数约束（最多 65536 个值），Usage 最多 1024 个区间，单区间可覆盖同一 page 的全部 65536 个 ID，
   Collection 最多 4096 项，Collection 与 Global 栈深度最多 64。Global Push/Pop 要求平衡。
   Unit Exponent 支持 -8..7 的四位编码及常见符号扩展编码；保留 Unit 的系统与保留位。
@@ -615,7 +620,9 @@ node scripts/sync-readme.mjs --check
 ```
 
 修改 `src/README.mbt.md` 后运行 `node scripts/sync-readme.mjs`，同步仓库首页并改写相对链接。
-CI 检查两份 README 一致及本地文档链接存在；首页使用普通文件，避免 GitHub 通过符号链接展示时把 `../docs/` 解析到错误位置。
+`moon.mod` 以生成的根 `README.md` 作为发布文档，让 GitHub 与 Mooncakes 均从模块根解析链接。
+CI 检查发布文档入口、两份 README 一致及本地文档文件和锚点；发布后运行
+`node scripts/check-public-docs.mjs`，验证线上页面实际生成的文档链接。
 
 CI 的 JS 任务也构建浏览器模块，并验证三个样例、LED Output、多 ID、Feature、
 Physical/Unit、完整 uint32 和错误路径。CLI 进程回归额外验证五种模板的生成、编码与解码、Usage 形式的值文件、LED Output 和超宽 Feature；

@@ -1,73 +1,707 @@
 {
-  "standard": "USB-IF HID 1.11, sections 6.2.2 and 8 (offline Report Protocol)",
+  "standard": "USB-IF HID 1.11, sections 6.2.2 and 8.1-8.4 (offline Report Protocol); scope=extension cases are excluded from standard compatibility evidence",
   "cases": [
     {
       "name": "keyboard-input",
-      "descriptor": "keyboard.hex", "values": "keyboard-usages.json", "report": "keyboard-report.hex",
-      "kind": "input", "id": 0, "wire_hex": "02 00 04 06 00 00 00 00",
-      "integers": [0, 1, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0],
-      "usages": [{"index": 1, "page": 7, "id": 225, "is_array": false}, {"index": 8, "page": 7, "id": 4, "is_array": true}, {"index": 9, "page": 7, "id": 6, "is_array": true}]
+      "descriptor": "keyboard.hex",
+      "values": "keyboard-usages.json",
+      "report": "keyboard-report.hex",
+      "kind": "input",
+      "id": 0,
+      "wire_hex": "02 00 04 06 00 00 00 00",
+      "integers": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        6,
+        0,
+        0,
+        0,
+        0
+      ],
+      "scope": "standard",
+      "elements": [
+        {
+          "field_index": 0,
+          "element_index": 0,
+          "bit_offset": 0,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 224
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 1,
+          "bit_offset": 1,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 225
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 2,
+          "bit_offset": 2,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 226
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 3,
+          "bit_offset": 3,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 227
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 4,
+          "bit_offset": 4,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 228
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 5,
+          "bit_offset": 5,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 229
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 6,
+          "bit_offset": 6,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 230
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 7,
+          "bit_offset": 7,
+          "is_array": false,
+          "usage": {
+            "page": 7,
+            "id": 231
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 0,
+          "bit_offset": 16,
+          "is_array": true,
+          "usage": {
+            "page": 7,
+            "id": 4
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 1,
+          "bit_offset": 24,
+          "is_array": true,
+          "usage": {
+            "page": 7,
+            "id": 6
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 2,
+          "bit_offset": 32,
+          "is_array": true,
+          "usage": {
+            "page": 7,
+            "id": 0
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 3,
+          "bit_offset": 40,
+          "is_array": true,
+          "usage": {
+            "page": 7,
+            "id": 0
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 4,
+          "bit_offset": 48,
+          "is_array": true,
+          "usage": {
+            "page": 7,
+            "id": 0
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 5,
+          "bit_offset": 56,
+          "is_array": true,
+          "usage": {
+            "page": 7,
+            "id": 0
+          }
+        }
+      ]
     },
     {
       "name": "keyboard-led-output",
-      "descriptor": "keyboard.hex", "values": "keyboard-led-values.json", "report": "keyboard-led-report.hex",
-      "kind": "output", "id": 0, "wire_hex": "03", "integers": [1, 1, 0, 0, 0],
-      "usages": [{"index": 0, "page": 8, "id": 1, "is_array": false}, {"index": 1, "page": 8, "id": 2, "is_array": false}]
+      "descriptor": "keyboard.hex",
+      "values": "keyboard-led-values.json",
+      "report": "keyboard-led-report.hex",
+      "kind": "output",
+      "id": 0,
+      "wire_hex": "03",
+      "integers": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "scope": "standard",
+      "elements": [
+        {
+          "field_index": 3,
+          "element_index": 0,
+          "bit_offset": 0,
+          "is_array": false,
+          "usage": {
+            "page": 8,
+            "id": 1
+          }
+        },
+        {
+          "field_index": 3,
+          "element_index": 1,
+          "bit_offset": 1,
+          "is_array": false,
+          "usage": {
+            "page": 8,
+            "id": 2
+          }
+        },
+        {
+          "field_index": 3,
+          "element_index": 2,
+          "bit_offset": 2,
+          "is_array": false,
+          "usage": {
+            "page": 8,
+            "id": 3
+          }
+        },
+        {
+          "field_index": 3,
+          "element_index": 3,
+          "bit_offset": 3,
+          "is_array": false,
+          "usage": {
+            "page": 8,
+            "id": 4
+          }
+        },
+        {
+          "field_index": 3,
+          "element_index": 4,
+          "bit_offset": 4,
+          "is_array": false,
+          "usage": {
+            "page": 8,
+            "id": 5
+          }
+        }
+      ]
     },
     {
       "name": "mouse-input",
-      "descriptor": "mouse.hex", "values": "mouse-values.json", "report": "mouse-report.hex",
-      "kind": "input", "id": 0, "wire_hex": "05 ff 02 fe", "integers": [1, 0, 1, -1, 2, -2]
+      "descriptor": "mouse.hex",
+      "values": "mouse-values.json",
+      "report": "mouse-report.hex",
+      "kind": "input",
+      "id": 0,
+      "wire_hex": "05 ff 02 fe",
+      "integers": [
+        1,
+        0,
+        1,
+        -1,
+        2,
+        -2
+      ],
+      "scope": "standard",
+      "elements": [
+        {
+          "field_index": 0,
+          "element_index": 0,
+          "bit_offset": 0,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 1
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 1,
+          "bit_offset": 1,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 2
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 2,
+          "bit_offset": 2,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 3
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 0,
+          "bit_offset": 8,
+          "is_array": false,
+          "usage": {
+            "page": 1,
+            "id": 48
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 1,
+          "bit_offset": 16,
+          "is_array": false,
+          "usage": {
+            "page": 1,
+            "id": 49
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 2,
+          "bit_offset": 24,
+          "is_array": false,
+          "usage": {
+            "page": 1,
+            "id": 56
+          }
+        }
+      ]
     },
     {
       "name": "gamepad-input",
-      "descriptor": "gamepad.hex", "values": "gamepad-values.json", "report": "gamepad-report.hex",
-      "kind": "input", "id": 7, "wire_hex": "07 01 08 00 80 ff 7f",
-      "integers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -32768, 32767]
+      "descriptor": "gamepad.hex",
+      "values": "gamepad-values.json",
+      "report": "gamepad-report.hex",
+      "kind": "input",
+      "id": 7,
+      "wire_hex": "07 01 08 00 80 ff 7f",
+      "integers": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        -32768,
+        32767
+      ],
+      "scope": "standard",
+      "elements": [
+        {
+          "field_index": 0,
+          "element_index": 0,
+          "bit_offset": 0,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 1
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 1,
+          "bit_offset": 1,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 2
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 2,
+          "bit_offset": 2,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 3
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 3,
+          "bit_offset": 3,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 4
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 4,
+          "bit_offset": 4,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 5
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 5,
+          "bit_offset": 5,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 6
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 6,
+          "bit_offset": 6,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 7
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 7,
+          "bit_offset": 7,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 8
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 8,
+          "bit_offset": 8,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 9
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 9,
+          "bit_offset": 9,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 10
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 10,
+          "bit_offset": 10,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 11
+          }
+        },
+        {
+          "field_index": 0,
+          "element_index": 11,
+          "bit_offset": 11,
+          "is_array": false,
+          "usage": {
+            "page": 9,
+            "id": 12
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 0,
+          "bit_offset": 16,
+          "is_array": false,
+          "usage": {
+            "page": 1,
+            "id": 48
+          }
+        },
+        {
+          "field_index": 2,
+          "element_index": 1,
+          "bit_offset": 32,
+          "is_array": false,
+          "usage": {
+            "page": 1,
+            "id": 49
+          }
+        }
+      ]
     },
     {
       "name": "consumer-input",
-      "descriptor": "consumer.hex", "values": "consumer-values.json", "report": "consumer-report.hex",
-      "kind": "input", "id": 0, "wire_hex": "e9 00", "integers": [233],
-      "usages": [{"index": 0, "page": 12, "id": 233, "is_array": true}]
+      "descriptor": "consumer.hex",
+      "values": "consumer-values.json",
+      "report": "consumer-report.hex",
+      "kind": "input",
+      "id": 0,
+      "wire_hex": "e9 00",
+      "integers": [
+        233
+      ],
+      "scope": "standard",
+      "elements": [
+        {
+          "field_index": 0,
+          "element_index": 0,
+          "bit_offset": 0,
+          "is_array": true,
+          "usage": {
+            "page": 12,
+            "id": 233
+          }
+        }
+      ]
+    },
+    {
+      "name": "standard-feature",
+      "scope": "standard",
+      "descriptor": "standard-feature.hex",
+      "values": "standard-feature-values.json",
+      "report": "standard-feature-report.hex",
+      "kind": "feature",
+      "id": 7,
+      "wire_hex": "07 a0 91",
+      "integers": [
+        4660
+      ],
+      "elements": [
+        {
+          "field_index": 1,
+          "element_index": 0,
+          "bit_offset": 3,
+          "is_array": false,
+          "usage": {
+            "page": 65280,
+            "id": 2
+          }
+        }
+      ]
     },
     {
       "name": "vendor-feature",
-      "descriptor": "vendor-feature.hex", "values": "vendor-feature-values.json", "report": "vendor-feature-report.hex",
-      "kind": "feature", "id": 7, "wire_hex": "07 f8 ff ff ff 0f", "integers": [],
-      "opaque_values": [{"field_index": 1, "element_index": 0, "bit_offset": 3, "bit_size": 33, "hex": "ff ff ff ff 01"}]
+      "descriptor": "vendor-feature.hex",
+      "values": "vendor-feature-values.json",
+      "report": "vendor-feature-report.hex",
+      "kind": "feature",
+      "id": 7,
+      "wire_hex": "07 f8 ff ff ff 0f",
+      "integers": [],
+      "opaque_values": [
+        {
+          "field_index": 1,
+          "element_index": 0,
+          "bit_offset": 3,
+          "bit_size": 33,
+          "hex": "ff ff ff ff 01"
+        }
+      ],
+      "scope": "extension",
+      "elements": [],
+      "extension_reason": "A 33-bit ordinary Variable at bit offset 3 spans five bytes, outside the HID 1.11 section 8.4 four-byte scalar-field constraint. Raw preservation is a permissive library extension."
     },
     {
       "name": "hat-null-input",
-      "descriptor": "hat-null.hex", "values": "hat-null-values.json", "report": "hat-null-report.hex",
-      "kind": "input", "id": 0, "wire_hex": "0f", "integers": [15], "null_indices": [0]
+      "descriptor": "hat-null.hex",
+      "values": "hat-null-values.json",
+      "report": "hat-null-report.hex",
+      "kind": "input",
+      "id": 0,
+      "wire_hex": "0f",
+      "integers": [
+        15
+      ],
+      "null_indices": [
+        0
+      ],
+      "scope": "standard",
+      "elements": [
+        {
+          "field_index": 0,
+          "element_index": 0,
+          "bit_offset": 0,
+          "is_array": false,
+          "usage": {
+            "page": 1,
+            "id": 57
+          }
+        }
+      ]
     },
     {
       "name": "buffered-input",
-      "descriptor": "buffered-bytes.hex", "values": "buffered-bytes-values.json", "report": "buffered-bytes-report.hex",
-      "kind": "input", "id": 5, "wire_hex": "05 4d 4f 4f 4e", "integers": [],
-      "buffered_values": [{"field_index": 0, "bit_offset": 0, "hex": "4d 4f 4f 4e"}]
+      "descriptor": "buffered-bytes.hex",
+      "values": "buffered-bytes-values.json",
+      "report": "buffered-bytes-report.hex",
+      "kind": "input",
+      "id": 5,
+      "wire_hex": "05 4d 4f 4f 4e",
+      "integers": [],
+      "buffered_values": [
+        {
+          "field_index": 0,
+          "bit_offset": 0,
+          "hex": "4d 4f 4f 4e"
+        }
+      ],
+      "scope": "standard",
+      "elements": []
     },
     {
       "name": "buffered-output",
-      "descriptor": "buffered-bytes.hex", "values": "buffered-bytes-values.json", "report": "buffered-bytes-report.hex",
-      "kind": "output", "id": 5, "wire_hex": "05 4d 4f 4f 4e", "integers": [],
-      "buffered_values": [{"field_index": 1, "bit_offset": 0, "hex": "4d 4f 4f 4e"}]
+      "descriptor": "buffered-bytes.hex",
+      "values": "buffered-bytes-values.json",
+      "report": "buffered-bytes-report.hex",
+      "kind": "output",
+      "id": 5,
+      "wire_hex": "05 4d 4f 4f 4e",
+      "integers": [],
+      "buffered_values": [
+        {
+          "field_index": 1,
+          "bit_offset": 0,
+          "hex": "4d 4f 4f 4e"
+        }
+      ],
+      "scope": "standard",
+      "elements": []
     },
     {
       "name": "buffered-feature",
-      "descriptor": "buffered-bytes.hex", "values": "buffered-bytes-values.json", "report": "buffered-bytes-report.hex",
-      "kind": "feature", "id": 5, "wire_hex": "05 4d 4f 4f 4e", "integers": [],
-      "buffered_values": [{"field_index": 2, "bit_offset": 0, "hex": "4d 4f 4f 4e"}]
+      "descriptor": "buffered-bytes.hex",
+      "values": "buffered-bytes-values.json",
+      "report": "buffered-bytes-report.hex",
+      "kind": "feature",
+      "id": 5,
+      "wire_hex": "05 4d 4f 4f 4e",
+      "integers": [],
+      "buffered_values": [
+        {
+          "field_index": 2,
+          "bit_offset": 0,
+          "hex": "4d 4f 4f 4e"
+        }
+      ],
+      "scope": "standard",
+      "elements": []
     }
   ],
   "rejections": [
-    {"case": "keyboard-input", "operation": "decode", "wire_hex": "02 00", "code": "report_length"},
-    {"case": "keyboard-led-output", "operation": "decode", "wire_hex": "00 03", "code": "report_length"},
-    {"case": "gamepad-input", "operation": "decode", "wire_hex": "08 01 08 00 80 ff 7f", "code": "unknown_report"},
-    {"case": "keyboard-led-output", "operation": "encode", "values": [1, 1], "code": "value_count"},
-    {"case": "mouse-input", "operation": "encode", "values": [1, 0, 1, -128, 2, -2], "code": "logical_range"},
-    {"case": "buffered-input", "operation": "encode", "values": [1], "code": "value_type"},
-    {"case": "buffered-input", "operation": "encode", "values": [{"hex": "4d 4f"}], "code": "value_range"}
+    {
+      "case": "keyboard-input",
+      "operation": "decode",
+      "wire_hex": "02 00",
+      "code": "report_length"
+    },
+    {
+      "case": "keyboard-led-output",
+      "operation": "decode",
+      "wire_hex": "00 03",
+      "code": "report_length"
+    },
+    {
+      "case": "gamepad-input",
+      "operation": "decode",
+      "wire_hex": "08 01 08 00 80 ff 7f",
+      "code": "unknown_report"
+    },
+    {
+      "case": "keyboard-led-output",
+      "operation": "encode",
+      "values": [
+        1,
+        1
+      ],
+      "code": "value_count"
+    },
+    {
+      "case": "mouse-input",
+      "operation": "encode",
+      "values": [
+        1,
+        0,
+        1,
+        -128,
+        2,
+        -2
+      ],
+      "code": "logical_range"
+    },
+    {
+      "case": "buffered-input",
+      "operation": "encode",
+      "values": [
+        1
+      ],
+      "code": "value_type"
+    },
+    {
+      "case": "buffered-input",
+      "operation": "encode",
+      "values": [
+        {
+          "hex": "4d 4f"
+        }
+      ],
+      "code": "value_range"
+    }
   ]
 }
