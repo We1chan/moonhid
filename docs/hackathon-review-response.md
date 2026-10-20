@@ -42,14 +42,16 @@ GitHub 在仓库首页展示内容时，按首页所在路径解析 `../docs/...
 修复将首页改为普通 Markdown 文件，从可执行 README 生成并把本地链接转换到根目录路径。
 `node scripts/sync-readme.mjs --check` 检查两份内容同步、发布入口、本地文档目标和锚点，已加入 CI。
 独立排查还发现 Mooncakes 把旧版 `src/README.mbt.md` 的相对路径按模块根解析，
-0.5.0 的 25 个文档/接口资产链接因此仍然 404。0.5.1 改为发布生成的根 README，
-并用线上检查脚本消费 GitHub、Mooncakes 实际渲染的链接再次验证；仅合并 main 无法更新旧注册表页面。
+0.5.0 的 25 个文档/接口资产链接因此仍然 404。0.5.1 尝试改用根 README，
+但发布后线上检查发现 Mooncakes 仍优先显示可执行 README，单改配置未生效。
+0.5.2 将源 README 跨页链接改为明确的 GitHub 地址，
+并用线上检查脚本消费两站实际渲染的链接再次验证；仅合并 main 无法更新旧注册表页面。
 可直接复核以下入口：
 
 - [标准兼容目标](hid-compatibility.md)
 - [完整报告案例](report-cases.md)
 - [在线检查器](https://we1chan.github.io/moonhid/)
-- [0.5.1 发布与安装验收](release-0.5.1.md)
+- [0.5.2 发布与安装验收](release-0.5.2.md)
 
-可通过 `moon add We1chan/moonhid@0.5.1` 安装核心库。本次补充围绕说明、案例与文档导航，
+可通过 `moon add We1chan/moonhid@0.5.2` 安装核心库。本次补充围绕说明、案例与文档导航，
 未改变核心编解码 API；从源码复核新增案例时请使用包含本次修复的提交。
