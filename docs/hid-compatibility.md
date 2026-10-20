@@ -3,20 +3,22 @@
 MoonHID 的目标是 **USB-IF HID 1.11 Report Descriptor 驱动的离线 Report Protocol 编解码**。
 报告级接口覆盖 Input、Output、Feature、Report ID、数值字段、Array、Constant、Null State 和
 Buffered Bytes。此目标受下面明确列出的资源与语义边界约束，不表示整个 USB HID 设备栈获得认证。
+标准案例遵守 §8.4 的普通字段最多跨四字节约束；库额外接受的超宽 Variable 等宽松扩展不计入标准兼容证据。
 
 Buffered Bytes 从 **0.5.0** 提供，安装入口见 [0.5.0 发布说明](release-0.5.0.md)；
 **0.4.0 不支持此语义**，原发布记录保留在 [0.4.0 发布说明](release-0.4.0.md)。
 
 ## 完整报告的含义与验收目标
 
-对一份 `compile_descriptor` 接受的描述符，选定 `(Input / Output / Feature, Report ID)` 后：
+对一份 `compile_descriptor` 接受的描述符，选定 `(Input / Output / Feature, Report ID)` 后，
+报告接口提供以下行为；其中属于标准范围的案例和宽松扩展在清单中分别标记：
 
 1. 编码器按描述符顺序接收该报告的全部 Data 值，生成包含所需 ID、全部字段和填充的完整报告。
    数值字段逐元素提供值；超宽 Variable 每元素提供一个 Raw；Buffered Bytes 每个 Main item 提供一段 Raw。
 2. 解码器接收精确长度的完整报告，依据同一描述符提取该方向和 ID 的全部 Data 字段，
    返回整数、Usage、范围与 Null 标记，或无损提取原始字节。
 3. 正确性同时以**人工指定的 wire 字节和解码语义**验收。只做本库 encode/decode 往返不足以作为兼容证据。
-   [完整报告案例](report-cases.md) 提供 10 个正例和 7 个反例，清单与预期存放在
+   [完整报告案例](report-cases.md) 提供 10 个标准正例、1 个宽松扩展正例和 7 个反例，清单与预期存放在
    [compatibility-cases.json](../examples/codec/compatibility-cases.json)，native 与 JS 的 CI 均执行。
 
 Constant 位和未用尾位不属于解码后的 Data 值；新编码把这些位置零，
@@ -29,18 +31,19 @@ Constant 位和未用尾位不属于解码后的 Data 值；新编码把这些�
 依据 [USB-IF HID 1.11 原文](https://www.usb.org/sites/default/files/documents/hid1_11.pdf)：
 §6.2.2.4 定义 Main 标志；§6.2.2.5 的 bit 8（印刷页 31，PDF 第 41 页）定义 Buffered Bytes；
 §6.2.2.7 定义 Size、Count、ID 等 Global items；§6.2.2.8 定义 Local items；
-§6.2.2.9 定义填充；§8.1–8.3 定义报告类型、ID 前缀和数值/Array 格式。
+§6.2.2.9 定义填充；§8.1–8.3 定义报告类型、ID 前缀和数值/Array 格式；
+§8.4（印刷页 57，PDF 第 67 页）规定普通字段不得跨越超过四字节，例如 32 位字段必须字节对齐。
 bit 8 是标准已定义能力，纳入报告编解码目标；bit 9..31 仍保留。
 
 | HID 1.11 语义 / 条款 | 当前源码的处理与边界 | 可复核证据 |
 | --- | --- | --- |
-| Input、Output、Feature；§6.2.2.5、§8.1 | 同一描述符的三方向独立布局与完整报告编解码 | 案例的键盘 Input / LED Output / 厂商 Feature；[encode_test](../src/encode_test.mbt) |
+| Input、Output、Feature；§6.2.2.5、§8.1 | 同一描述符的三方向独立布局与完整报告编解码 | 案例的键盘 Input / LED Output / 13 位普通 Feature；[encode_test](../src/encode_test.mbt) |
 | Report ID、Size、Count；§6.2.2.7、§8.2 | 方向和 ID 分开计算载荷偏移；无 ID 时不加 0，有 ID 时添加一个字节；严格检查报告长度 | 带 ID 手柄与无 ID 键盘；[report_id_test](../src/report_id_test.mbt) |
-| 数值 Variable；§6.2.2.5、§8.2 | 1..32 位有符号/无符号整数；按 LSB 位序提取，支持跨字节，符号由 Logical Minimum 决定 | 鼠标负位移、signed16 手柄；[decode_test](../src/decode_test.mbt)、[encode_test](../src/encode_test.mbt) |
+| 数值 Variable；§6.2.2.5、§8.2、§8.4 | 1..32 位有符号/无符号整数；按 LSB 位序提取，符号由 Logical Minimum 决定；标准案例逐元素检查最多跨四字节 | 鼠标负位移、signed16 手柄、位偏移 3 的 13 位 Feature；[decode_test](../src/decode_test.mbt)、[encode_test](../src/encode_test.mbt) |
 | 数值 Array；§6.2.2.5、§8.3 | 1..32 位选择器，按 `value - logical_min` 映射 Usage 序列；未映射值保留原数值 | 键盘六键 Array、媒体键；[values_test](../src/values_test.mbt)、[access_test](../src/access_test.mbt) |
 | Constant 与填充；§6.2.2.5、§6.2.2.9 | 保留布局，新编码置零，解码省略 Constant；字段修改保留相邻原始位 | LED 的高三位为零、Feature 的低三位填充；[bits_test](../src/bits_test.mbt) |
 | Null State 与 Logical 范围；§6.2.2.5、§6.2.2.7 | 解码保留越界原值并标记 Null；编码检查位宽与范围，Null 接受可表示的范围外值 | Hat 0..7 的 Null 原值 15；[encode_test](../src/encode_test.mbt) |
-| 超宽 Variable；§6.2.2.7 | 大于 32 位时每元素用 Raw 与 `opaque_values` 保存位数据，不执行整数或物理量运算；超宽数值 Array 未实现 | 33 位 Feature 跨字节原始值；[opaque_test](../src/opaque_test.mbt) |
+| 超宽 Variable：宽松扩展，超出 §8.4 | 大于 32 位时每元素用 Raw 与 `opaque_values` 保存位数据，不执行整数或物理量运算；不计入 HID 1.11 标准兼容验收；超宽数值 Array 未实现 | 单独标记 `scope=extension` 的 33 位 Feature；[opaque_test](../src/opaque_test.mbt) |
 | Buffered Bytes；§6.2.2.5 bit 8 | 整个 Main item 为固定、字节对齐的 Raw 流；不解释数值、Array 或 Null | 下方三方向案例；[buffered_test](../src/buffered_test.mbt) |
 | Absolute/Relative、Wrap、Linear、Preferred State、Volatile；§6.2.2.5 | 保留标志；编解码返回本报告原值，不累积相对运动、不进行环绕/非线性映射或设备状态维护 | 鼠标 Relative；[metadata_test](../src/metadata_test.mbt) |
 | Physical、Unit、Unit Exponent；§6.2.2.7 | 保存元数据；通过单独物理量 API 做线性换算与十进制指数，不做单位制转换 | [编解码文档](codec.md#物理量换算)、[access_test](../src/access_test.mbt) |
@@ -49,6 +52,12 @@ bit 8 是标准已定义能力，纳入报告编解码目标；bit 9..31 仍保�
 
 wire 是报告协议字节。HIDAPI/node-hid 写接口对无 ID 报告要求的额外 `00` 由传输适配层添加；
 WebHID 分开提供 ID 与 payload，适配时再按这里的约定组合。具体接口见 [CLI 前缀说明](codec.md#文件-cli-与样例)。
+
+**编译成功不等于符合 HID 1.11 的全部约束。** 编译器也用于保留真实设备中的非标准布局，
+因此不会拒绝全部 §8.4 普通字段跨度违规。普通字段超过 32 位，或虽不超过 32 位却因起始位偏移横跨五字节，
+均只属于库的宽松处理，不作为标准兼容证据。案例脚本独立检查所有标准案例的每个普通元素，
+包括 Constant；Buffered Bytes 按 §6.2.2.5 定义的应用字节流单独检查字节对齐，
+不按一个超宽数值字段解释。
 
 ## Buffered Bytes 契约
 
@@ -126,3 +135,4 @@ Delimiter 采用已记录的 Linux 优选分支规则，备选组保留为元数
 `src/buffered_test.mbt`、README 可执行示例和固定种子模糊测试覆盖；
 CLI、bridge 与 headless Chrome 另验证公开入口，结果见 [本次验收](buffered-bytes-validation.md)。
 既有七份真实描述符及 hid-tools 对照继续作为布局回归；它们不构成 Buffered Bytes 实机验收或完整协议认证。
+其中真实设备包含的超宽普通字段只证明本库可以保留其布局与原始位，不改变上述标准范围。

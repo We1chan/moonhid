@@ -31,7 +31,30 @@ const manifest = JSON.parse(await readFile(join(fixtures, 'compatibility-cases.j
 // Compare both directions against saved, independently specified wire bytes.
 // Decoding consumes the committed report fixture, not the encoder's output.
 for (const sample of manifest.cases) {
+  assert.ok(['standard', 'extension'].includes(sample.scope), sample.name);
   const descriptor = join(fixtures, sample.descriptor);
+  const inspected = JSON.parse(success(run(['inspect', descriptor])));
+  const fields = inspected.layout.fields.filter(field => field.kind === sample.kind && field.report_id === sample.id);
+  const scalarViolations = [];
+  for (const field of fields) {
+    if ((field.flags & 256) !== 0) {
+      // HID 1.11 section 6.2.2.5 defines these as application byte streams,
+      // rather than scalar numeric fields subject to the section 8.4 check.
+      assert.equal(field.bit_offset % 8, 0, sample.name);
+      assert.equal(field.bit_size * field.count % 8, 0, sample.name);
+      continue;
+    }
+    for (let element = 0; element < field.count; element++) {
+      const offset = field.bit_offset + element * field.bit_size;
+      const byteSpan = Math.ceil((offset % 8 + field.bit_size) / 8);
+      if (byteSpan > 4) scalarViolations.push({ offset, bit_size: field.bit_size, byte_span: byteSpan });
+    }
+  }
+  if (sample.scope === 'standard') {
+    assert.deepEqual(scalarViolations, [], `${sample.name}: HID 1.11 section 8.4 scalar field limit`);
+  } else {
+    assert.ok(scalarViolations.length > 0, `${sample.name}: expected a documented wide-field extension`);
+  }
   const saved = (await readFile(join(fixtures, sample.report), 'utf8')).trim();
   assert.equal(saved, sample.wire_hex, sample.name);
   const encoded = success(run(['encode', '--kind', sample.kind, '--id', String(sample.id), descriptor, join(fixtures, sample.values)]));
@@ -42,19 +65,17 @@ for (const sample of manifest.cases) {
   const decoded = json.decoded;
   assert.equal(decoded.kind, sample.kind);
   assert.equal(decoded.report_id, sample.id);
-  assert.deepEqual(decoded.values.map(value => value.value), sample.integers, sample.name);
+  assert.equal(sample.elements.length, sample.integers.length, `${sample.name}: complete independent element expectations`);
+  const expectedValues = sample.elements.map((element, index) => ({
+    ...element,
+    value: sample.integers[index],
+    in_logical_range: !(sample.null_indices ?? []).includes(index),
+    is_null: (sample.null_indices ?? []).includes(index),
+  }));
+  assert.deepEqual(decoded.values, expectedValues, sample.name);
   assert.deepEqual(decoded.opaque_values, sample.opaque_values ?? [], sample.name);
   assert.deepEqual(decoded.buffered_values, sample.buffered_values ?? [], sample.name);
-  assert.deepEqual(decoded.values.flatMap((value, index) => value.is_null ? [index] : []), sample.null_indices ?? [], sample.name);
-  for (const [index, value] of decoded.values.entries()) {
-    assert.equal(value.in_logical_range, !(sample.null_indices ?? []).includes(index), sample.name);
-  }
-  for (const usage of sample.usages ?? []) {
-    const value = decoded.values[usage.index];
-    assert.deepEqual(value.usage, { page: usage.page, id: usage.id }, sample.name);
-    assert.equal(value.is_array, usage.is_array, sample.name);
-  }
-  console.log(`${sample.name}: ${sample.kind} / ID ${sample.id} -> ${encoded}`);
+  console.log(`${sample.name} [${sample.scope}]: ${sample.kind} / ID ${sample.id} -> ${encoded}`);
 }
 const scratch = await mkdtemp(join(tmpdir(), 'moonhid-compatibility-'));
 try {
@@ -73,4 +94,6 @@ try {
 } finally {
   await rm(scratch, { recursive: true, force: true });
 }
-console.log(`HID 1.11 (${target}): ${manifest.cases.length} fixed-wire encode/decode cases and ${manifest.rejections.length} rejection cases passed.`);
+const standardCount = manifest.cases.filter(sample => sample.scope === 'standard').length;
+const extensionCount = manifest.cases.filter(sample => sample.scope === 'extension').length;
+console.log(`HID 1.11 (${target}): ${standardCount} standard fixed-wire cases, ${extensionCount} permissive extension case and ${manifest.rejections.length} rejection cases passed.`);
