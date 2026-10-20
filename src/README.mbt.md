@@ -618,7 +618,7 @@ node scripts/sync-readme.mjs --check
 ```
 
 修改 `src/README.mbt.md` 后运行 `node scripts/sync-readme.mjs`，同步仓库首页并改写相对链接。
-`moon.mod` 以生成的根 `README.md` 作为发布文档；Mooncakes 还可能优先显示包内可执行 README，
+`moon.mod` 以生成的根 `README.md` 作为发布文档；Mooncakes 同时展示模块和包内可执行 README，
 因此源 README 的所有跨页链接均使用 GitHub 明确地址，避免依赖展示平台的相对路径基址。
 CI 检查发布文档入口、跨页链接地址、两份 README 一致及文档文件和锚点；发布后运行
 `node scripts/check-public-docs.mjs`，验证线上页面实际生成的文档链接。
