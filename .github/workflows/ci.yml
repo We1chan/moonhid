@@ -24,7 +24,9 @@ jobs:
           node-version: '22'
       - name: Verify README and documentation links
         if: matrix.target == 'wasm'
-        run: node scripts/sync-readme.mjs --check
+        run: |
+          node scripts/sync-readme.mjs --check
+          node scripts/check-acceptance-docs.mjs
       - name: Install recorded MoonBit toolchain
         uses: ./.github/actions/setup-moon
       - name: Record toolchain
