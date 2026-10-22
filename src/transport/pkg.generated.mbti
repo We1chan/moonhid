@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "We1chan/moonhid/transport"
+
+import {
+  "We1chan/moonhid",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn from_hidapi(@moonhid.Layout, @moonhid.ReportKind, Bytes) -> Result[Bytes, @moonhid.Diagnostic]
+
+pub fn from_webhid(@moonhid.Layout, @moonhid.ReportKind, WebFrame) -> Result[Bytes, @moonhid.Diagnostic]
+
+pub fn to_hidapi(@moonhid.Layout, @moonhid.ReportKind, Bytes) -> Result[Bytes, @moonhid.Diagnostic]
+
+pub fn to_webhid(@moonhid.Layout, @moonhid.ReportKind, Bytes) -> Result[WebFrame, @moonhid.Diagnostic]
+
+// Errors
+
+// Types and methods
+pub(all) struct WebFrame {
+  report_id : Int
+  payload : Bytes
+} derive(Eq, @debug.Debug)
+pub fn WebFrame::equal(Self, Self) -> Bool
+pub fn WebFrame::not_equal(Self, Self) -> Bool
+pub fn WebFrame::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

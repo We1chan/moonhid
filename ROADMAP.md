@@ -34,6 +34,7 @@
 
 - 中文 lint、item/字段定位、Null 教学案例、固件回归示例、在线与预编译离线检查器已完成。
 - 报告编码、往返性质和网页字段编辑/编码导出已实现；源码新增结构化声明 v1 与 build/declare，五个模板和七份真实描述符/codec 数据逐字节回放，见 [声明格式](docs/declaration.md)；[批量帧重放](docs/replay.md) 提供行号、逐帧错误与 Usage 期望，已核对 Xbox 42 帧和合成固件案例。
+- 纯 MoonBit `transport` 帧转换已通过四后端合成验证，Windows HIDAPI 链接/初始化探针通过；[记录与范围](docs/hidapi-validation.md) 区分软件帧、虚拟环境与实机证据。原生收发适配器及可选网页 Output/Feature 发送保留为后续工作。
 - String/Designator 与 Delimiter 备选 Usage 已保留；Buffered Bytes 已支持，布局编译继续明确拒绝长项。
 - 增加非字节对齐手柄、带多个 ID 的复合设备、Feature 报告和异常描述符样例。
 - 七份本机真实描述符已公开、通过结构回归和 hid-tools 0.12 独立布局对照。
