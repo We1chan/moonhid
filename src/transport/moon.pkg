@@ -1,0 +1,8 @@
+import {
+  "We1chan/moonhid" @hid,
+  "moonbitlang/core/debug",
+}
+
+import {
+  "We1chan/moonhid/examples",
+} for "test"
