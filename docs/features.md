@@ -42,7 +42,7 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 | 文件 CLI | inspect / lint / decode / encode / generate；源码新增 build / declare / replay；逐帧行号、错误与 Usage 期望；encode 支持位置数组与 Usage 对象两种值文件，generate 支持五种模板；Unicode 路径、机器可读输出、退出码 | 按需增加流式采集输入 |
 | 浏览器检查器 | 描述符/布局/解码/JSON 导出、WebHID Input、collections 对照；源码版新增三方向报告初始化、字段/元素编辑与完整 HEX 导出，见 [网页报告编辑](browser-editor.md) | Output/Feature 传输适配、按 Usage 编辑 |
 | 设备传输适配 | 浏览器 Input 与 Xbox 蓝牙实测；源码新增纯 MoonBit `transport` 帧转换，四后端合成字节验证 | 独立设备信息、枚举、打开/关闭、Input 订阅、Output 发送、Feature 读写；验证断开和错误 |
-| 原生 HID 接入 | 适配器仍在规划；[可行性探针](hidapi.md) 已验证 Windows native 链接与初始化，Linux 结果保存在 CI artifact | native HIDAPI FFI；至少键盘 LED 和厂商 Feature 实机验收，记录平台、权限和驱动限制 |
+| 原生 HID 接入 | 适配器仍在规划；[可行性探针](hidapi.md) 已验证 Windows/Linux native 链接与初始化，Linux CI 的 UHID 虚拟设备可被 HIDAPI 枚举 | native HIDAPI FFI；至少键盘 LED 和厂商 Feature 实机验收，记录平台、权限和驱动限制 |
 | Usage/单位语义 | 数字 Usage、常见名称、Unit/Physical 元数据、物理量换算 | 完整 Usage 名称数据包、单位制之间的转换 |
 | 描述符便捷性 | 显式尺寸、ID、填充、集合结束，最小且无歧义的短项整数宽度 | 可选自动填充、自动 ID、冗余全局项优化；语义布局独立对照 |
 
