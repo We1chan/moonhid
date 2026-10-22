@@ -38,7 +38,9 @@ jobs:
       - name: Test
         run: moon test --target ${{ matrix.target }}
       - name: Run device examples
-        run: moon run src/cmd/main --target ${{ matrix.target }}
+        run: |
+          moon run src/cmd/main --target ${{ matrix.target }}
+          moon run src/cmd/scenarios --target ${{ matrix.target }}
       - name: Build and verify browser module
         if: matrix.target == 'js'
         run: |

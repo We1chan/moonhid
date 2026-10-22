@@ -1,0 +1,5 @@
+import {
+  "We1chan/moonhid/examples",
+}
+
+pkgtype(kind: "executable")
