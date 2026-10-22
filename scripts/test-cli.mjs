@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, writeFile, rm, readdir } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -213,7 +213,64 @@ try {
     assert.match(help.stdout, /moonhid lint <descriptor\.hex>/);
     assert.match(help.stdout, /moonhid encode --kind/);
     assert.match(help.stdout, /moonhid generate mouse\|keyboard\|gamepad\|consumer\|vendor/);
-    console.log(`CLI ${target}: inspect/decode/lint/encode (positional and Usage form)/generate (five templates), Buffered Bytes in three directions, Unicode paths, raw Feature and exit codes 0/1/2/3 passed.`);
+    assert.match(help.stdout, /moonhid build <declaration\.json>/);
+    assert.match(help.stdout, /moonhid declare <descriptor\.hex>/);
+    const declarationPath = join(scratch, '声明 with spaces.json');
+    const success = args => {
+      const result = run(args);
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stderr, '');
+      return result.stdout.trim();
+    };
+    for (const name of ['mouse', 'keyboard', 'gamepad', 'consumer', 'vendor']) {
+      const built = success(['build', join(root, 'examples/declarations', name + '.json')]);
+      assert.equal(built, success(['generate', name]), name + ' declaration differs from template');
+    }
+    const composite = success(['build', join(root, 'examples/declarations/composite.json')]);
+    assert.equal(composite, (await readFile(join(root, 'examples/declarations/composite.hex'), 'utf8')).trim());
+    await writeFile(generatedPath, composite);
+    const compositeLayout = JSON.parse(success(['inspect', generatedPath])).layout;
+    assert.equal(compositeLayout.collections.length, 2);
+    assert.deepEqual(compositeLayout.reports.map(report => `${report.kind}:${report.report_id}`).sort(), ['feature:2', 'input:1', 'output:3']);
+    assert.deepEqual(compositeLayout.fields.filter(field => field.kind === 'input').map(field => [field.bit_offset, field.logical_min]), [[0, -127], [8, -127]]);
+    const realSource = await readFile(join(root, 'src/real_devices_test.mbt'), 'utf8');
+    const realDescriptors = [...realSource.matchAll(/fn real_device_([a-g])\(\) -> String \{\s*"([^"]+)"/g)].map(([, , hex]) => hex);
+    assert.equal(realDescriptors.length, 7);
+    const codecNames = (await readdir(join(root, 'examples/codec'))).filter(name => name.endsWith('.hex') && !name.endsWith('-report.hex'));
+    const codecDescriptors = await Promise.all(codecNames.map(name => readFile(join(root, 'examples/codec', name), 'utf8')));
+    for (const original of [...realDescriptors, ...codecDescriptors, composite]) {
+      await writeFile(generatedPath, original);
+      const declaration = success(['declare', generatedPath]);
+      assert.equal(JSON.parse(declaration).version, 1);
+      await writeFile(declarationPath, declaration);
+      const rebuilt = success(['build', declarationPath]);
+      assert.equal(rebuilt.replaceAll(' ', ''), original.replace(/\s/g, '').toLowerCase(), 'declare/build must preserve original bytes');
+    }
+    for (const [text, code] of [
+      ['{', 'declaration_json'],
+      ['{"version":1,"items":[{"unknown":1}]}', 'declaration_key'],
+      ['{"version":1,"items":[{"report_size":1.5}]}', 'declaration_value'],
+      [JSON.stringify({ version: 1, items: Array(65).fill({ push: true }) }), 'declaration_limit'],
+    ]) {
+      await writeFile(declarationPath, text);
+      const result = run(['build', declarationPath]);
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, '');
+      assert.match(result.stderr, new RegExp(`^${code} @`));
+      assert.match(result.stderr, /\$/);
+    }
+    for (const [args, status, code] of [
+      [['build'], 2, 'arguments'], [['declare'], 2, 'arguments'],
+      [['build', join(scratch, 'missing.json')], 1, 'file_read'],
+      [['declare', bad], 1, 'invalid_hex'],
+      [['declare', compileError], 1, 'truncated_item'],
+    ]) {
+      const result = run(args);
+      assert.equal(result.status, status);
+      assert.equal(result.stdout, '');
+      assert.match(result.stderr, new RegExp(`^${code} @`));
+    }
+    console.log(`CLI ${target}: inspect/decode/lint/encode/generate, five declaration templates, composite, ${7 + codecNames.length} exact real/codec roundtrips, Buffered Bytes, Unicode paths and exit codes passed.`);
   }
 } finally {
   await rm(scratch, { recursive: true, force: true });

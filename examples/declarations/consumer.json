@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "items": [
+    {"usage_page": "0x0c"}, {"usage": 1},
+    {"collection": "application", "items": [
+      {"logical_range": [0, "0x3ff"]}, {"usage_range": [0, "0x3ff"]},
+      {"report_count": 1}, {"report_size": 16}, {"input": ["array"]}
+    ]}
+  ]
+}

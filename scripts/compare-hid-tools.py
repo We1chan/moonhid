@@ -5,6 +5,7 @@ from importlib.metadata import version
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 from hidtools.hid import ReportDescriptor
 
@@ -68,6 +69,20 @@ def compare(fixture):
 def main():
     exported = subprocess.run(["node", str(ROOT / "scripts/export-real-layouts.mjs")], cwd=ROOT, check=True, capture_output=True, text=True)
     results = [compare(fixture) for fixture in json.loads(exported.stdout)]
+    # This synthetic case exercises declaration compilation, nested collections,
+    # Push/Pop restoration, separate IDs and Feature independently of real A-G.
+    command = ["moon", "run", "src/cmd/moonhid", "--target", "js", "--"]
+    built = subprocess.run(command + ["build", "examples/declarations/composite.json"], cwd=ROOT, check=True, capture_output=True, text=True)
+    descriptor = built.stdout.strip()
+    expected = (ROOT / "examples/declarations/composite.hex").read_text().strip()
+    if descriptor != expected:
+        raise AssertionError("Composite declaration differs from its fixed byte fixture")
+    with tempfile.TemporaryDirectory(prefix="moonhid-declaration-") as scratch:
+        path = Path(scratch) / "composite.hex"
+        path.write_text(descriptor)
+        inspected = subprocess.run(command + ["inspect", str(path)], cwd=ROOT, check=True, capture_output=True, text=True)
+        layout = json.loads(inspected.stdout)["layout"]
+    results.append(compare({"label": "synthetic-declaration-composite", "hex": descriptor, "layout": layout}))
     print(json.dumps({"tool": "hid-tools", "version": version("hid-tools"), "devices": results}, indent=2))
     return 1 if any(r["differences"] for r in results) else 0
 

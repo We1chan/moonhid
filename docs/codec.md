@@ -17,6 +17,9 @@ Buffered Bytes 从 0.5.0 提供；0.4.0 会拒绝此标志。
 
 ## 描述符生成
 
+源码另提供独立的 [JSON 声明 v1](declaration.md)：`descriptor_from_declaration` 与 `declaration_from_descriptor`，
+CLI 使用 `build` / `declare`，支持显式原始 item 宽度和描述符字节往返；不是展示 JSON v2 的导入功能。
+
 `DescriptorBuilder::new()` 创建可链式调用的对象。`usage_page` / `usage` / `usage_range`
 声明数字 Usage，`extended_usage(Usage)` 强制生成携带 page 的四字节 Usage。
 `logical_range`、`report_size`、`report_count` 和 `input` / `output` / `feature` 定义字段。
