@@ -26,13 +26,15 @@
 - 新增描述符构建器、Item 序列化、五种设备模板与 CLI `encode` / `generate`；媒体键与厂商数据模板与 TinyUSB 宏展开逐字节相同，构建器的 Maximum 编码不再触发 `logical_max_sign`。
 - 新增参照 Windows HID 解析库（`hidpi.h`）的 Usage 级接口：报告目录与初始化、按键/按钮置位与列出、按 Usage 读写数值、物理量换算；CLI `encode` 支持按 Usage 描述的值文件，并经 hid-tools 独立对照。
 - 既有模糊语料加入 Item 无损往返与报告往返性质，约定见 [codec](docs/codec.md)。
-- 0.4.0 已发布到 mooncakes.io，独立项目四后端各 6/6 安装验收通过，见 [发布说明](docs/release-0.4.0.md)；网页继续提供解析与解码，编码接口通过库与 CLI 使用。
+- 0.4.0 已发布到 mooncakes.io，独立项目四后端各 6/6 安装验收通过，见 [发布说明](docs/release-0.4.0.md)。
+- 0.5.0 增加 Buffered Bytes；0.5.2 完成 Mooncakes 文档入口修复与独立安装验收，见 [发布说明](docs/release-0.5.2.md)。
+- 源码版网页已支持 Input / Output / Feature 报告初始化、按字段/元素编辑与完整 HEX 导出，复用 MoonBit 核心的 ID、Null、Array、Raw 和 Buffered Bytes 语义；见 [网页报告编辑](docs/browser-editor.md)。
 
 ## 下一阶段：协议覆盖与验证
 
 - 中文 lint、item/字段定位、Null 教学案例、固件回归示例、在线与预编译离线检查器已完成。
-- 报告编码与往返性质已实现；后续增加结构化声明文件、批量帧重放和网页字段编辑/编码导出。
-- String/Designator 与 Delimiter 备选 Usage 已保留；长项和 Buffered Bytes 继续明确拒绝。
+- 报告编码、往返性质和网页字段编辑/编码导出已实现；后续增加结构化声明文件和批量帧重放。
+- String/Designator 与 Delimiter 备选 Usage 已保留；Buffered Bytes 已支持，布局编译继续明确拒绝长项。
 - 增加非字节对齐手柄、带多个 ID 的复合设备、Feature 报告和异常描述符样例。
 - 七份本机真实描述符已公开、通过结构回归和 hid-tools 0.12 独立布局对照。
 - 已有确定性模糊测试与资源上限回归；已加入七份真实描述符及资源上限的可复现性能基准。
@@ -49,7 +51,7 @@
 
 - 参赛者审阅代码并能解释状态机、位序、逻辑范围、数组 Usage 和支持边界。
 - 模块 `We1chan/moonhid` 的 0.2.0 发布与安装验收已完成；后续发布沿用已记录的流程。
-- 稳定 CI 已固定工具链，另设最新兼容检查；交付入口和版本结果见 [0.4.0 发布说明](docs/release-0.4.0.md)。
+- 稳定 CI 已固定工具链，另设最新兼容检查；交付入口和版本结果见 [0.5.2 发布说明](docs/release-0.5.2.md)。
 - 根据比赛最新版规则由参赛者自行撰写提案；报名与最终验收分开确认。
 
 ## 当前范围之外

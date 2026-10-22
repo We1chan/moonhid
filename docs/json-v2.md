@@ -97,18 +97,24 @@ HID 1.11 Main bit 8 的 Buffered Bytes 放入新增的 `buffered_values`，每�
 
 ## 浏览器桥接与下载文件
 
-浏览器 ES 模块导出三个函数：
+仓库源码构建的浏览器 ES 模块导出五个函数：
 
 - `inspect_descriptor(hex)` → `{ "ok": true, "schema_version": 2, "descriptor": ... }`
 - `decode_wire(descriptor_hex, kind, report_hex)` → `{ "ok": true, "schema_version": 2, "wire_hex": ..., "decoded": ... }`
+- `initialize_wire(descriptor_hex, kind, report_id)` → 与 `decode_wire` 相同的成功结构；调用核心 `new_report`。
+- `write_wire_field(descriptor_hex, kind, report_hex, field_index, element_index, value_text)` → 与 `decode_wire` 相同的成功结构；调用核心 `read_field` / `write_field`，保留其他位。
 - `examples_json()` → 鼠标、键盘、手柄样例数组，含 `name`, `descriptor_hex`, `input_hex`, `expected_values`, `output_hex`。
 
-所有参数及返回值都是原生 JavaScript 字符串；返回值再用 `JSON.parse` 读取。
+`report_id`、`field_index`、`element_index` 为 JavaScript 整数，其余参数及返回值为原生 JavaScript 字符串；返回值用 `JSON.parse` 读取。
+`value_text` 对 1..32 位普通字段是十进制整数文本，对超宽字段与 Buffered Bytes 是严格十六进制文本。
+字段索引对应 `layout.fields`，元素索引从 0 开始；Buffered Bytes 只接受元素 0，写入整段固定字节流。
+方向、ID、长度、索引、类型、位宽和 Logical/Null 规则由核心校验。失败结构没有 `wire_hex` 或 `decoded`，网页保留原报告。
 `inspect_descriptor` 返回的 `descriptor.lints` 与核心导出一致；网页检查面板支持中文说明、
 级别筛选、分页和字段定位，导出的描述符 JSON 保留完整提示。
 失败格式为 `{ "ok": false, "schema_version": 2, "stage": ..., "error": { "offset": ..., "code": ..., "message": ... } }`。
-`stage` 是 `descriptor_hex`、`descriptor`、`report_hex` 或 `report`。
+`stage` 是 `descriptor_hex`、`descriptor`、`report_hex`、`report`；字段写入新增 `field`、`field_value` 和 `field_value_hex`。
 十六进制阶段的 offset 是原始文本 UTF-16 索引，二进制阶段是零起始字节偏移。
+`field` 错误通常指向描述符中声明字段的字节偏移（无效字段索引为 0）；`field_value` 的整数格式错误偏移为 0。
 `report_length` 的 offset 为实际收到的字节数，EOF 错误可指向输入末尾。
 
 下载的 `moonhid-inspection.json` 包含：
@@ -126,3 +132,7 @@ HID 1.11 Main bit 8 的 Buffered Bytes 放入新增的 `buffered_values`，每�
 上例展示结构，省略了有效描述符的内部数据。成功解码后最后两个字段分别变为
 规范化报告十六进制和解码组件；当前报告为空或未通过检查时为 `null`。
 描述符未通过检查时导出按钮禁用。格式可保存复现问题，本版尚无 JSON 文件导入功能。
+
+「导出报告 HEX」另存为 `moonhid-<kind>-<report_id>.hex`，内容为规范化完整报告十六进制加换行，
+含描述符要求的 Report ID 前缀。当前输入尚未解码或无效时禁用此按钮；导出前同步解码，避免保存旧字节。
+具体操作见 [网页报告编辑](browser-editor.md)。
