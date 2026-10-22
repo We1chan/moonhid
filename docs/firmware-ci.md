@@ -5,6 +5,8 @@
 lint 在 Main item 的 @16 返回 `null_without_room`，CLI 退出 3。
 `descriptor.hex` 改为 0–7，保留同一报告长度；`idle-report.hex` 的 `0f` 被解码为空闲值。
 `expected.json` 冻结字段、原始值和 Null 判定，防止固件变更悄悄改变协议。
+`frames.txt` / `expected.jsonl` 进一步断言 Null、北、东三帧的 Usage 原值；
+脚本实际运行 [replay](replay.md)，任一坏帧或期望不一致均使固件 CI 失败。
 
 ```sh
 moon update
@@ -19,10 +21,12 @@ Warning 提醒人工核对，不能仅凭提示认定设备违反协议；无提
 
 1. 将 `examples/firmware-ci/` 复制为固件仓库中的 `hid-regression/`。
 2. 用固件导出的描述符替换 `descriptor.hex`，保存一条真实或明确标为合成的
-   Input 报告到 `idle-report.hex`，按该设备更新 `expected.json`。
+   Input 报告到 `idle-report.hex`，按该设备更新 `expected.json`；将批量帧保存到 `frames.txt`，
+   独立填写逐帧 Usage 断言到 `expected.jsonl`。
 3. 删除与自己的设备无关的 `descriptor-before.hex`；该文件存在时测试还要求它产生 Warning。
 4. 将示例 `workflow.yml` 复制到 `.github/workflows/hid-regression.yml`。
-   它从固定的 `v0.3.0` 获取 MoonHID，复制本仓库的样例，再执行实际 CLI。
+   当前示例从 `main` 获取包含新 replay 命令的源码；0.6.0 发布时固定为该标签。
+   复制本仓库的样例后执行实际 CLI。
 
 `node scripts/firmware-ci.mjs js <case-directory>` 可指定其他案例目录。
 这个示例对当前描述符要求没有 Warning，退出 3 会使 CI 失败。
