@@ -207,3 +207,12 @@ MoonBit 工具链为 `moon 0.1.20260920`、`moonc v0.10.14+7d59c7ec9`。
 | 元素 1 写入 `2` | 显示 `value_range`，原始报告保持 `e2`，待修改文本 `2` 保留 |
 
 这些操作验证的是网页构造与导出的离线字节，没有向真实键盘发送 Output。
+
+### Pages 线上交付补验
+
+2026-10-22，Windows / Chrome 155.0.8059.86。[PR #40](https://github.com/We1chan/moonhid/pull/40)
+五项 CI 全绿后合并至 `3e5c8762ac85f19530c87faf79b66a282670caf6`，
+[Pages 部署](https://github.com/We1chan/moonhid/actions/runs/39803974333) 成功。
+在 [线上检查器](https://we1chan.github.io/moonhid/) 通过实际控件重复上表五步：
+依次观测到 `00`、`02`、`03`、`e2`；非法值 `2` 显示 `value_range`，原始报告仍为 `e2`。
+本轮网页编辑已经部署并完成线上交互验证，注册表版本仍为 0.5.2。

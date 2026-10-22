@@ -50,6 +50,7 @@ jobs:
           node scripts/test-web.mjs
           node scripts/test-webhid.mjs
           node scripts/test-usability.mjs
+          node scripts/test-acceptance.mjs
           node scripts/firmware-ci.mjs
           node scripts/package-inspector.mjs
           node scripts/test-offline.mjs
@@ -78,6 +79,9 @@ jobs:
       - name: Verify inspector DOM in headless Chrome
         if: matrix.target == 'js'
         run: node scripts/test-inspector.mjs
+      - name: Verify one-command acceptance (wasm/js)
+        if: matrix.target == 'js'
+        run: node scripts/acceptance.mjs --quick
       - name: Record performance baseline
         if: matrix.target == 'js'
         run: node --expose-gc scripts/benchmark.mjs > _build/benchmark.json
@@ -88,6 +92,8 @@ jobs:
           path: |
             _build/distribution/
             _build/benchmark.json
+            _build/acceptance-report.json
+            _build/acceptance-logs/
 
   latest-compatible:
     name: latest-toolchain (js)
