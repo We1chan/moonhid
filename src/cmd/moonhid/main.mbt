@@ -7,12 +7,13 @@ priv enum Command {
   Generate(String)
   Build(String)
   Declare(String)
+  Replay(@hid.ReportKind, String, String, String?)
   Help
 }
 
 ///|
 fn usage() -> String {
-  "moonhid inspect <descriptor.hex>\nmoonhid lint <descriptor.hex>\nmoonhid decode --kind input|output|feature <descriptor.hex> <report.hex>\nmoonhid encode --kind input|output|feature --id 0..255 <descriptor.hex> <values.json>\nmoonhid generate mouse|keyboard|gamepad|consumer|vendor\nmoonhid build <declaration.json>\nmoonhid declare <descriptor.hex>"
+  "moonhid inspect <descriptor.hex>\nmoonhid lint <descriptor.hex>\nmoonhid decode --kind input|output|feature <descriptor.hex> <report.hex>\nmoonhid encode --kind input|output|feature --id 0..255 <descriptor.hex> <values.json>\nmoonhid generate mouse|keyboard|gamepad|consumer|vendor\nmoonhid build <declaration.json>\nmoonhid declare <descriptor.hex>\nmoonhid replay --kind input|output|feature <descriptor.hex> <frames.txt> [--expect <expected.jsonl>]"
 }
 
 ///|
@@ -38,6 +39,16 @@ fn parse_command(args : Array[String]) -> Result[Command, String] {
     ["lint", path] => Ok(Lint(path))
     ["build", path] => Ok(Build(path))
     ["declare", path] => Ok(Declare(path))
+    ["replay", "--kind", kind, descriptor, frames] =>
+      match parse_kind(kind) {
+        Ok(kind) => Ok(Replay(kind, descriptor, frames, None))
+        Err(error) => Err(error)
+      }
+    ["replay", "--kind", kind, descriptor, frames, "--expect", expected] =>
+      match parse_kind(kind) {
+        Ok(kind) => Ok(Replay(kind, descriptor, frames, Some(expected)))
+        Err(error) => Err(error)
+      }
     ["generate", name] => {
       if !["mouse", "keyboard", "gamepad", "consumer", "vendor"].contains(name) {
         return Err(
@@ -93,7 +104,10 @@ fn read_values(path : String) -> Result[Json, @hid.Diagnostic] {
 
 ///|
 fn json_integer(number : Double, index : Int) -> Result[Int64, @hid.Diagnostic] {
-  if number < -2147483648.0 || number > 4294967295.0 {
+  if number.is_nan() ||
+    number.is_inf() ||
+    number < -2147483648.0 ||
+    number > 4294967295.0 {
     return Err({
       offset: index,
       code: "value_range",
@@ -307,6 +321,8 @@ fn read_hex(path : String) -> Result[Bytes, @hid.Diagnostic] {
 fn execute(command : Command) -> Result[(String, Int), @hid.Diagnostic] {
   match command {
     Help => Ok((usage(), 0))
+    Replay(kind, descriptor, frames, expected) =>
+      replay(kind, descriptor, frames, expected)
     Build(path) => {
       let text = @fs.read_file_to_string(path) catch {
         _ =>
