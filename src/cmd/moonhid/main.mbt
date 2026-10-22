@@ -5,12 +5,14 @@ priv enum Command {
   Decode(@hid.ReportKind, String, String)
   Encode(@hid.ReportKind, Int, String, String)
   Generate(String)
+  Build(String)
+  Declare(String)
   Help
 }
 
 ///|
 fn usage() -> String {
-  "moonhid inspect <descriptor.hex>\nmoonhid lint <descriptor.hex>\nmoonhid decode --kind input|output|feature <descriptor.hex> <report.hex>\nmoonhid encode --kind input|output|feature --id 0..255 <descriptor.hex> <values.json>\nmoonhid generate mouse|keyboard|gamepad|consumer|vendor"
+  "moonhid inspect <descriptor.hex>\nmoonhid lint <descriptor.hex>\nmoonhid decode --kind input|output|feature <descriptor.hex> <report.hex>\nmoonhid encode --kind input|output|feature --id 0..255 <descriptor.hex> <values.json>\nmoonhid generate mouse|keyboard|gamepad|consumer|vendor\nmoonhid build <declaration.json>\nmoonhid declare <descriptor.hex>"
 }
 
 ///|
@@ -34,6 +36,8 @@ fn parse_command(args : Array[String]) -> Result[Command, String] {
     ["--help"] | ["-h"] => Ok(Help)
     ["inspect", path] => Ok(Inspect(path))
     ["lint", path] => Ok(Lint(path))
+    ["build", path] => Ok(Build(path))
+    ["declare", path] => Ok(Declare(path))
     ["generate", name] => {
       if !["mouse", "keyboard", "gamepad", "consumer", "vendor"].contains(name) {
         return Err(
@@ -303,6 +307,30 @@ fn read_hex(path : String) -> Result[Bytes, @hid.Diagnostic] {
 fn execute(command : Command) -> Result[(String, Int), @hid.Diagnostic] {
   match command {
     Help => Ok((usage(), 0))
+    Build(path) => {
+      let text = @fs.read_file_to_string(path) catch {
+        _ =>
+          return Err({
+            offset: 0,
+            code: "file_read",
+            message: "Cannot read declaration file: \{path}",
+          })
+      }
+      match @hid.descriptor_from_declaration(text) {
+        Ok(bytes) => Ok((@hid.format_hex(bytes), 0))
+        Err(error) => Err(error)
+      }
+    }
+    Declare(path) => {
+      let bytes = match read_hex(path) {
+        Ok(bytes) => bytes
+        Err(error) => return Err(error)
+      }
+      match @hid.declaration_from_descriptor(bytes) {
+        Ok(json) => Ok((json.stringify(), 0))
+        Err(error) => Err(error)
+      }
+    }
     Generate(name) => {
       let result = match name {
         "mouse" => @examples.mouse_descriptor()

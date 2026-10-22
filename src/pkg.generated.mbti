@@ -14,9 +14,13 @@ pub fn clear_usages(Layout, ReportKind, Bytes, Array[Usage]) -> Result[Bytes, Di
 
 pub fn compile_descriptor(Bytes) -> Result[Layout, Diagnostic]
 
+pub fn declaration_from_descriptor(Bytes) -> Result[Json, Diagnostic]
+
 pub fn decode_report(Layout, ReportKind, Bytes) -> Result[DecodedReport, Diagnostic]
 
 pub fn decode_unit(Int64) -> Result[UnitDimensions, Diagnostic]
+
+pub fn descriptor_from_declaration(String) -> Result[Bytes, Diagnostic]
 
 pub fn descriptor_to_json(Bytes) -> Result[Json, Diagnostic]
 

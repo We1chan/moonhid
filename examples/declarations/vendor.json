@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "items": [
+    {"usage_page": "0xff00"}, {"usage": 1},
+    {"collection": "application", "items": [
+      {"usage": 2}, {"logical_range": [0, 255]}, {"report_size": 8}, {"report_count": 64}, {"input": ["variable"]},
+      {"usage": 3}, {"logical_range": [0, 255]}, {"report_size": 8}, {"report_count": 64}, {"output": ["variable"]}
+    ]}
+  ]
+}
