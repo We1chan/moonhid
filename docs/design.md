@@ -106,6 +106,9 @@ Buffered Bytes 的 Main bit 8 表示整个固定字节流：`Size × Count / 8` 
 
 ## 错误、资源上限与支持边界
 
+[结构化声明 v1](declaration.md) 是构建器的 JSON 入口，`descriptor_from_declaration` 最终仍调用构建器和同一布局编译器。
+导出通过显式 item 宽度保存原始字节；错误按声明节点先序编号映射到 JSON 路径，展示 JSON v2 保持独立。
+
 不支持的长项和保留语义在布局编译时明确报错；原始 tokenizer/`serialize_items` 仍可保留其字节。
 String/Designator 和 Unit 中保留的信息不等于已实现全部上层语义，见 [兼容目标](hid-compatibility.md)。
 
