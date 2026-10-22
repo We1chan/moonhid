@@ -58,6 +58,7 @@ Buffered Bytes 从 **0.5.0** 提供；0.4.0 不含此支持。报名补充说明
 | 描述符解析 | 十六进制输入、短项/长项分词、布局编译 `compile_descriptor`、Collection 树、Physical/Unit 元数据、版本化 JSON v2；CLI `inspect` |
 | 报告编码 | `encode_report`：Input / Output / Feature、多 Report ID、整数与超宽原始值、数量/范围/Null 校验、自动写 ID 与零填充；CLI `encode` |
 | 报告解码 | `decode_report`：Variable / Array、Null State、有符号与无符号、跨字节与超宽字段；CLI `decode` |
+| 批量重放（源码新增） | CLI `replay` 按行解码、保留错误行号；`--expect` 比较 Usage 数值、Raw、物理量和活跃集合；[42 帧与固件示例](https://github.com/We1chan/moonhid/blob/main/docs/replay.md) |
 | 字段读写 | `find_fields` 按 Usage 定位字段，`read_field` / `write_field` 读写单个值并保留相邻位 |
 | Usage 级访问 | 参照 Windows `hidpi.h`：`new_report` 初始化报告，`set_usages` / `clear_usages` 按下、释放按键与按钮，`get/set_usage_value`、`get/set_physical_value` 读写数值与物理量；CLI `encode` 接受按 Usage 描述的值文件 |
 | 描述符检查 | `lint_descriptor` 十项规则，CLI `lint`，网页中文提示 |
@@ -424,6 +425,7 @@ moon run src/cmd/moonhid --target native -- encode --kind output --id 0 examples
 moon run src/cmd/moonhid --target native -- encode --kind input --id 0 examples/codec/keyboard.hex examples/codec/keyboard-usages.json
 moon run src/cmd/moonhid --target js -- encode --kind feature --id 7 examples/codec/vendor-feature.hex examples/codec/vendor-feature-values.json
 moon run src/cmd/moonhid --target native -- decode --kind input descriptor.hex report.hex
+moon run src/cmd/moonhid --target js -- replay --kind input examples/firmware-ci/descriptor.hex examples/firmware-ci/frames.txt --expect examples/firmware-ci/expected.jsonl
 ```
 
 | 子命令 | 作用与输出 |
@@ -434,6 +436,7 @@ moon run src/cmd/moonhid --target native -- decode --kind input descriptor.hex r
 | `lint` | 每条检查结果输出一行，例如 `warning usage_count @18: ...`；没有提示时 stdout 为空，规则见 [lint 说明](https://github.com/We1chan/moonhid/blob/main/docs/lint.md) |
 | `encode` | 按值文件编码 Input / Output / Feature 报告，stdout 为十六进制 |
 | `decode` | 输出带 `schema_version: 2` 的 `wire_hex` / `decoded` 组件；报告文件应包含所需的 Report ID 前缀 |
+| `replay`（源码新增） | 每行一帧 hex，允许空行与 `#` 注释；stdout 为带原文件行号的 JSONL，`--expect` 按 Usage 逐帧断言，见 [重放说明](https://github.com/We1chan/moonhid/blob/main/docs/replay.md) |
 
 `encode` 接受两种值文件：按字段、元素顺序排列的 JSON 数组，例如 `[1, 1, 0, 0, 0]`
 编码键盘 LED Output 为 `03`，超宽字段用 `{"hex": "ff ff ff ff 01"}`；或按 Usage 描述的 JSON 对象，
@@ -443,7 +446,7 @@ moon run src/cmd/moonhid --target native -- decode --kind input descriptor.hex r
 `--kind` 可以是 input、output、feature；`encode` 的 `--id 0` 用于不带 ID 的报告。
 成功时 stdout 只含 JSON、十六进制或检查结果；错误写入 stderr，格式为 `code @offset: message`。
 退出码：0 表示成功，1 表示文件、输入或诊断错误，2 表示参数错误；
-`lint` 存在 Warning 时退出 3，只有 Info 时仍退出 0，`inspect` 有 Warning 时也退出 0。
+`lint` 存在 Warning 或 `replay` 期望不匹配时退出 3；只有 Info 时 `lint` 仍退出 0，`inspect` 有 Warning 时也退出 0。
 
 固件仓库的 CI 可以构建 native 可执行文件，检查导出的描述符，并根据退出码判断是否需要审阅：
 
