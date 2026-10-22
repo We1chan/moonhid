@@ -28,6 +28,7 @@
 - 既有模糊语料加入 Item 无损往返与报告往返性质，约定见 [codec](docs/codec.md)。
 - 0.4.0 已发布到 mooncakes.io，独立项目四后端各 6/6 安装验收通过，见 [发布说明](docs/release-0.4.0.md)。
 - 0.5.0 增加 Buffered Bytes；0.5.2 完成 Mooncakes 文档入口修复与独立安装验收，见 [发布说明](docs/release-0.5.2.md)。
+- 0.6.0 已发布；干净克隆完整验收 23 项通过，四后端各 123/123；注册表独立安装各 14/14，71 份文件逐字节一致。公开链接、离线包与 Pages 的实际结果见 [交付记录](docs/release-0.6.0.md#2026-10-23-实际交付验收)。
 - 0.6.0 网页支持 Input / Output / Feature 报告初始化、按字段/元素编辑与完整 HEX 导出，复用 MoonBit 核心的 ID、Null、Array、Raw 和 Buffered Bytes 语义；见 [网页报告编辑](docs/browser-editor.md)。
 
 ## 下一阶段：协议覆盖与验证

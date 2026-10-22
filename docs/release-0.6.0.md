@@ -72,3 +72,31 @@ Release 附带 `moonhid-inspector-v0.6.0.zip` 和 `SHA256SUMS.txt`。
 解压后运行 `node scripts/serve-offline.mjs`，Windows 也可双击 `start-inspector.cmd`；只需 Node.js 22+。
 `BUILD.json` 记录版本、构建提交和时间。下载后对照 SHA-256，并在解压包上运行服务复核。
 在线检查器位于 [GitHub Pages](https://we1chan.github.io/moonhid/)，部署以对应 main CI 成功记录为准。
+
+## 2026-10-23 实际交付验收
+
+发布提交为 `706ff87a88ae166cc627c1bc1d0ca774e00ebe57`，Mooncakes 返回 `200 OK`，
+[GitHub v0.6.0](https://github.com/We1chan/moonhid/releases/tag/v0.6.0) 已公开。
+完整机器记录见 [发布汇总](release-0.6.0-validation.json) 和 [注册表独立安装](registry-0.6.0-validation.json)，
+同时随 Release 附件提供，固定标签中的发布流程也能通过附件访问实际结果。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 发布前 PR 与发布提交 CI | 各五项全绿；[发布提交 CI](https://github.com/We1chan/moonhid/actions/runs/39815335313) 使用手动触发，同一提交运行全部检查 |
+| 干净克隆完整验收 | 原仓库外新克隆，`dirty: false`；PASS 23 / FAIL 0 / SKIP 0，四后端各 123/123 |
+| 注册表独立安装 | 实际下载 0.6.0，无本地覆盖；四后端各 14/14；71 份源码/配置与标签原始字节、LF 归一比较均相同 |
+| 公开交付链接 | GitHub/Mooncakes、全部 6 个 Release 正文和 9 个技术入口，共 296 个来源、102 个不同 URL；0 失败，0 缺失必需入口 |
+| 下载离线包 | 从 GitHub 重新下载，SHA-256 与本地及下载的清单一致；17 个文件与上传构建逐字节相同 |
+| 下载包运行 | Node-only 服务、资源/MIME/HEAD/路径限制、字段编辑通过；三方向 Buffered Bytes 和 13 位 Feature 值 4660 通过 |
+| 线上检查器 | [Pages build/deploy](https://github.com/We1chan/moonhid/actions/runs/39817365525) 成功；线上 index/app/core 均为 HTTP 200，与下载包对应文件逐字节相同 |
+
+GitHub 当时存在队列延迟，未观察到此提交的自动 push 检查；发布前 PR 已通过五项 CI，
+且其 Git 树与发布提交相同。随后对发布提交手动运行完整 CI 和 Pages，均已拿到成功结果。
+首次 Release 发布触发的 [公开文档 CI](https://github.com/We1chan/moonhid/actions/runs/39816618874) 也成功，
+增加发布机器记录与 CI/Pages 链接后，本机再次检查全部 296 项并通过。
+
+离线 ZIP SHA-256：
+
+```text
+d17b2ca18be8f0450ee9352aefbcf71b99826e640214227875c024c22ead15b8
+```

@@ -38,7 +38,7 @@
 | 固定报告字节与拒绝案例 | 约定的编码/解码与错误是否符合独立预期 | [报告案例](report-cases.md) |
 | hid-tools 0.12 独立对照 | 布局、字段值和生成的报告是否与独立实现一致 | [真实描述符](real-devices.md)、[编解码验收](codec-validation.md) |
 | 固定种子模糊测试 | 随机/突变输入是否崩溃，资源上限与往返性质是否保持 | [模糊测试](fuzz-validation.md) |
-| 注册表独立安装 | 公开包是否能从注册表下载并在仓库外使用 | [0.5.2 安装记录](registry-0.5.2-validation.json) |
+| 注册表独立安装 | 公开包是否能从注册表下载并在仓库外使用 | [0.6.0 安装记录](registry-0.6.0-validation.json)，四后端各 14/14，71 份文件逐字节匹配发布提交 |
 | 线上真实链接检查 | GitHub、Mooncakes 和交付入口实际是否可访问 | [独立排查](review-audit-2026-10-20.md) |
 | 浏览器模拟适配器与 DOM | ID/载荷分离、生命周期、界面操作和导出是否正确 | [检查器验收](inspector-validation.md) |
 | 真实设备采集与重放 | 已记录的手柄操作是否对应实际收到的 Input 位值 | [Xbox 蓝牙记录](xbox-bluetooth.md) |
