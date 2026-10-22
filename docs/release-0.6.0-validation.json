@@ -1,0 +1,161 @@
+{
+  "version": "0.6.0",
+  "recorded_at": "2026-10-22T16:59:13.582Z",
+  "local_date": "2026-10-23",
+  "timezone": "Asia/Singapore",
+  "release_commit": "706ff87a88ae166cc627c1bc1d0ca774e00ebe57",
+  "release_tag": "v0.6.0",
+  "release_url": "https://github.com/We1chan/moonhid/releases/tag/v0.6.0",
+  "mooncakes_server_status": "200 OK",
+  "clean_clone": {
+    "outside_original_repository": true,
+    "dirty": false,
+    "commit": "706ff87a88ae166cc627c1bc1d0ca774e00ebe57",
+    "summary": {
+      "PASS": 23,
+      "FAIL": 0,
+      "SKIP": 0
+    },
+    "source_tests": {
+      "wasm": {
+        "total": 123,
+        "passed": 123,
+        "failed": 0
+      },
+      "wasm-gc": {
+        "total": 123,
+        "passed": 123,
+        "failed": 0
+      },
+      "js": {
+        "total": 123,
+        "passed": 123,
+        "failed": 0
+      },
+      "native": {
+        "total": 123,
+        "passed": 123,
+        "failed": 0
+      }
+    },
+    "platform": {
+      "os": "win32",
+      "arch": "x64",
+      "release": "10.0.26200"
+    }
+  },
+  "registry": {
+    "validation_file": "registry-0.6.0-validation.json",
+    "registry_install": true,
+    "local_overrides": false,
+    "tests": {
+      "wasm": {
+        "total": 14,
+        "passed": 14,
+        "failed": 0
+      },
+      "wasm-gc": {
+        "total": 14,
+        "passed": 14,
+        "failed": 0
+      },
+      "js": {
+        "total": 14,
+        "passed": 14,
+        "failed": 0
+      },
+      "native": {
+        "total": 14,
+        "passed": 14,
+        "failed": 0
+      }
+    },
+    "compared_files": 71,
+    "raw_byte_matches": 71,
+    "lf_normalized_matches": 71
+  },
+  "ci": {
+    "release_candidate": {
+      "run_id": 39814189691,
+      "head": "1d665afdcd8a16fe95aca44c75dd82f8773e4307",
+      "status": "success",
+      "jobs_passed": 5,
+      "git_tree_equal_to_release": true
+    },
+    "main": {
+      "run_id": 39815335313,
+      "event": "workflow_dispatch",
+      "head": "706ff87a88ae166cc627c1bc1d0ca774e00ebe57",
+      "status": "success",
+      "jobs_passed": 5
+    },
+    "public_documentation": {
+      "run_id": 39818286947,
+      "event": "workflow_dispatch",
+      "head": "706ff87a88ae166cc627c1bc1d0ca774e00ebe57",
+      "status": "success",
+      "link_sources": 296,
+      "initial_release_run_id": 39816618874
+    }
+  },
+  "public_documentation": {
+    "version": "0.6.0",
+    "link_sources": 296,
+    "unique_urls": 102,
+    "releases": 6,
+    "extra_urls": 9,
+    "failures": 0,
+    "required_registry_links_missing": 0,
+    "recorded_at": "2026-10-22T16:55:30.135Z"
+  },
+  "pages": {
+    "run_id": 39817365525,
+    "event": "workflow_dispatch",
+    "head": "706ff87a88ae166cc627c1bc1d0ca774e00ebe57",
+    "status": "success",
+    "jobs_passed": 2,
+    "live_files": [
+      {
+        "file": "index.html",
+        "http_status": 200,
+        "sha256": "6abd7fd24fdd67e004df6796ec2e5acecdb0b9274c9e07633d08e9f3cda9049e",
+        "matches_downloaded_bundle": true
+      },
+      {
+        "file": "app.js",
+        "http_status": 200,
+        "sha256": "faaab518337fb65f7c81768fbe2066b6dce14d16a63011c381ca23530a7e2486",
+        "matches_downloaded_bundle": true
+      },
+      {
+        "file": "moonhid-core.js",
+        "http_status": 200,
+        "sha256": "0da7803afb494862c8c119ab3afd7f586b2fac1fbebe5cb32f7fcd7303925d3a",
+        "matches_downloaded_bundle": true
+      }
+    ]
+  },
+  "offline_release": {
+    "filename": "moonhid-inspector-v0.6.0.zip",
+    "sha256": "d17b2ca18be8f0450ee9352aefbcf71b99826e640214227875c024c22ead15b8",
+    "downloaded_from_github": true,
+    "checksum_matches_local_and_downloaded_sums": true,
+    "files_matched": 17,
+    "node_only_startup": true,
+    "field_editor_core": true,
+    "buffered_bytes_directions": [
+      "input",
+      "output",
+      "feature"
+    ],
+    "standard_feature_value": 4660,
+    "passed": true
+  },
+  "scope": {
+    "native_hidapi": "framing and feasibility probes only; device I/O adapter remains planned",
+    "real_led_feature_test": "not run",
+    "web_output_feature": "planned",
+    "participant_design_understanding": "not verified",
+    "formal_competition_submission": "not performed"
+  }
+}
