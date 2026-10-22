@@ -3,9 +3,9 @@
 MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 使用链路为：声明生成描述符 → 编译布局 → 初始化报告 → 按 Usage 或字段读写 → 编码或解码报告 → 交给设备传输层。
 核心负责报告协议，CLI 和浏览器负责检查与复现，设备连接由独立适配层接入。
-当前发布的 0.5.2 核心能力与 0.5.0 相同，修复文档跨平台入口并补齐标准验收说明。Buffered Bytes 从 0.5.0 提供。
-仓库源码新增 [结构化声明 v1](declaration.md) 和 [批量重放](replay.md)，提供 build/declare、描述符字节往返与逐帧断言；尚未发布到旧版本。
-发布与安装验收见 [发布说明](release-0.5.2.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
+0.6.0 新增网页字段编辑、[结构化声明 v1](declaration.md)、[批量重放](replay.md) 和纯 MoonBit transport 帧转换。
+已有 API 保持兼容；展示 JSON 保持 v2，声明是独立 v1 格式；Buffered Bytes 从 0.5.0 提供。
+发布与安装验收见 [发布说明](release-0.6.0.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
 
 功能范围参照三类成熟库确定：报告解析库（Windows `hidpi.h`、hid-tools）、
 设备端描述符库（TinyUSB、Rust usbd-hid、Microsoft Waratah）和设备通信库（HIDAPI、node-hid）。
@@ -18,7 +18,7 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 | 二进制输入 | 严格 hex、诊断、短项/长项分词、小端数值 | `parse_hex`、`parse_items`；截断、零长度、uint32 |
 | 原始描述符编辑 | Item 序列化，保留宽度与未知数据 | `serialize_items`；原始 bytes 无损往返 |
 | 描述符创作 | Usage/范围/扩展 Usage、集合、三方向、ID、Physical/Unit、Push/Pop；Maximum 采用读法无歧义的编码 | `DescriptorBuilder`；生成后编译；模板 lint 为空 |
-| 结构化声明（源码新增） | JSON v1、命名 flags、嵌套集合、显式 raw 宽度、语义验证与字节无损导入导出 | `descriptor_from_declaration` / `declaration_from_descriptor`；五模板、复合设备、七真实与九 codec 描述符回放 |
+| 结构化声明（0.6.0 新增） | JSON v1、命名 flags、嵌套集合、显式 raw 宽度、语义验证与字节无损导入导出 | `descriptor_from_declaration` / `declaration_from_descriptor`；五模板、复合设备、七真实与九 codec 描述符回放 |
 | 设备模板 | 鼠标、键盘（含 LED）、手柄、媒体键、厂商原始数据 | `@examples.*_descriptor`、CLI `generate`；三份独立 fixture、两份与 TinyUSB 宏展开逐字节相同 |
 | 布局与元数据 | 每方向/ID 独立偏移、Constant、Array、集合树、String/Designator、Delimiter | `compile_descriptor`；七份真实描述符与 hid-tools 对照 |
 | 报告目录与初始化 | 每个报告的长度与值数量；Null 值、Array 空值或零 | `list_reports`、`new_report`（对应 `HidP_GetCaps`、`HidP_InitializeReportForID`）；Hat/轴 Null 与模糊性质 |
@@ -39,9 +39,9 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 
 | 层 | 当前状态 | 后续验收目标 |
 | --- | --- | --- |
-| 文件 CLI | inspect / lint / decode / encode / generate；源码新增 build / declare / replay；逐帧行号、错误与 Usage 期望；encode 支持位置数组与 Usage 对象两种值文件，generate 支持五种模板；Unicode 路径、机器可读输出、退出码 | 按需增加流式采集输入 |
-| 浏览器检查器 | 描述符/布局/解码/JSON 导出、WebHID Input、collections 对照；源码版新增三方向报告初始化、字段/元素编辑与完整 HEX 导出，见 [网页报告编辑](browser-editor.md) | Output/Feature 传输适配、按 Usage 编辑 |
-| 设备传输适配 | 浏览器 Input 与 Xbox 蓝牙实测；源码新增纯 MoonBit `transport` 帧转换，四后端合成字节验证 | 独立设备信息、枚举、打开/关闭、Input 订阅、Output 发送、Feature 读写；验证断开和错误 |
+| 文件 CLI | inspect / lint / decode / encode / generate；0.6.0 新增 build / declare / replay；逐帧行号、错误与 Usage 期望；encode 支持位置数组与 Usage 对象两种值文件，generate 支持五种模板；Unicode 路径、机器可读输出、退出码 | 按需增加流式采集输入 |
+| 浏览器检查器 | 描述符/布局/解码/JSON 导出、WebHID Input、collections 对照；新增三方向报告初始化、字段/元素编辑与完整 HEX 导出，见 [网页报告编辑](browser-editor.md) | Output/Feature 传输适配、按 Usage 编辑 |
+| 设备传输适配 | 浏览器 Input 与 Xbox 蓝牙实测；0.6.0 新增纯 MoonBit `transport` 帧转换，四后端合成字节验证 | 独立设备信息、枚举、打开/关闭、Input 订阅、Output 发送、Feature 读写；验证断开和错误 |
 | 原生 HID 接入 | 适配器仍在规划；[可行性探针](hidapi.md) 已验证 Windows/Linux native 链接与初始化，Linux CI 的 UHID 虚拟设备可被 HIDAPI 枚举 | native HIDAPI FFI；至少键盘 LED 和厂商 Feature 实机验收，记录平台、权限和驱动限制 |
 | Usage/单位语义 | 数字 Usage、常见名称、Unit/Physical 元数据、物理量换算 | 完整 Usage 名称数据包、单位制之间的转换 |
 | 描述符便捷性 | 显式尺寸、ID、填充、集合结束，最小且无歧义的短项整数宽度 | 可选自动填充、自动 ID、冗余全局项优化；语义布局独立对照 |

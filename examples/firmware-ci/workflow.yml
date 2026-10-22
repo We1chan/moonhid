@@ -12,9 +12,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Fetch MoonHID source with replay (pin v0.6.0 after release)
+      - name: Fetch released MoonHID with replay
         run: |
-          git clone --depth 1 --branch main https://github.com/We1chan/moonhid.git moonhid
+          git clone --depth 1 --branch v0.6.0 https://github.com/We1chan/moonhid.git moonhid
       - name: Install the recorded compiler
         working-directory: moonhid
         run: |

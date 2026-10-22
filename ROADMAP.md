@@ -28,12 +28,12 @@
 - 既有模糊语料加入 Item 无损往返与报告往返性质，约定见 [codec](docs/codec.md)。
 - 0.4.0 已发布到 mooncakes.io，独立项目四后端各 6/6 安装验收通过，见 [发布说明](docs/release-0.4.0.md)。
 - 0.5.0 增加 Buffered Bytes；0.5.2 完成 Mooncakes 文档入口修复与独立安装验收，见 [发布说明](docs/release-0.5.2.md)。
-- 源码版网页已支持 Input / Output / Feature 报告初始化、按字段/元素编辑与完整 HEX 导出，复用 MoonBit 核心的 ID、Null、Array、Raw 和 Buffered Bytes 语义；见 [网页报告编辑](docs/browser-editor.md)。
+- 0.6.0 网页支持 Input / Output / Feature 报告初始化、按字段/元素编辑与完整 HEX 导出，复用 MoonBit 核心的 ID、Null、Array、Raw 和 Buffered Bytes 语义；见 [网页报告编辑](docs/browser-editor.md)。
 
 ## 下一阶段：协议覆盖与验证
 
 - 中文 lint、item/字段定位、Null 教学案例、固件回归示例、在线与预编译离线检查器已完成。
-- 报告编码、往返性质和网页字段编辑/编码导出已实现；源码新增结构化声明 v1 与 build/declare，五个模板和七份真实描述符/codec 数据逐字节回放，见 [声明格式](docs/declaration.md)；[批量帧重放](docs/replay.md) 提供行号、逐帧错误与 Usage 期望，已核对 Xbox 42 帧和合成固件案例。
+- 报告编码、往返性质和网页字段编辑/编码导出已实现；0.6.0 新增结构化声明 v1 与 build/declare，五个模板和七份真实描述符/codec 数据逐字节回放，见 [声明格式](docs/declaration.md)；[批量帧重放](docs/replay.md) 提供行号、逐帧错误与 Usage 期望，已核对 Xbox 42 帧和合成固件案例。
 - 纯 MoonBit `transport` 帧转换已通过四后端合成验证，Windows HIDAPI 链接/初始化探针通过；[记录与范围](docs/hidapi-validation.md) 区分软件帧、虚拟环境与实机证据。原生收发适配器及可选网页 Output/Feature 发送保留为后续工作。
 - String/Designator 与 Delimiter 备选 Usage 已保留；Buffered Bytes 已支持，布局编译继续明确拒绝长项。
 - 增加非字节对齐手柄、带多个 ID 的复合设备、Feature 报告和异常描述符样例。
@@ -52,7 +52,7 @@
 
 - 参赛者审阅代码并能解释状态机、位序、逻辑范围、数组 Usage 和支持边界。
 - 模块 `We1chan/moonhid` 的 0.2.0 发布与安装验收已完成；后续发布沿用已记录的流程。
-- 稳定 CI 已固定工具链，另设最新兼容检查；交付入口和版本结果见 [0.5.2 发布说明](docs/release-0.5.2.md)。
+- 稳定 CI 已固定工具链，另设最新兼容检查；交付入口和版本结果见 [0.6.0 发布说明](docs/release-0.6.0.md)。
 - 根据比赛最新版规则由参赛者自行撰写提案；报名与最终验收分开确认。
 
 ## 当前范围之外
