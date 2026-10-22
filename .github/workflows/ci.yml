@@ -43,6 +43,24 @@ jobs:
         run: |
           moon run src/cmd/main --target ${{ matrix.target }}
           moon run src/cmd/scenarios --target ${{ matrix.target }}
+      - name: Probe native HIDAPI linking and Linux UHID feasibility
+        if: matrix.target == 'native'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libhidapi-dev
+          node scripts/probe-hidapi.mjs
+          sudo modprobe uhid || sudo apt-get install -y "linux-modules-extra-$(uname -r)" || true
+          sudo modprobe uhid || true
+          python3 -m venv _build/hidapi-venv
+          _build/hidapi-venv/bin/pip install hid-tools==0.12
+          sudo _build/hidapi-venv/bin/python scripts/probe-hidapi-uhid.py
+      - uses: actions/upload-artifact@v4
+        if: matrix.target == 'native' && always()
+        with:
+          name: hidapi-feasibility
+          path: |
+            _build/hidapi-feasibility.json
+            _build/hidapi-uhid-feasibility.json
       - name: Build and verify browser module
         if: matrix.target == 'js'
         run: |

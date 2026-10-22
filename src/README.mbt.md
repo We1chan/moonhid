@@ -59,6 +59,7 @@ Buffered Bytes 从 **0.5.0** 提供；0.4.0 不含此支持。报名补充说明
 | 报告编码 | `encode_report`：Input / Output / Feature、多 Report ID、整数与超宽原始值、数量/范围/Null 校验、自动写 ID 与零填充；CLI `encode` |
 | 报告解码 | `decode_report`：Variable / Array、Null State、有符号与无符号、跨字节与超宽字段；CLI `decode` |
 | 批量重放（源码新增） | CLI `replay` 按行解码、保留错误行号；`--expect` 比较 Usage 数值、Raw、物理量和活跃集合；[42 帧与固件示例](https://github.com/We1chan/moonhid/blob/main/docs/replay.md) |
+| 帧转换（源码新增） | `transport` 纯 MoonBit 包在核心 wire、HIDAPI 缓冲区和 WebHID `(reportId, payload)` 之间转换并验证 ID/长度；[可行性与范围](https://github.com/We1chan/moonhid/blob/main/docs/hidapi.md) |
 | 字段读写 | `find_fields` 按 Usage 定位字段，`read_field` / `write_field` 读写单个值并保留相邻位 |
 | Usage 级访问 | 参照 Windows `hidpi.h`：`new_report` 初始化报告，`set_usages` / `clear_usages` 按下、释放按键与按钮，`get/set_usage_value`、`get/set_physical_value` 读写数值与物理量；CLI `encode` 接受按 Usage 描述的值文件 |
 | 描述符检查 | `lint_descriptor` 十项规则，CLI `lint`，网页中文提示 |
