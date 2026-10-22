@@ -270,7 +270,115 @@ try {
       assert.equal(result.stdout, '');
       assert.match(result.stderr, new RegExp(`^${code} @`));
     }
-    console.log(`CLI ${target}: inspect/decode/lint/encode/generate, five declaration templates, composite, ${7 + codecNames.length} exact real/codec roundtrips, Buffered Bytes, Unicode paths and exit codes passed.`);
+    const framesPath = join(scratch, '报告 frames.txt');
+    const expectPath = join(scratch, '逐帧 expected.jsonl');
+    const replay = (desc = descriptor, kind = 'input', expected = false) => run([
+      'replay', '--kind', kind, desc, framesPath, ...(expected ? ['--expect', expectPath] : []),
+    ]);
+    const rows = result => result.stdout.trim() ? result.stdout.trim().split('\n').map(line => JSON.parse(line)) : [];
+    await writeFile(framesPath, '# 注释\r\n\r\nff # -1\r\n00\r\nzz\r\nff ff\r\n01\r\n');
+    const mixed = replay();
+    assert.equal(mixed.status, 1, mixed.stderr);
+    assert.match(mixed.stderr, /^replay line 5: invalid_hex @0:/);
+    assert.deepEqual(rows(mixed).map(r => [r.line, r.ok, r.diagnostic?.code]), [
+      [3, true, undefined], [4, true, undefined], [5, false, 'invalid_hex'],
+      [6, false, 'report_length'], [7, true, undefined],
+    ]);
+    assert.deepEqual(rows(mixed).filter(r => r.ok).map(r => r.decoded.values[0].value), [-1, 0, 1]);
+    await writeFile(framesPath, '# signed values\nff\n00\n');
+    await writeFile(expectPath, [{ values: [usage(1, 0x30, { value: -1 })], physical: [usage(1, 0x30, { value: -1 })], active: [] }, {}].map(JSON.stringify).join('\n'));
+    const matching = replay(descriptor, 'input', true);
+    assert.equal(matching.status, 0, matching.stderr);
+    assert.equal(matching.stderr, '');
+    assert.deepEqual(rows(matching).map(r => [r.line, r.report_id, r.matched]), [[2, 0, true], [3, 0, true]]);
+    await writeFile(expectPath, [{ values: [usage(1, 0x30, { value: 1 })] }, { values: [usage(1, 0x30, { value: 2 })] }].map(JSON.stringify).join('\n'));
+    const mismatch = replay(descriptor, 'input', true);
+    assert.equal(mismatch.status, 3, mismatch.stderr);
+    assert.match(mismatch.stderr, /^replay_mismatch line 2: values\[0\].*expected 1, got -1\n$/);
+    assert.deepEqual(rows(mismatch).map(r => r.matched), [false, false]);
+    await writeFile(framesPath, 'ff\nzz\n');
+    assert.equal(replay(descriptor, 'input', true).status, 1, 'frame errors take precedence over mismatches');
+    await writeFile(framesPath, 'ff\n');
+    for (const expected of [
+      '{', '[]', '{"extra":[]}', '{"values":{}}', '{"active":[{"page":1,"id":70000}]}',
+      '{"values":[{"page":1,"id":48,"value":1.5}]}',
+      '{"values":[{"page":1,"id":48,"value":1e999}]}',
+      '{"values":[{"page":1,"id":48,"hex":"zz"}]}',
+      '{"physical":[{"page":1,"id":48,"value":1e999}]}',
+      JSON.stringify({ values: [usage(1, 48, { value: 1 }), usage(1, 48, { value: 1 })] }),
+      JSON.stringify({ active: [usage(9, 1), usage(9, 1)] }),
+      '', '{}\n{}',
+    ]) {
+      await writeFile(expectPath, expected);
+      const result = replay(descriptor, 'input', true);
+      assert.equal(result.status, 1, `expected input: ${expected}\n${result.stderr}`);
+      assert.equal(result.stdout, '');
+      assert.match(result.stderr, /^replay_expect @\d+:/);
+    }
+    for (const expected of [
+      { values: [usage(1, 0x31, { value: -1 })] },
+      { physical: [usage(1, 0x30, { value: -2 })] },
+      { active: [usage(9, 1)] },
+    ]) {
+      await writeFile(expectPath, JSON.stringify(expected));
+      assert.equal(replay(descriptor, 'input', true).status, 3);
+    }
+    await writeFile(generatedPath, success(['generate', 'keyboard']));
+    await writeFile(framesPath, '03\n');
+    await writeFile(expectPath, JSON.stringify({ active: [usage(8, 2), usage(8, 1)] }));
+    assert.equal(replay(generatedPath, 'output', true).status, 0, 'active set is order independent');
+    await writeFile(expectPath, JSON.stringify({ active: [usage(8, 1)] }));
+    assert.equal(replay(generatedPath, 'output', true).status, 3, 'unexpected active controls fail');
+    await writeFile(framesPath, '05 4d 4f 4f 4e\n');
+    await writeFile(expectPath, JSON.stringify({ values: [usage(0xff00, 4, { hex: '4d4f4f4e' })] }));
+    const feature = replay(bufferedPath, 'feature', true);
+    assert.equal(feature.status, 0, feature.stderr);
+    assert.equal(rows(feature)[0].report_id, 5);
+    await writeFile(framesPath, '06 4d 4f 4f 4e\n');
+    assert.equal(rows(replay(bufferedPath, 'feature'))[0].diagnostic.code, 'unknown_report');
+    await writeFile(framesPath, '# no frames\n');
+    assert.equal(replay().stdout, '');
+    assert.equal(replay().status, 0);
+    await writeFile(framesPath, '#'.repeat(8388609));
+    const limited = replay();
+    assert.equal(limited.status, 1);
+    assert.match(limited.stderr, /^replay_limit @0:/);
+    await writeFile(framesPath, '00\n'.repeat(65537));
+    assert.match(replay().stderr, /^replay_limit @65537:/);
+    const deviceCases = join(root, 'examples/device-cases');
+    const capture = JSON.parse(await readFile(join(deviceCases, 'xbox-bluetooth.json'), 'utf8'));
+    const expectedXbox = (await readFile(join(deviceCases, 'xbox-bluetooth-expected.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
+    const xboxFrames = (await readFile(join(deviceCases, 'xbox-bluetooth-frames.txt'), 'utf8')).trim().split('\n').filter(line => !line.startsWith('#'));
+    assert.deepEqual(xboxFrames, capture.reports.map(r => r.wire_hex));
+    const xbox = run(['replay', '--kind', 'input', join(deviceCases, 'xbox-bluetooth-descriptor.hex'), join(deviceCases, 'xbox-bluetooth-frames.txt'), '--expect', join(deviceCases, 'xbox-bluetooth-expected.jsonl')]);
+    assert.equal(xbox.status, 0, xbox.stderr);
+    assert.equal(xbox.stderr, '');
+    assert.equal(rows(xbox).length, 42);
+    const axisIds = [0x30, 0x31, 0x33, 0x34, 0x32];
+    for (const [index, row] of rows(xbox).entries()) {
+      assert.equal(row.line, index + 2);
+      assert.equal(row.matched, true);
+      // Expectations must originate from the recorded independent arrays, not decoder output.
+      assert.deepEqual(expectedXbox[index].values, [
+        ...capture.reports[index].expected_axes.map((value, i) => usage(1, axisIds[i], { value })),
+        ...capture.reports[index].expected_buttons.map((value, i) => usage(9, i + 1, { value })),
+        usage(1, 0x39, { value: capture.reports[index].expected_hat_raw }),
+      ]);
+    }
+    assert.match(help.stdout, /moonhid replay --kind/);
+    for (const [args, status, code] of [
+      [['replay'], 2, 'arguments'],
+      [['replay', '--kind', 'bad', descriptor, framesPath], 2, 'report_kind'],
+      [['replay', '--kind', 'input', descriptor, join(scratch, 'missing-frames')], 1, 'file_read'],
+      [['replay', '--kind', 'input', descriptor, framesPath, '--expect', join(scratch, 'missing-expect')], 1, 'file_read'],
+    ]) {
+      await writeFile(framesPath, 'ff\n');
+      const result = run(args);
+      assert.equal(result.status, status);
+      assert.equal(result.stdout, '');
+      assert.match(result.stderr, new RegExp(`^${code} @`));
+    }
+    console.log(`CLI ${target}: inspect/decode/lint/encode/generate, five declaration templates, composite, ${7 + codecNames.length} exact real/codec roundtrips, replay (42 Xbox frames, errors/expectations/limits), Buffered Bytes, Unicode paths and exit codes passed.`);
   }
 } finally {
   await rm(scratch, { recursive: true, force: true });

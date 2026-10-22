@@ -1,5 +1,5 @@
 # Copy this into a firmware repository that includes the MoonHID regression case.
-# For another device, replace the descriptor/report files and expected.json.
+# For another device, replace descriptor/report files and both expectation files.
 name: HID regression
 on: [push, pull_request]
 permissions:
@@ -12,9 +12,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Fetch a released, reviewed MoonHID version
+      - name: Fetch MoonHID source with replay (pin v0.6.0 after release)
         run: |
-          git clone --depth 1 --branch v0.3.0 https://github.com/We1chan/moonhid.git moonhid
+          git clone --depth 1 --branch main https://github.com/We1chan/moonhid.git moonhid
       - name: Install the recorded compiler
         working-directory: moonhid
         run: |

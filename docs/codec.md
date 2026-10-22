@@ -221,6 +221,10 @@ MoonHID 无 ID 的 wire 不含额外 0；HIDAPI/node-hid 写接口要求首字�
 
 ## 验证
 
+批量文件采用 `moonhid replay --kind input|output|feature <descriptor.hex> <frames.txt>`，
+`--expect <expected.jsonl>` 可按 Usage 断言数值、Raw、物理量和活跃集合。
+详见 [帧格式、行号与退出码](replay.md)；[固件示例](firmware-ci.md) 已接入逐帧断言。
+
 生成器、编码器与模板测试检查独立预期字节、三方向、多 ID、跨字节、signed/unsigned32、
 Array、Null、超宽值、最大报告与错误路径。Usage 级测试用手工推算的字节检查键盘修饰键与按键数组、
 LED、Hat Null、带 ID 的 Button Array、重复 Usage 与无空值 Array；物理量测试覆盖指数、
