@@ -4,6 +4,10 @@
 
 [![CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml/badge.svg)](https://github.com/We1chan/moonhid/actions/workflows/ci.yml)
 
+**验收入口**：在仓库根目录运行 `node scripts/acceptance.mjs`（快速模式加 `--quick`）。
+复现步骤、完整输出与证据：[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md)。
+交互演示：[在线检查器](https://we1chan.github.io/moonhid/)。
+
 面向 MoonBit 的通用 HID 报告工具库：描述符生成与解析、字段布局、报告编解码、
 按 Usage 读写报告、物理量换算和描述符检查。
 
@@ -657,3 +661,16 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 
 代码、测试与文档包含 AI 辅助开发成果。正式参赛前应由参赛者审阅实现，
 理解协议与边界，并按比赛规则自行撰写参赛提案。
+
+## 比赛验收对照
+
+下表提供可核对的证据，不替代赛事评审或参赛者对实现的理解。
+
+| 标准 | 本项目的做法与证据 |
+| --- | --- |
+| MoonBit 为主 | 核心解析、编解码、lint、构建器、CLI、场景逻辑和浏览器桥接使用 MoonBit；JS 处理界面、设备适配和验收编排。[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md)、[源码行数统计命令](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#源码统计) |
+| 仓库公开 | 公开保留开发与交付记录。[提交历史](https://github.com/We1chan/moonhid/commits/main/)、[Issues 与里程碑](https://github.com/We1chan/moonhid/milestone/1)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[Release](https://github.com/We1chan/moonhid/releases) |
+| 能够运行 | 一键复现四后端、CLI、网页、离线包和场景演示；可选检查缺依赖明确跳过。[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md)、[CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) |
+| 工作有效 | 仓库创建于 2026-10-01，已有 0.2.0 至 0.5.2 的版本记录，新增工作通过独立 Issue/PR 跟踪。[版本记录](https://github.com/We1chan/moonhid/releases)、[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md) |
+| 开源合规 | Apache-2.0；核心按公开协议独立实现，记录模板参考和真实描述符来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
+| AI 可解释 | 已公开 AI 的实际参与和核心设计；参赛者目前尚未验证独立讲解能力，此项仍需本人阅读与复现。[AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)、[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md) |
