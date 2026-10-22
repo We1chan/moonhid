@@ -3,7 +3,7 @@
 MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 使用链路为：声明生成描述符 → 编译布局 → 初始化报告 → 按 Usage 或字段读写 → 编码或解码报告 → 交给设备传输层。
 核心负责报告协议，CLI 和浏览器负责检查与复现，设备连接由独立适配层接入。
-0.6.0 新增网页字段编辑、[结构化声明 v1](declaration.md)、[批量重放](replay.md) 和纯 MoonBit transport 帧转换。
+0.6.0 已发布，新增网页字段编辑、[结构化声明 v1](declaration.md)、[批量重放](replay.md) 和纯 MoonBit transport 帧转换。
 已有 API 保持兼容；展示 JSON 保持 v2，声明是独立 v1 格式；Buffered Bytes 从 0.5.0 提供。
 发布与安装验收见 [发布说明](release-0.6.0.md)，标准兼容目标见 [HID 1.11 兼容说明](hid-compatibility.md)。
 
