@@ -169,3 +169,41 @@ MoonBit 四后端及公开接口、格式检查由 PR CI 执行；网页测试�
 - 两次长度错误之间点击「定位」，按钮使用最新报告的错误位置，不被刷新中断。
 - 在 501 个 Constant 字段之后声明 Global 项和 Collection，lint 定位会显示对应的 Items 页及高亮项。
   字段、视口/主题、导出、页面恢复和设备生命周期的既有回归继续通过。
+
+## 网页字段编辑与 HEX 导出验收
+
+2026-10-22，Windows，Chrome 155.0.8059.86，Node v24.14.0，Python 3.14.3。
+MoonBit 工具链为 `moon 0.1.20260920`、`moonc v0.10.14+7d59c7ec9`。
+操作说明见 [网页报告编辑](browser-editor.md)。
+
+- `moon check --target all --deny-warn` 与 `moon build --target all` 通过；wasm / wasm-gc / js / native 各 112/112 测试通过。
+  `moon info`、`moon fmt` 已执行，核心公开接口保持不变，浏览器包新增 `initialize_wire` 与 `write_wire_field`。
+- 重新构建的 browser bridge 验证 signed32 最小值、uint32 最大值、Array Usage、Hat Null、Raw 与三方向 Buffered Bytes。
+  `07 ff ff` 的 12 位跨字节字段写入 291 后为 `07 1f 89`，两端 Constant 与 Report ID 保持不变；
+  `af` 的低四位写入 2 后为 `a2`，未用尾位保持不变。
+- Chrome 表单完整执行「初始化 → 选择元素 → 写入 → HEX/JSON 导出」。键盘 LED 报告 `e0` 的 Caps Lock 写入 1 后为 `e2`；
+  非法值、浮点文本、Raw 高位非零、缓冲区长度错误和非法 hex 均保留原报告和待修改文本。
+- 不同方向保留独立报告草稿。输入报告变为非法或待解码时立即禁用字段写入与 HEX 导出，初始化取消待执行的旧解码；
+  描述符变化时立即清除旧字段。选择第 200 个元素会联动到值表第二页。
+- 1440、1100、390 宽度和浅/深色主题检查通过，无页面横向溢出。
+  WebHID 接收中禁用初始化和字段编辑，断开后恢复；既有模拟设备生命周期、A–G 描述符与 Xbox 42 帧重放通过。
+- native/Node JS 文件 CLI、固件 CI、10 个标准固定字节案例、1 个宽松扩展与 7 个错误案例通过。
+  重新打包的离线服务检查通过，并直接调用离线包内的初始化和写入函数，排除复制旧版解析器的情况。
+- README 同步、221 个本地文档链接、21 个标题锚点、格式与 diff 空白检查通过。
+
+新增 browser bridge、Chrome DOM 与离线包检查沿用现有 JS CI。这里记录的是本机源码验证，
+尚未发布新版本或增加 Output/Feature 实机传输验收。
+
+### Chrome 交互补验
+
+2026-10-22，Windows，Chrome 155.0.8059.86，在独立 Chrome 标签页通过实际表单控件操作本地检查器：
+
+| 操作 | 观测结果 |
+| --- | --- |
+| 键盘 → Output → 初始化 | 原始报告为 `00` |
+| 字段 #3 元素 1 写入 `1`（Caps Lock） | 原始报告变为 `02` |
+| 同字段元素 0 写入 `1`（Num Lock） | 原始报告变为 `03`，Caps Lock 保持为 1 |
+| 原始报告改为 `e0`，元素 1 写入 `1` | 原始报告为 `e2`，高三位填充仍为 1 |
+| 元素 1 写入 `2` | 显示 `value_range`，原始报告保持 `e2`，待修改文本 `2` 保留 |
+
+这些操作验证的是网页构造与导出的离线字节，没有向真实键盘发送 Output。

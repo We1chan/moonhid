@@ -171,6 +171,133 @@ try {
   assert.deepEqual(editedDescriptor, { enabled: false, data: null });
   assert.equal(await evaluate('document.querySelectorAll("#values tbody tr").length'), 0);
   await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
+  // Initialize -> choose an element -> edit -> export through the actual form.
+  const editField = value => evaluate(`(() => {
+    const input = document.getElementById('field-value');
+    input.value = ${JSON.stringify(value)};
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    document.getElementById('apply-field').click();
+  })()`);
+  const chooseElement = value => evaluate(`(() => {
+    const input = document.getElementById('field-element');
+    input.value = ${JSON.stringify(String(value))};
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  const wireText = () => evaluate('document.getElementById("report").value');
+  const download = id => evaluate(`(async () => {
+    let blob, filename;
+    const create = URL.createObjectURL;
+    const click = HTMLAnchorElement.prototype.click;
+    URL.createObjectURL = value => { blob = value; return create(value); };
+    HTMLAnchorElement.prototype.click = function () { filename = this.download; };
+    try { document.getElementById(${JSON.stringify(id)}).click(); }
+    finally { URL.createObjectURL = create; HTMLAnchorElement.prototype.click = click; }
+    return blob ? { filename, text: await blob.text() } : null;
+  })()`);
+  await evaluate(`document.querySelector('[data-fixture="keyboard"]').click(); document.getElementById('initialize-report').click(); document.querySelector('#values tr[data-field="2"][data-element="2"] .field-ref').click()`);
+  assert.equal(await evaluate('document.getElementById("field-element").value'), '2');
+  await editField('4');
+  assert.equal(await wireText(), '00 00 00 00 04 00 00 00');
+  assert.match(await text('values'), /Key A/);
+  await evaluate(`[...document.querySelectorAll('#reports button')].find(button => button.querySelector('strong').textContent === 'Output').click()`);
+  await setText('report', 'e0');
+  await chooseElement(1);
+  await editField('1');
+  assert.equal(await wireText(), 'e2', 'LED edit must preserve Constant bits');
+  assert.match(await text('field-edit-status'), /已写入/);
+  await editField('2');
+  assert.equal(await wireText(), 'e2');
+  assert.match(await text('field-edit-status'), /value_range/);
+  assert.equal(await evaluate('document.getElementById("field-value").value'), '2', 'Rejected text must remain available for correction');
+  assert.equal(await evaluate('document.getElementById("field-value").getAttribute("aria-invalid")'), 'true');
+  await editField('1.5');
+  assert.equal(await wireText(), 'e2');
+  assert.match(await text('field-edit-status'), /value_type/);
+  await chooseElement(999);
+  assert.equal(await evaluate('document.getElementById("apply-field").disabled'), true);
+  await chooseElement(1);
+  assert.equal(await evaluate('document.getElementById("apply-field").disabled'), false);
+  await editField('1');
+  assert.deepEqual(await download('export-hex'), { filename: 'moonhid-output-0.hex', text: 'e2\n' });
+  const encodedJson = JSON.parse((await download('export')).text);
+  assert.deepEqual(encodedJson.selected_report, { kind: 'output', report_id: 0 });
+  assert.equal(encodedJson.wire_hex, 'e2');
+  assert.deepEqual(encodedJson.decoded.values.map(value => value.value), [0, 1, 0, 0, 0]);
+  await evaluate(`[...document.querySelectorAll('#reports button')].find(button => button.querySelector('strong').textContent === 'Input').click()`);
+  assert.equal(await wireText(), '00 00 00 00 04 00 00 00', 'Input and Output drafts must stay separate');
+  await evaluate(`[...document.querySelectorAll('#reports button')].find(button => button.querySelector('strong').textContent === 'Output').click()`);
+  assert.equal(await wireText(), 'e2');
+  assert.equal(await evaluate(`(() => { const node = document.getElementById('report'); node.value = 'zz'; node.dispatchEvent(new Event('input', { bubbles: true })); return document.getElementById('export-hex').disabled && document.getElementById('field-edit-controls').disabled; })()`), true);
+  assert.equal(await download('export-hex'), null, 'An invalid pending report must never export the old wire');
+  await evaluate(`document.getElementById('initialize-report').click()`);
+  assert.equal(await wireText(), '00', 'Initialization must cancel a pending report decode');
+  await new Promise(resolve => setTimeout(resolve, 160));
+  assert.match(await text('report-status'), /已解码/);
+  // Element selection reveals a distant page without creating thousands of inputs.
+  await setText('descriptor', '15 00 25 01 75 01 96 c9 00 81 02');
+  assert.equal(await evaluate('document.getElementById("field-edit-controls").disabled'), true);
+  await evaluate(`document.getElementById('initialize-report').click()`);
+  await chooseElement(200);
+  assert.equal(await evaluate(`document.querySelector('#values tr[data-element="200"]') !== null`), true);
+  await editField('1');
+  assert.equal(await wireText(), '00 '.repeat(25) + '01');
+  await setText('descriptor', '85 07 15 00 26 ff 0f 75 03 95 01 81 01 75 0c 81 02 75 01 81 01');
+  await setText('report', '07 ff ff');
+  await editField('291');
+  assert.equal(await wireText(), '07 1f 89', 'Cross-byte editing must preserve both pads and the ID');
+  assert.deepEqual(await download('export-hex'), { filename: 'moonhid-input-7.hex', text: '07 1f 89\n' });
+  await field(0);
+  assert.equal(await evaluate('document.getElementById("field-edit-controls").disabled'), true);
+  await setText('descriptor', '05 01 09 39 15 00 25 07 75 04 95 01 81 42');
+  await evaluate(`document.getElementById('initialize-report').click()`);
+  assert.equal(await wireText(), '0f');
+  assert.match(await text('values'), /Null State/);
+  await setText('report', 'af');
+  await editField('2');
+  assert.equal(await wireText(), 'a2', 'Unused tail bits must be preserved');
+  await editField('15');
+  assert.equal(await wireText(), 'af');
+  assert.match(await text('values'), /Null State/);
+  await editField('16');
+  assert.equal(await wireText(), 'af');
+  await setText('descriptor', '85 07 75 03 95 01 81 01 75 21 81 02');
+  await setText('report', '07 ff ff ff ff ff');
+  await editField('00 00 00 00 00');
+  assert.equal(await wireText(), '07 07 00 00 00 f0');
+  await editField('ff ff ff ff ff');
+  assert.equal(await wireText(), '07 07 00 00 00 f0');
+  assert.match(await text('field-edit-status'), /value_range/);
+  await setText('descriptor', '06 00 ff 09 01 a1 01 85 05 15 00 25 01 75 08 95 04 09 02 82 02 01 09 03 92 02 01 09 04 b2 02 01 c0');
+  for (const kind of ['Input', 'Output', 'Feature']) {
+    await evaluate(`[...document.querySelectorAll('#reports button')].find(button => button.querySelector('strong').textContent === ${JSON.stringify(kind)}).click(); document.getElementById('initialize-report').click()`);
+    assert.equal(await wireText(), '05 00 00 00 00');
+    assert.equal(await evaluate('document.getElementById("field-element-row").hidden'), true);
+    await editField('00 ff 01 80');
+    assert.equal(await wireText(), '05 00 ff 01 80');
+    await editField('00 ff');
+    assert.equal(await wireText(), '05 00 ff 01 80');
+    await editField('00 zz 01 80');
+    assert.equal(await wireText(), '05 00 ff 01 80');
+    assert.match(await text('field-edit-status'), /invalid_hex/);
+  }
+  await evaluate(`document.querySelector('[data-fixture="keyboard"]').click(); [...document.querySelectorAll('#reports button')].find(button => button.querySelector('strong').textContent === 'Output').click()`);
+  await chooseElement(1);
+  await editField('1');
+  for (const width of [1440, 1100, 390]) {
+    await call('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+    for (const scheme of ['light', 'dark']) {
+      await call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] });
+      assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true, `Field editor overflow at ${width}/${scheme}`);
+      if (process.env.MOONHID_SCREENSHOTS) {
+        await mkdir(process.env.MOONHID_SCREENSHOTS, { recursive: true });
+        await evaluate(`window.scrollTo(0, 0); document.querySelector('.pane-detail').scrollTop = 0`);
+        const { data } = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: width === 390 });
+        await writeFile(join(process.env.MOONHID_SCREENSHOTS, `field-editor-${width}-${scheme}.png`), Buffer.from(data, 'base64'));
+      }
+    }
+  }
+  await call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'light' }] });
+  await evaluate(`document.querySelector('[data-fixture="mouse"]').click()`);
   // A known ID can be selected even if its report still has the wrong length.
   const multipleIds = '15 00 26 ff 00 75 08 95 01 85 01 81 02 85 02 95 02 81 02';
   await setText('descriptor', multipleIds);
@@ -375,6 +502,8 @@ try {
   await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
   assert.equal(await evaluate('document.getElementById("report").value'), '03 ff');
   assert.match(await text('values'), /-1/);
+  assert.equal(await evaluate('document.getElementById("field-edit-controls").disabled'), true, 'Live input must not race a field edit');
+  assert.equal(await evaluate('document.getElementById("initialize-report").disabled'), true);
   // Deliver an actual pointer press/release with a report frame in between.
   await evaluate(`window.__originalEmit = window.__mockDevice.emit; window.__originalItems = window.__mockDevice.collections[0].inputReports[0].items;
     window.__mockDevice.collections[0].inputReports[0].items = [window.__originalItems[0], { ...window.__originalItems[0], usages: [0x10031] }];
@@ -415,6 +544,7 @@ try {
   await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
   assert.equal(await evaluate('document.getElementById("report").value'), '03 ff');
   await evaluate(`document.getElementById('hid-disconnect').click(); new Promise(resolve => setTimeout(resolve, 0))`);
+  assert.equal(await evaluate('document.getElementById("field-edit-controls").disabled'), false);
   await setText('report', '03 00');
   await evaluate(`window.__mockDevice.emit(); new Promise(resolve => requestAnimationFrame(resolve))`);
   assert.equal(await evaluate('document.getElementById("report").value'), '03 00');
@@ -509,7 +639,7 @@ try {
     await writeFile(join(process.env.MOONHID_SCREENSHOTS, 'capture.png'), Buffer.from(data, 'base64'));
   }
   assert.deepEqual(errors, []);
-  console.log('Inspector DOM: startup inputs, ID routing, linked pagination, units, live pointer/focus and Array/Null updates, A–G, widths/themes, exports and HID lifecycle passed.');
+  console.log('Inspector DOM: field editing/HEX exports, initialization, ID/padding/Array/Null/Raw/Buffered Bytes, startup inputs, pagination, A–G, widths/themes and HID lifecycle passed.');
 } finally {
   socket?.close();
   // The isolated Chrome process group includes its profile-writing children.
