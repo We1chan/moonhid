@@ -15,6 +15,7 @@ from_webhid(layout, kind, WebFrame {report_id, payload}) -> Result[Bytes, Diagno
 ```
 
 先编译描述符，再将同一 Layout 和方向传入这些函数；它们复用核心解码器检查 ID 和精确长度。
+在调用包的 `moon.pkg` 导入 `"We1chan/moonhid/transport"` 后，以 `@transport` 调用。
 Raw、Null、异常原值以及 Constant 位均按原始字节保留，不重新编码，也不写设备。
 
 | 接口 | 不带 Report ID | 带 Report ID |

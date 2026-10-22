@@ -116,6 +116,7 @@ async function main() {
     { id: 'toolchain', name: 'MoonBit 工具链', command: moon ?? 'moon', args: ['version', '--all'] },
     nodeStep('readme', 'README 与文档链接', 'sync-readme.mjs', ['--check']),
     nodeStep('facts', '文档事实确认', 'check-acceptance-docs.mjs'),
+    nodeStep('public-docs-test', '公开链接检查器反例', 'test-public-docs.mjs'),
     ...checks,
     ...tests,
     moonStep('scenarios-wasm', '四场景演示 wasm', ['run', 'src/cmd/scenarios', '--target', 'wasm']),

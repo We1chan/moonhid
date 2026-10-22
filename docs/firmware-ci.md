@@ -25,7 +25,7 @@ Warning 提醒人工核对，不能仅凭提示认定设备违反协议；无提
    独立填写逐帧 Usage 断言到 `expected.jsonl`。
 3. 删除与自己的设备无关的 `descriptor-before.hex`；该文件存在时测试还要求它产生 Warning。
 4. 将示例 `workflow.yml` 复制到 `.github/workflows/hid-regression.yml`。
-   当前示例从 `main` 获取包含新 replay 命令的源码；0.6.0 发布时固定为该标签。
+   示例固定从 `v0.6.0` 获取包含 replay 命令的源码。
    复制本仓库的样例后执行实际 CLI。
 
 `node scripts/firmware-ci.mjs js <case-directory>` 可指定其他案例目录。

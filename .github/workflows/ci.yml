@@ -27,6 +27,7 @@ jobs:
         run: |
           node scripts/sync-readme.mjs --check
           node scripts/check-acceptance-docs.mjs
+          node scripts/test-public-docs.mjs
       - name: Install recorded MoonBit toolchain
         uses: ./.github/actions/setup-moon
       - name: Record toolchain

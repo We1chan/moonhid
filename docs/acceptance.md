@@ -1,14 +1,14 @@
 # 验收说明与复现步骤
 
 MoonHID 是以 MoonBit 为核心的通用 HID 描述符生成、报告编解码和字段访问工具库。
-当前已发布版本为 **0.5.2**，在独立模块中安装：
+本页对应版本为 **0.6.0**，在独立模块中安装：
 
 ```sh
-moon add We1chan/moonhid@0.5.2
+moon add We1chan/moonhid@0.6.0
 ```
 
-网页字段编辑、四场景入口、结构化声明、批量重放和本页验收脚本是仓库源码的新增工作；注册表安装结果以
-[0.5.2 发布记录](release-0.5.2.md) 为准，不将尚未发布的源码能力归入旧包。
+0.6.0 包含网页字段编辑、四场景入口、结构化声明、批量重放、纯帧转换和本页验收脚本。
+安装和交付结果见 [0.6.0 发布记录](release-0.6.0.md)，原生设备收发仍为规划范围。
 
 ## 环境与安装
 
@@ -64,7 +64,7 @@ node scripts/acceptance.mjs
 node scripts/acceptance.mjs --quick
 ```
 
-完整模式按顺序检查文档、四后端无警告检查与测试、wasm/js 四场景演示、browser bridge、WebHID 模拟、
+完整模式按顺序检查文档与公开链接检查器反例、四后端无警告检查与测试、wasm/js 四场景演示、browser bridge、WebHID 模拟、
 教学与 Xbox 42 帧回放、JS 文件 CLI、标准报告案例、固件 CI、离线打包与服务。
 native 文件 CLI、native 标准案例、两项 hid-tools 独立对照、Chrome DOM 为额外检查。
 `--quick` 仅执行 wasm/js 后端，跳过 native CLI、native 标准案例和需要 native 的 hid-tools 编码对照。
@@ -72,7 +72,7 @@ native 文件 CLI、native 标准案例、两项 hid-tools 独立对照、Chrome
 终端最后显示“步骤 / 结果 / 用时 / 是否必需”的表及汇总，例如依赖齐全的完整模式：
 
 ```text
-汇总：PASS 22 / FAIL 0 / SKIP 0
+汇总：PASS 23 / FAIL 0 / SKIP 0
 报告：_build/acceptance-report.json
 ```
 
@@ -114,7 +114,7 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 
 - [在线检查器](https://we1chan.github.io/moonhid/)：键盘 → Output → 初始化 → Caps Lock 写 1，报告 `00 → 02`；Num Lock 写 1，变为 `03`。
 - 将原始报告改为 `e0`，Caps Lock 写 1 得到 `e2`；写 2 显示 `value_range`，原报告保持不变。导出 HEX 包含完整报告字节。
-- [GitHub Release](https://github.com/We1chan/moonhid/releases/latest) 提供历史已发布离线包；源码新增能力可执行
+- [GitHub Release](https://github.com/We1chan/moonhid/releases/tag/v0.6.0) 提供对应离线包；也可执行
   `node scripts/build-web.mjs`、`node scripts/package-inspector.mjs`，然后在生成目录运行 `node scripts/serve-offline.mjs`。
   离线包运行仅需 Node.js，Windows 可双击 `start-inspector.cmd`。
 
@@ -127,7 +127,7 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 | --- | --- | --- |
 | MoonBit 为主 | 核心协议、编解码、构建器、Usage 访问、CLI 和 bridge 使用 MoonBit；JS 负责界面、传输适配与测试编排 | [设计](design.md)、[源码统计](#源码统计) |
 | 仓库公开 | 保留提交、Issue、PR、里程碑和发布历史 | [提交](https://github.com/We1chan/moonhid/commits/main/)、[里程碑](https://github.com/We1chan/moonhid/milestone/1) |
-| 能够运行 | 场景入口、固定输出、一键脚本、CI 与独立安装 | [场景](scenarios.md)、[脚本](../scripts/acceptance.mjs)、[0.5.2 安装](registry-0.5.2-validation.json) |
+| 能够运行 | 场景入口、固定输出、一键脚本、CI 与独立安装 | [场景](scenarios.md)、[脚本](../scripts/acceptance.mjs)、[0.6.0 发布与安装](release-0.6.0.md) |
 | 工作有效 | 仓库创建于 2026-10-01，版本和功能连续迭代，源码新增有对应 Issue/PR | [Release](https://github.com/We1chan/moonhid/releases)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr) |
 | 开源合规 | Apache-2.0，公开协议独立实现，描述符与模板参考有来源 | [LICENSE](../LICENSE)、[真实来源](real-devices.md)、README 协议与参考 |
 | AI 可解释 | 如实披露 AI 工作和设计；参赛者目前尚未验证本人独立解释能力 | [实际分工](ai-collaboration.md)、[设计](design.md)；此项仍需参赛者本人掌握和讲解 |
