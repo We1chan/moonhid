@@ -1,4 +1,4 @@
-import { mkdir, copyFile, writeFile } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile, readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -13,7 +13,9 @@ for (const file of ['index.html', 'capture.html', 'app.js', 'capture.js', 'brows
 await copyFile(join(root, 'scripts/serve-offline.mjs'), join(destination, 'scripts/serve-offline.mjs'));
 await copyFile(join(root, 'LICENSE'), join(destination, 'LICENSE'));
 const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-await writeFile(join(destination, 'BUILD.json'), JSON.stringify({ commit, built_at: new Date().toISOString(), node: process.version }, null, 2) + '\n');
+const metadata = await readFile(join(root, 'moon.mod'), 'utf8');
+const version = metadata.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
+await writeFile(join(destination, 'BUILD.json'), JSON.stringify({ version, commit, built_at: new Date().toISOString(), node: process.version }, null, 2) + '\n');
 await writeFile(join(destination, 'start-inspector.cmd'), '@echo off\r\ncd /d "%~dp0"\r\nnode scripts\\serve-offline.mjs\r\npause\r\n');
-await writeFile(join(destination, 'README.txt'), 'MoonHID offline inspector\n\nRequires Node.js 22+. No MoonBit, npm install, Python or network access is needed.\nRun: node scripts/serve-offline.mjs\nThen open http://127.0.0.1:8765/ in your browser.\nWindows: double-click start-inspector.cmd.\nThe optional WebHID mode still requires selecting a compatible device.\nThis bundle contains reference-layout capture, not raw descriptor extraction.\n');
+await writeFile(join(destination, 'README.txt'), `MoonHID ${version} 离线检查器\n\n需要 Node.js 22+。直接运行，无需安装其他依赖。\n运行：node scripts/serve-offline.mjs\n浏览器打开：http://127.0.0.1:8765/\nWindows：双击 start-inspector.cmd。\n可离线解析描述符、解码报告、编辑字段并导出 HEX。\n可选 WebHID Input 需要用户选择兼容设备；浏览器采集仅能重建参考布局。\nBUILD.json 记录版本和构建提交。\n`);
 console.log(destination);

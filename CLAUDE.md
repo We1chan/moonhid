@@ -34,6 +34,10 @@ node scripts/firmware-ci.mjs [js|native]   # runs examples/firmware-ci through t
 node scripts/package-inspector.mjs         # offline bundle → _build/distribution/moonhid-inspector
 node scripts/test-offline.mjs              # serves that bundle and checks it (run package-inspector first)
 node scripts/test-inspector.mjs            # DOM checks in headless Chrome (CHROME_BIN overrides the binary)
+node scripts/acceptance.mjs                 # full acceptance with JSON report; --quick uses wasm/js
+node scripts/test-public-docs.mjs           # local HTTP/Markdown/URL-list regression, no external network
+node scripts/check-public-docs.mjs --urls docs/acceptance-urls.txt # published pages + all Releases, needs gh
+node scripts/verify-registry.mjs            # after publication/tagging: fresh registry install outside checkout
 node --expose-gc scripts/benchmark.mjs     # timing observations, not pass/fail
 python3 scripts/serve-web.py               # serves web/ on 127.0.0.1:8765 (MOONHID_PORT to change)
 ```

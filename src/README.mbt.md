@@ -54,12 +54,12 @@ Buffered Bytes 从 **0.5.0** 提供；0.4.0 不含此支持。报名补充说明
 | 能力 | 内容与入口 |
 | --- | --- |
 | 描述符生成 | 链式构建器 `DescriptorBuilder`；鼠标、键盘（含 LED）、手柄、媒体键、厂商数据五种模板；原始 item 序列化 `serialize_items`；CLI `generate` |
-| 结构化声明（源码新增） | 独立 JSON 声明 v1，支持命名 flags、嵌套集合、显式 item 宽度和字节无损往返；`descriptor_from_declaration` / `declaration_from_descriptor`，CLI `build` / `declare`；见 [格式说明](https://github.com/We1chan/moonhid/blob/main/docs/declaration.md) |
+| 结构化声明（0.6.0 新增） | 独立 JSON 声明 v1，支持命名 flags、嵌套集合、显式 item 宽度和字节无损往返；`descriptor_from_declaration` / `declaration_from_descriptor`，CLI `build` / `declare`；见 [格式说明](https://github.com/We1chan/moonhid/blob/main/docs/declaration.md) |
 | 描述符解析 | 十六进制输入、短项/长项分词、布局编译 `compile_descriptor`、Collection 树、Physical/Unit 元数据、版本化 JSON v2；CLI `inspect` |
 | 报告编码 | `encode_report`：Input / Output / Feature、多 Report ID、整数与超宽原始值、数量/范围/Null 校验、自动写 ID 与零填充；CLI `encode` |
 | 报告解码 | `decode_report`：Variable / Array、Null State、有符号与无符号、跨字节与超宽字段；CLI `decode` |
-| 批量重放（源码新增） | CLI `replay` 按行解码、保留错误行号；`--expect` 比较 Usage 数值、Raw、物理量和活跃集合；[42 帧与固件示例](https://github.com/We1chan/moonhid/blob/main/docs/replay.md) |
-| 帧转换（源码新增） | `transport` 纯 MoonBit 包在核心 wire、HIDAPI 缓冲区和 WebHID `(reportId, payload)` 之间转换并验证 ID/长度；[可行性与范围](https://github.com/We1chan/moonhid/blob/main/docs/hidapi.md) |
+| 批量重放（0.6.0 新增） | CLI `replay` 按行解码、保留错误行号；`--expect` 比较 Usage 数值、Raw、物理量和活跃集合；[42 帧与固件示例](https://github.com/We1chan/moonhid/blob/main/docs/replay.md) |
+| 帧转换（0.6.0 新增） | `transport` 纯 MoonBit 包在核心 wire、HIDAPI 缓冲区和 WebHID `(reportId, payload)` 之间转换并验证 ID/长度；[可行性与范围](https://github.com/We1chan/moonhid/blob/main/docs/hidapi.md) |
 | 字段读写 | `find_fields` 按 Usage 定位字段，`read_field` / `write_field` 读写单个值并保留相邻位 |
 | Usage 级访问 | 参照 Windows `hidpi.h`：`new_report` 初始化报告，`set_usages` / `clear_usages` 按下、释放按键与按钮，`get/set_usage_value`、`get/set_physical_value` 读写数值与物理量；CLI `encode` 接受按 Usage 描述的值文件 |
 | 描述符检查 | `lint_descriptor` 十项规则，CLI `lint`，网页中文提示 |
@@ -112,14 +112,14 @@ MoonHID 在一个库中同时提供解析库的报告访问和设备端库的描
 在现有 MoonBit 模块目录中执行：
 
 ```sh
-moon add We1chan/moonhid@0.5.2
+moon add We1chan/moonhid@0.6.0
 ```
 
-0.5.2 保留生成、编码、字段读写、Usage 级接口与 Buffered Bytes，JSON schema 保持 v2。
-此补丁修复 Mooncakes 文档入口，补充标准约束与可复现案例；核心 API 与 0.5.0 相同。
-发布入口与安装验收见 [0.5.2 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)。
+0.6.0 新增结构化声明 v1、批量报告重放、网页字段编辑和 transport 帧转换，保留已有编解码与 Usage 接口。
+展示 JSON schema 保持 v2；声明使用独立的 v1 格式。
+发布入口与安装验收见 [0.6.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.0.md)。
 从 0.4.0 升级时，手工构造 `DecodedReport` 的代码需增加 `buffered_values: []`。
-历史版本记录保留在 [0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
+历史版本记录保留在 [0.5.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)、[0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
 
 在使用库的包的 `moon.pkg` 中声明导入，别名与下方 API 示例一致：
 
@@ -432,12 +432,12 @@ moon run src/cmd/moonhid --target js -- replay --kind input examples/firmware-ci
 | 子命令 | 作用与输出 |
 | --- | --- |
 | `generate` | 从 MoonBit 构建器生成 mouse / keyboard / gamepad / consumer / vendor 描述符，stdout 为十六进制 |
-| `build` / `declare`（源码新增） | 声明 JSON v1 → 描述符十六进制，或从描述符导出带原始宽度的声明；不与展示 JSON v2 混用 |
+| `build` / `declare`（0.6.0 新增） | 声明 JSON v1 → 描述符十六进制，或从描述符导出带原始宽度的声明；不与展示 JSON v2 混用 |
 | `inspect` | 输出完整描述符 JSON v2，其中 `lints` 数组列出检查结果 |
 | `lint` | 每条检查结果输出一行，例如 `warning usage_count @18: ...`；没有提示时 stdout 为空，规则见 [lint 说明](https://github.com/We1chan/moonhid/blob/main/docs/lint.md) |
 | `encode` | 按值文件编码 Input / Output / Feature 报告，stdout 为十六进制 |
 | `decode` | 输出带 `schema_version: 2` 的 `wire_hex` / `decoded` 组件；报告文件应包含所需的 Report ID 前缀 |
-| `replay`（源码新增） | 每行一帧 hex，允许空行与 `#` 注释；stdout 为带原文件行号的 JSONL，`--expect` 按 Usage 逐帧断言，见 [重放说明](https://github.com/We1chan/moonhid/blob/main/docs/replay.md) |
+| `replay`（0.6.0 新增） | 每行一帧 hex，允许空行与 `#` 注释；stdout 为带原文件行号的 JSONL，`--expect` 按 Usage 逐帧断言，见 [重放说明](https://github.com/We1chan/moonhid/blob/main/docs/replay.md) |
 
 `encode` 接受两种值文件：按字段、元素顺序排列的 JSON 数组，例如 `[1, 1, 0, 0, 0]`
 编码键盘 LED Output 为 `03`，超宽字段用 `{"hex": "ff ff ff ff 01"}`；或按 Usage 描述的 JSON 对象，
@@ -464,7 +464,7 @@ moon build src/cmd/moonhid --target native --release
 ## 浏览器检查器
 
 检查器用于分析描述符与报告：解析、位布局、解码、lint 与 JSON 导出。
-源码版新增报告初始化、字段编辑与 HEX 导出，Input / Output / Feature 均可离线构造；
+0.6.0 新增报告初始化、字段编辑与 HEX 导出，Input / Output / Feature 均可离线构造；
 操作示例见 [网页报告编辑](https://github.com/We1chan/moonhid/blob/main/docs/browser-editor.md)。描述符生成和按 Usage 编码还可通过库与 CLI 使用。
 
 直接打开 [在线检查器](https://we1chan.github.io/moonhid/)。
@@ -677,6 +677,6 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 | MoonBit 为主 | 核心解析、编解码、lint、构建器、CLI、场景逻辑和浏览器桥接使用 MoonBit；JS 处理界面、设备适配和验收编排。[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md)、[源码行数统计命令](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#源码统计) |
 | 仓库公开 | 公开保留开发与交付记录。[提交历史](https://github.com/We1chan/moonhid/commits/main/)、[Issues 与里程碑](https://github.com/We1chan/moonhid/milestone/1)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[Release](https://github.com/We1chan/moonhid/releases) |
 | 能够运行 | 一键复现四后端、CLI、网页、离线包和场景演示；可选检查缺依赖明确跳过。[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md)、[CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) |
-| 工作有效 | 仓库创建于 2026-10-01，已有 0.2.0 至 0.5.2 的版本记录，新增工作通过独立 Issue/PR 跟踪。[版本记录](https://github.com/We1chan/moonhid/releases)、[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md) |
+| 工作有效 | 仓库创建于 2026-10-01，已有 0.2.0 至 0.6.0 的版本记录，新增工作通过独立 Issue/PR 跟踪。[版本记录](https://github.com/We1chan/moonhid/releases)、[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md) |
 | 开源合规 | Apache-2.0；核心按公开协议独立实现，记录模板参考和真实描述符来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
 | AI 可解释 | 已公开 AI 的实际参与和核心设计；参赛者目前尚未验证独立讲解能力，此项仍需本人阅读与复现。[AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)、[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md) |

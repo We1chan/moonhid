@@ -1,0 +1,10 @@
+# 技术交付入口清单；不包含参赛者的验收正文。
+https://github.com/We1chan/moonhid
+https://github.com/We1chan/moonhid/releases/tag/v0.6.0
+https://github.com/We1chan/moonhid/blob/v0.6.0/docs/acceptance.md
+https://we1chan.github.io/moonhid/
+https://mooncakes.io/docs/We1chan/moonhid@0.6.0
+https://github.com/We1chan/moonhid/blob/v0.6.0/docs/hid-compatibility.md
+https://github.com/We1chan/moonhid/blob/v0.6.0/docs/report-cases.md
+https://github.com/We1chan/moonhid/blob/v0.6.0/docs/design.md
+https://github.com/We1chan/moonhid/blob/v0.6.0/docs/ai-collaboration.md

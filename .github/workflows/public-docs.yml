@@ -16,4 +16,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node scripts/check-public-docs.mjs
+      - run: node scripts/check-public-docs.mjs --urls docs/acceptance-urls.txt
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-documentation-links
+          path: _build/public-docs-report.json
