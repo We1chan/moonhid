@@ -245,6 +245,21 @@ h2, h3 { margin: 0; }
 .entry-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
 .entry-head label { font-weight: 600; }
 .entry-head .link { margin-left: auto; }
+.report-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.report-actions .block-note { margin: 0; }
+.field-editor { padding: 16px; border-top: 1px solid var(--line); }
+.field-editor h3 { font-size: 13px; font-weight: 600; }
+.field-editor fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.field-editor label { display: block; margin: 8px 0 4px; color: var(--ink-2); font-size: 12px; }
+.field-editor input, .field-editor textarea {
+  width: 100%; min-width: 0; padding: 7px 8px; border: 1px solid var(--line-strong);
+  border-radius: 6px; background: var(--raised); font-family: var(--mono);
+}
+.field-editor textarea { resize: vertical; overflow-wrap: anywhere; }
+.field-editor [aria-invalid="true"] { border-color: var(--danger); }
+.field-editor fieldset:disabled { opacity: .5; }
+.field-editor .status { margin: 8px 0 0; overflow-wrap: anywhere; }
+.report-entry #report-action-status:empty, .field-editor .status:empty { min-height: 0; margin: 0; }
 
 /* Blocks */
 .block { margin-top: 28px; }

@@ -448,8 +448,9 @@ moon build src/cmd/moonhid --target native --release
 
 ## 浏览器检查器
 
-检查器用于分析描述符与报告：解析、位布局、解码、lint 与 JSON 导出。描述符生成、报告编码和字段读写
-通过上面的库接口与 CLI 使用，网页端的字段编辑与编码导出见 [开发路线](https://github.com/We1chan/moonhid/blob/main/ROADMAP.md)。
+检查器用于分析描述符与报告：解析、位布局、解码、lint 与 JSON 导出。
+源码版新增报告初始化、字段编辑与 HEX 导出，Input / Output / Feature 均可离线构造；
+操作示例见 [网页报告编辑](https://github.com/We1chan/moonhid/blob/main/docs/browser-editor.md)。描述符生成和按 Usage 编码还可通过库与 CLI 使用。
 
 直接打开 [在线检查器](https://we1chan.github.io/moonhid/)。
 [Release](https://github.com/We1chan/moonhid/releases/latest) 提供编译好的离线包：
@@ -470,7 +471,7 @@ python3 scripts/serve-web.py
 终端中按 `Ctrl+C` 关闭服务。端口被其他程序占用时，可设置 `MOONHID_PORT=8766`。
 
 界面分为三栏：左侧是描述符编辑器和逐项注释的 Items 列表，中间是报告选择、原始报告输入、
-按字节排列的位布局和解码值表，右侧是字段详情与 Collection 树。窄屏时按同一顺序单列排列，
+按字节排列的位布局和解码值表，右侧是字段编辑器、详情与 Collection 树。窄屏时按同一顺序单列排列，
 浅色与深色主题跟随系统设置。
 
 点击鼠标、键盘或手柄载入合成样例。粘贴自己的描述符后会自动解析；在报告标签中选择
@@ -481,6 +482,12 @@ Input / Output / Feature 与 Report ID，填入完整报告后自动解码，`Ct
 点击 Global / Local item 或 Collection 会标出它们在描述符中的字节范围。
 十六进制输入错误会在编辑器中标红，并给出字符或字节偏移；首字节 Report ID 与所选报告不一致时，
 可以一键切换到对应报告。
+
+点击「初始化报告」创建当前方向与 ID 的报告，再在值表选择数据元素，在右侧填写十进制整数或原始十六进制字节，
+点击「写入报告」同步更新报告与解码结果。写入保留相邻字段、Constant、未用尾位和 Report ID；
+范围、位宽或字节长度不符时保留原报告并显示错误。多元素字段可直接选择元素索引，Buffered Bytes 整段编辑。
+「导出报告 HEX」保存当前完整报告，含所需 ID 前缀；「导出 JSON」同时保存描述符与解码值。
+实时 Input 接收期间需先断开再编辑报告。网页构造与导出字节，设备 Output/Feature 发送仍见 [开发路线](https://github.com/We1chan/moonhid/blob/main/ROADMAP.md)。
 
 左侧中文 lint 面板区分 Warning / Info，可筛选、分页并定位 item 与字段。
 编译成功但有 Warning 时仍可解码；未产生提示不等于协议认证。
