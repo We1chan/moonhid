@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "items": [
+    {"usage_page": 1}, {"usage": 5},
+    {"collection": "application", "items": [
+      {"report_size": 8}, {"report_count": 1}, {"logical_range": [-127, 127]},
+      {"usage": 1}, {"collection": "physical", "items": [
+        {"report_id": 1}, {"usage": "0x30"}, {"input": ["variable", "relative"]},
+        {"push": true}, {"report_id": 2}, {"logical_range": [0, 255]},
+        {"usage_page": "0xff00"}, {"usage": 2}, {"feature": ["variable"]},
+        {"pop": true}, {"report_id": 1}, {"usage": "0x31"}, {"input": ["variable", "relative"]}
+      ]},
+      {"push": true}, {"report_id": 3}, {"usage_page": 8}, {"usage_range": [1, 5]},
+      {"logical_range": [0, 1]}, {"report_size": 1}, {"report_count": 5}, {"output": ["variable"]},
+      {"report_size": 3}, {"report_count": 1}, {"output": ["constant"]}, {"pop": true}
+    ]}
+  ]
+}

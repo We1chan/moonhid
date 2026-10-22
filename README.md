@@ -56,6 +56,7 @@ Buffered Bytes 从 **0.5.0** 提供；0.4.0 不含此支持。报名补充说明
 | 能力 | 内容与入口 |
 | --- | --- |
 | 描述符生成 | 链式构建器 `DescriptorBuilder`；鼠标、键盘（含 LED）、手柄、媒体键、厂商数据五种模板；原始 item 序列化 `serialize_items`；CLI `generate` |
+| 结构化声明（源码新增） | 独立 JSON 声明 v1，支持命名 flags、嵌套集合、显式 item 宽度和字节无损往返；`descriptor_from_declaration` / `declaration_from_descriptor`，CLI `build` / `declare`；见 [格式说明](https://github.com/We1chan/moonhid/blob/main/docs/declaration.md) |
 | 描述符解析 | 十六进制输入、短项/长项分词、布局编译 `compile_descriptor`、Collection 树、Physical/Unit 元数据、版本化 JSON v2；CLI `inspect` |
 | 报告编码 | `encode_report`：Input / Output / Feature、多 Report ID、整数与超宽原始值、数量/范围/Null 校验、自动写 ID 与零填充；CLI `encode` |
 | 报告解码 | `decode_report`：Variable / Array、Null State、有符号与无符号、跨字节与超宽字段；CLI `decode` |
@@ -397,6 +398,8 @@ cd moonhid
 moon run src/cmd/main
 moon run src/cmd/scenarios
 moon run src/cmd/moonhid --target native -- generate keyboard
+moon run src/cmd/moonhid --target js -- build examples/declarations/keyboard.json
+moon run src/cmd/moonhid --target js -- declare examples/codec/keyboard.hex
 moon run src/cmd/moonhid --target native -- encode --kind input --id 0 examples/codec/keyboard.hex examples/codec/keyboard-usages.json
 ```
 
@@ -428,6 +431,7 @@ moon run src/cmd/moonhid --target native -- decode --kind input descriptor.hex r
 | 子命令 | 作用与输出 |
 | --- | --- |
 | `generate` | 从 MoonBit 构建器生成 mouse / keyboard / gamepad / consumer / vendor 描述符，stdout 为十六进制 |
+| `build` / `declare`（源码新增） | 声明 JSON v1 → 描述符十六进制，或从描述符导出带原始宽度的声明；不与展示 JSON v2 混用 |
 | `inspect` | 输出完整描述符 JSON v2，其中 `lints` 数组列出检查结果 |
 | `lint` | 每条检查结果输出一行，例如 `warning usage_count @18: ...`；没有提示时 stdout 为空，规则见 [lint 说明](https://github.com/We1chan/moonhid/blob/main/docs/lint.md) |
 | `encode` | 按值文件编码 Input / Output / Feature 报告，stdout 为十六进制 |

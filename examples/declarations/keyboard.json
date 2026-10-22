@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "items": [
+    {"usage_page": 1}, {"usage": 6},
+    {"collection": "application", "items": [
+      {"usage_page": 7}, {"usage_range": ["0xe0", "0xe7"]}, {"logical_range": [0, 1]},
+      {"report_size": 1}, {"report_count": 8}, {"input": ["variable"]},
+      {"report_size": 8}, {"report_count": 1}, {"input": ["constant"]},
+      {"usage_range": [0, "0x65"]}, {"logical_range": [0, "0x65"]},
+      {"report_size": 8}, {"report_count": 6}, {"input": ["array"]},
+      {"usage_page": 8}, {"usage_range": [1, 5]}, {"logical_range": [0, 1]},
+      {"report_size": 1}, {"report_count": 5}, {"output": ["variable"]},
+      {"report_size": 3}, {"report_count": 1}, {"output": ["constant"]}
+    ]}
+  ]
+}

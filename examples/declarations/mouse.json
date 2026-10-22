@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "items": [
+    {"usage_page": 1}, {"usage": 2},
+    {"collection": "application", "items": [
+      {"usage_page": 9}, {"usage_range": [1, 3]}, {"logical_range": [0, 1]},
+      {"report_size": 1}, {"report_count": 3}, {"input": ["data", "variable", "absolute"]},
+      {"report_size": 5}, {"report_count": 1}, {"input": ["constant"]},
+      {"usage_page": 1}, {"usage": "0x30"}, {"usage": "0x31"}, {"usage": "0x38"},
+      {"logical_range": [-127, 127]}, {"report_size": 8}, {"report_count": 3},
+      {"input": ["data", "variable", "relative"]}
+    ]}
+  ]
+}
