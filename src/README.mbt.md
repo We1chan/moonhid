@@ -389,6 +389,7 @@ test "README: Buffered Bytes remain one application stream" {
 git clone https://github.com/We1chan/moonhid.git
 cd moonhid
 moon run src/cmd/main
+moon run src/cmd/scenarios
 moon run src/cmd/moonhid --target native -- generate keyboard
 moon run src/cmd/moonhid --target native -- encode --kind input --id 0 examples/codec/keyboard.hex examples/codec/keyboard-usages.json
 ```
@@ -398,6 +399,10 @@ moon run src/cmd/moonhid --target native -- encode --kind input --id 0 examples/
 手柄样例带 Report ID `7`，两个 16 位轴分别为 `-32768 / 32767`。
 `generate keyboard` 输出带 LED Output 的键盘描述符，与 `examples/codec/keyboard.hex` 逐字节相同；
 `encode` 读取值文件，按 Usage 按下 Left Shift、A 和 C，输出 Input 报告 `02 00 04 06 00 00 00 00`。
+
+`moon run src/cmd/scenarios` 按顺序演示键盘、鼠标与手柄、媒体键与厂商配置、固件回归四个场景。
+全部业务操作由 MoonBit 实际执行，完整固定输出与各场景说明见 [四场景演示](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md)。
+该入口不依赖文件、设备或网络，wasm / wasm-gc / JS / native 均可运行，输出快照参与四后端测试。
 
 ## 文件命令行工具
 
