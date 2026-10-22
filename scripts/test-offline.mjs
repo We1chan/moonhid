@@ -25,7 +25,12 @@ try {
   assert.equal((await fetch(base + '/%2e%2e%5cLICENSE')).status, 404);
   assert.equal((await fetch(base + '/', { method: 'POST' })).status, 405);
   assert.equal(await (await fetch(base + '/', { method: 'HEAD' })).text(), '');
-  console.log('Prebuilt offline bundle: Node-only startup, assets, MIME, HEAD and path restrictions passed.');
+  // Exercise the packaged module, so copying an old parser cannot pass on assets alone.
+  const { initialize_wire, write_wire_field } = await import(new URL('../_build/distribution/moonhid-inspector/web/moonhid-core.js', import.meta.url));
+  const leds = '05 08 19 01 29 05 15 00 25 01 75 01 95 05 91 02 75 03 95 01 91 01';
+  assert.equal(JSON.parse(initialize_wire(leds, 'output', 0)).wire_hex, '00');
+  assert.equal(JSON.parse(write_wire_field(leds, 'output', 'e0', 0, 1, '1')).wire_hex, 'e2');
+  console.log('Prebuilt offline bundle: Node-only startup, assets, packaged field editor core, MIME, HEAD and path restrictions passed.');
 } finally {
   if (child.exitCode === null && child.signalCode === null) {
     const exited = once(child, 'exit');

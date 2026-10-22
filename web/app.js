@@ -13,7 +13,7 @@ const LINT_PAGE = 50;
 const kindNames = { input: 'Input', output: 'Output', feature: 'Feature' };
 const kindZh = { input: '输入', output: '输出', feature: '特性' };
 const fixtureNames = { mouse: '鼠标', keyboard: '键盘', gamepad: '手柄' };
-const stageLabels = { descriptor_hex: '描述符文本', descriptor: '描述符', report_hex: '报告文本', report: '报告' };
+const stageLabels = { descriptor_hex: '描述符文本', descriptor: '描述符', report_hex: '报告文本', report: '报告', field: '字段声明', field_value: '字段值', field_value_hex: '字段字节文本' };
 const collectionTypes = ['Physical', 'Application', 'Logical', 'Report', 'Named Array', 'Usage Switch', 'Usage Modifier'];
 const unitSystems = ['None', 'SI Linear', 'SI Rotation', 'English Linear', 'English Rotation'];
 const unitSymbols = [null, ['cm', 'g', 's', 'K', 'A', 'cd'], ['rad', 'g', 's', 'K', 'A', 'cd'], ['in', 'slug', 's', '°F', 'A', 'cd'], ['deg', 'slug', 's', '°F', 'A', 'cd']];
@@ -45,6 +45,8 @@ const diagnosticText = {
   report_limit: '报告超过 65536 位', descriptor_limit: '描述符超过 65536 字节', empty_layout: '描述符中没有报告字段', invalid_layout: '布局超出支持范围',
   report_length: '报告长度与布局不符', short_report: '报告缺少所需的位', unknown_report: '布局中没有这个报告', bit_range: '位范围无效',
   report_kind: '报告方向无效', report_id_selection: 'Report ID 与所选报告不一致',
+  field_index: '字段索引无效', element_index: '元素索引超出字段范围', field_report: '字段不属于当前报告',
+  constant_field: '填充字段不可编辑', value_type: '字段值的格式无效', value_range: '字段值超出位宽或逻辑范围',
 };
 
 let core = null;
@@ -53,6 +55,8 @@ let compiledDescriptorText = null;
 let pendingInput = null;
 let inputFrame = 0;
 let liveState = { status: 'idle', device: null, busy: false, received: 0, error: null };
+let fieldEditKey = null;
+let fieldEditDirty = false;
 const hidAvailable = Boolean(navigator.hid && window.isSecureContext);
 const hidController = createHIDController(hidAvailable ? navigator.hid : null, {
   onState: next => {
@@ -99,6 +103,7 @@ const state = {
   reportIdSwitch: null,
   descriptorPending: false,
   selected: null,
+  element: 0,
   focus: null,
   version: 0,
   itemPage: 0,
@@ -121,6 +126,8 @@ function renderLiveState(note = null) {
   };
   const message = !hidAvailable ? 'WebHID 不可用：请使用 Chromium 与 HTTPS 或 127.0.0.1。' : note ?? labels[liveState.status];
   setStatus('hid-status', liveState.error || note ? 'warn' : hidController.device ? 'ok' : '', h('span', { class: 'status-text' }, message));
+  renderReportActions();
+  renderFieldEditor();
 }
 
 function renderLiveComparison() {
@@ -473,7 +480,7 @@ function parseDescriptor() {
     state.drafts.set(state.reportKey, unassignedReport);
   }
   const keep = previous && state.selected !== null && reportFields().some(({ index }) => index === state.selected);
-  if (!keep) state.selected = firstField();
+  if (!keep) { state.selected = firstField(); state.element = 0; }
   state.valuePage = valuesPageForField(state.selected, 0);
   reportEditor.value = state.drafts.get(state.reportKey) ?? '';
   decodeReport(false);
@@ -500,7 +507,7 @@ function decodeReport(render = true) {
       state.wireHex = result.wire_hex;
     }
   }
-  if (render) { renderReportStatus(); renderBitmap(); renderValues(); paintReport(); renderExport(); }
+  if (render) { renderReportStatus(); renderBitmap(); renderValues(); paintReport(); renderExport(); renderFieldEditor(); }
 }
 const scheduleDescriptor = debounce(parseDescriptor, 180);
 const scheduleReport = debounce(() => decodeReport(), 120);
@@ -516,12 +523,14 @@ function valuesPageForField(index, page) {
   }
   return page;
 }
-function selectField(index, { fromItems = false } = {}) {
+function selectField(index, { fromItems = false, element = null } = {}) {
   const field = state.descriptor.layout.fields[index];
   const key = `${field.kind}:${field.report_id}`;
+  if (state.selected !== index) state.element = 0;
+  if (element !== null) state.element = element;
   state.selected = index;
   state.focus = null;
-  if (key !== state.reportKey) return switchReport(key, index);
+  if (key !== state.reportKey) return switchReport(key, index, state.element);
   const page = valuesPageForField(index, state.valuePage);
   if (page !== state.valuePage) { state.valuePage = page; renderValues(); }
   applySelection({ list: !fromItems, hex: true });
@@ -568,9 +577,11 @@ function revealIn(container, node) {
   if (rect.top < box.top) container.scrollTop -= box.top - rect.top + 24;
   else if (rect.bottom > box.bottom) container.scrollTop += rect.bottom - box.bottom + 24;
 }
-function switchReport(key, select = null) {
+function switchReport(key, select = null, element = 0) {
+  clearReportAction();
   state.reportKey = key;
   state.selected = select ?? firstField();
+  state.element = element;
   state.focus = null;
   state.valuePage = valuesPageForField(state.selected, 0);
   reportEditor.value = state.drafts.get(key) ?? '';
@@ -603,11 +614,61 @@ function renderAll() {
 function renderFixtures() {
   for (const button of $('fixtures').querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.fixture === state.fixture?.name));
 }
-function renderExport() { $('export').disabled = !currentReport() || compiledDescriptorText !== descriptorEditor.value; }
+function renderExport() {
+  $('export').disabled = !currentReport() || compiledDescriptorText !== descriptorEditor.value;
+  renderReportActions();
+}
+function renderReportActions() {
+  const ready = core && currentReport() && compiledDescriptorText === descriptorEditor.value;
+  $('initialize-report').disabled = !ready || Boolean(hidController.device) || hidController.busy;
+  $('export-hex').disabled = !ready || !state.decoded || !state.wireHex;
+}
+function clearReportAction() { setStatus('report-action-status', ''); }
+function resetFieldEdit() { fieldEditKey = null; fieldEditDirty = false; }
+function selectedElementValue() {
+  const match = value => value.field_index === state.selected && value.element_index === state.element;
+  const integer = state.decoded?.values.find(match);
+  if (integer) return String(integer.value);
+  const raw = state.decoded?.opaque_values.find(match);
+  if (raw) return raw.hex;
+  return state.decoded?.buffered_values?.find(value => value.field_index === state.selected)?.hex ?? '';
+}
+function renderFieldEditor() {
+  const field = state.selected === null ? null : state.descriptor?.layout.fields[state.selected];
+  const key = `${reportViewKey()}|${state.selected}|${state.element}`;
+  if (key !== fieldEditKey) {
+    fieldEditKey = key;
+    fieldEditDirty = false;
+    $('field-element').value = String(state.element);
+    $('field-element').removeAttribute('aria-invalid');
+    $('field-value').removeAttribute('aria-invalid');
+    setStatus('field-edit-status', '');
+  }
+  if (!fieldEditDirty) $('field-value').value = selectedElementValue();
+  const raw = field && (field.flags & 256 || field.bit_size > 32);
+  const count = field ? field.flags & 256 ? 1 : field.count : 1;
+  const element = $('field-element');
+  element.max = String(count - 1);
+  $('field-element-row').hidden = !field || count <= 1 || Boolean(field.flags & 1);
+  $('field-value-label').textContent = raw ? '值（十六进制字节）' : '值（十进制整数）';
+  $('field-value').placeholder = raw ? '例如 00 ff 01 80' : '例如 -1 或 255';
+  $('field-value-help').textContent = !field || field.flags & 1 ? '' : raw
+    ? `${Math.ceil(field.bit_size * (field.flags & 256 ? field.count : 1) / 8)} 字节${field.flags & 256 ? '，写入完整 Buffered Bytes 字节流。' : '，末字节未用高位必须为 0。'}`
+    : `Logical ${field.logical_min} … ${field.logical_max}；${field.bit_size} 位${field.flags & 64 ? '，接受可表示的 Null 值' : ''}。${field.flags & 2 ? '' : '数组填写选择器整数，Usage 随解码更新。'}`;
+  const live = Boolean(hidController.device) || hidController.busy;
+  const ready = Boolean(core && currentReport() && compiledDescriptorText === descriptorEditor.value && state.decoded);
+  $('field-edit-controls').disabled = !ready || !field || Boolean(field.flags & 1) || live;
+  $('apply-field').disabled = !element.validity.valid;
+  $('field-edit-hint').textContent = !field ? '选择数据字段并初始化或载入报告。'
+    : field.flags & 1 ? '填充字段不可编辑；修改数据字段时保留这些位。'
+    : live ? '正在接收实时输入。断开后可编辑报告。'
+    : !ready ? '先初始化报告，或载入长度匹配的原始报告。'
+    : `字段 #${state.selected}${count > 1 ? ` [${state.element}]` : ''}；写入后同步更新原始报告和解码值。`;
+}
 function diagnostic(result, locate) {
-  const unit = result.stage.endsWith('_hex') ? '字符' : '字节';
+  const unit = result.stage.endsWith('_hex') || result.stage === 'field_value' ? '字符' : '字节';
   const text = h('span', { class: 'status-text' },
-    `${diagnosticText[result.error.code] ?? '输入未通过检查'}`, ' ', h('code', null, result.error.code),
+    `${result.stage === 'field' && result.error.code === 'logical_range' ? '字段值超出 Logical 范围' : diagnosticText[result.error.code] ?? '输入未通过检查'}`, ' ', h('code', null, result.error.code),
     h('span', { class: 'raw' }, `${stageLabels[result.stage] ?? result.stage}${unit}偏移 ${result.error.offset} · ${result.error.message}`));
   return [text, locate];
 }
@@ -811,7 +872,7 @@ function renderValues() {
   const page = rows.slice(state.valuePage * VALUE_PAGE, (state.valuePage + 1) * VALUE_PAGE);
   const body = page.map(row => {
     const { field, index } = row;
-    const ref = h('button', { type: 'button', class: 'field-ref', onclick: event => { event.stopPropagation(); selectField(index); } }, `#${index}`);
+    const ref = h('button', { type: 'button', class: 'field-ref', onclick: event => { event.stopPropagation(); selectField(index, { element: row.element ?? 0 }); } }, `#${index}`);
     if (row.pad) {
       const { start, end } = fieldBits(field);
       return h('tr', { class: `pad${index === state.selected ? ' on' : ''}`, dataset: { field: index }, onclick: () => selectField(index) },
@@ -833,7 +894,7 @@ function renderValues() {
     else if (value?.is_null) tag = h('span', { class: 'tag warn' }, 'Null State');
     else if (value && !value.in_logical_range) tag = h('span', { class: 'tag bad' }, '越界');
     else tag = h('span', { class: 'dim' }, isArray ? '数组' : field.flags & 4 ? '相对' : '绝对');
-    return h('tr', { class: `${colorClass(index)}${index === state.selected ? ' on' : ''}`, dataset: { field: index }, onclick: () => selectField(index) },
+    return h('tr', { class: `${colorClass(index)}${index === state.selected ? ' on' : ''}`, dataset: { field: index, element: row.element }, onclick: () => selectField(index, { element: row.element }) },
       h('td', null, ref, !buffered && field.count > 1 ? h('span', { class: 'elem' }, ` [${row.element}]`) : null),
       h('td', null, usageCell),
       h('td', { class: 'bits' }, width > 1 ? `${start}–${start + width - 1}` : start),
@@ -855,6 +916,7 @@ function collectionPath(index) {
   return path;
 }
 function renderDetail() {
+  renderFieldEditor();
   const box = $('field-detail');
   if (!state.descriptor) return box.replaceChildren(empty('解析描述符后，选择位布局、字段表或 Items 中的字段。'));
   if (state.selected === null) return box.replaceChildren(empty('当前报告没有字段。'));
@@ -933,10 +995,64 @@ function paintReport() {
 
 // ---------- Actions ----------
 function loadFixture(fixture) {
+  clearReportAction();
+  resetFieldEdit();
   state.fixture = { ...fixture, pending: true };
   state.selected = null;
   descriptorEditor.value = fixture.descriptor_hex;
   scheduleDescriptor.now();
+}
+function downloadText(filename, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  h('a', { href: url, download: filename }).click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function acceptWire(result) {
+  scheduleReport.cancel();
+  fieldEditDirty = false;
+  $('field-value').removeAttribute('aria-invalid');
+  reportEditor.value = result.wire_hex;
+  state.drafts.set(state.reportKey, result.wire_hex);
+  Object.assign(state, { decoded: result.decoded, wireHex: result.wire_hex, reportError: null, reportIdSwitch: null });
+  renderReportStatus();
+  renderBitmap();
+  renderValues();
+  renderExport();
+  applySelection();
+}
+function initializeReport() {
+  const report = currentReport();
+  if (!report || compiledDescriptorText !== descriptorEditor.value || hidController.device || hidController.busy) return;
+  const result = JSON.parse(core.initialize_wire(state.descriptor.descriptor_hex, report.kind, report.report_id));
+  if (!result.ok) return setStatus('report-action-status', 'error', ...diagnostic(result));
+  resetFieldEdit();
+  acceptWire(result);
+  setStatus('report-action-status', 'ok', h('span', { class: 'status-text' }, '已初始化报告；自动写入 Report ID，并设置可用的 Null 和数组空闲值。'));
+}
+function applyField(event) {
+  event.preventDefault();
+  if (compiledDescriptorText !== descriptorEditor.value || hidController.device || hidController.busy) return;
+  scheduleReport.now();
+  if (!state.decoded || state.selected === null || !$('field-element').validity.valid) return;
+  const report = currentReport();
+  const valueText = $('field-value').value;
+  const result = guard(valueText, 'field_value') ?? JSON.parse(core.write_wire_field(
+    state.descriptor.descriptor_hex, report.kind, reportEditor.value, state.selected, state.element, valueText,
+  ));
+  if (!result.ok) {
+    $('field-value').setAttribute('aria-invalid', 'true');
+    return setStatus('field-edit-status', 'error', ...diagnostic(result));
+  }
+  clearReportAction();
+  acceptWire(result);
+  setStatus('field-edit-status', 'ok', h('span', { class: 'status-text' }, `已写入字段 #${state.selected} [${state.element}]，其余位保持不变。`));
+}
+function exportHex() {
+  if (!currentReport() || compiledDescriptorText !== descriptorEditor.value) return;
+  scheduleReport.now();
+  if (!state.decoded || !state.wireHex) return;
+  const report = currentReport();
+  downloadText(`moonhid-${report.kind}-${report.report_id}.hex`, state.wireHex + '\n', 'text/plain');
 }
 function exportJson() {
   if (!state.descriptor || compiledDescriptorText !== descriptorEditor.value) return;
@@ -944,12 +1060,12 @@ function exportJson() {
   const report = currentReport();
   if (!report) return;
   const result = { schema_version: 2, descriptor: state.descriptor, selected_report: { kind: report.kind, report_id: report.report_id }, wire_hex: state.wireHex, decoded: state.decoded };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2) + '\n'], { type: 'application/json' }));
-  h('a', { href: url, download: 'moonhid-inspection.json' }).click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadText('moonhid-inspection.json', JSON.stringify(result, null, 2) + '\n', 'application/json');
 }
 
 $('descriptor').addEventListener('input', () => {
+  clearReportAction();
+  resetFieldEdit();
   compiledDescriptorText = null;
   scheduleReport.cancel();
   state.version++;
@@ -963,11 +1079,15 @@ $('descriptor').addEventListener('input', () => {
   scheduleDescriptor();
 });
 $('report').addEventListener('input', () => {
+  clearReportAction();
+  resetFieldEdit();
   if (state.reportKey) state.drafts.set(state.reportKey, reportEditor.value);
   Object.assign(state, { decoded: null, wireHex: null, reportError: null, reportIdSwitch: null });
   renderReportStatus();
   renderBitmap();
   renderValues();
+  renderExport();
+  renderFieldEditor();
   paintReport();
   scheduleReport();
 });
@@ -975,6 +1095,8 @@ for (const [id, run] of [['descriptor', () => scheduleDescriptor.now()], ['repor
   $(id).addEventListener('keydown', event => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); run(); } });
 }
 $('sample-report').addEventListener('click', () => {
+  clearReportAction();
+  resetFieldEdit();
   const sample = sampleFor(currentReport());
   reportEditor.value = sample;
   state.drafts.set(state.reportKey, sample);
@@ -982,6 +1104,36 @@ $('sample-report').addEventListener('click', () => {
   applySelection();
 });
 $('export').addEventListener('click', exportJson);
+$('initialize-report').addEventListener('click', initializeReport);
+$('export-hex').addEventListener('click', exportHex);
+$('field-edit-form').addEventListener('submit', applyField);
+$('field-value').addEventListener('input', () => {
+  fieldEditDirty = true;
+  $('field-value').removeAttribute('aria-invalid');
+  setStatus('field-edit-status', '');
+});
+$('field-value').addEventListener('keydown', event => {
+  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    $('field-edit-form').requestSubmit();
+  }
+});
+$('field-element').addEventListener('input', () => {
+  const input = $('field-element');
+  $('apply-field').disabled = !input.validity.valid;
+  input.setAttribute('aria-invalid', String(!input.validity.valid));
+  if (!input.validity.valid) return setStatus('field-edit-status', 'error', h('span', { class: 'status-text' }, `元素索引必须是 0 … ${input.max} 的整数。`));
+  setStatus('field-edit-status', '');
+  state.element = Number(input.value);
+  let row = 0;
+  for (const { field, index } of reportFields()) {
+    if (index === state.selected) break;
+    row += field.flags & 257 ? 1 : field.count;
+  }
+  state.valuePage = Math.floor((row + state.element) / VALUE_PAGE);
+  renderValues();
+  renderFieldEditor();
+});
 for (const phase of ['before', 'after']) $('lesson-' + phase).addEventListener('click', () => loadFixture(nullLesson[phase]));
 $('hid-connect').addEventListener('click', () => hidController.connect());
 $('hid-disconnect').addEventListener('click', () => hidController.disconnect());

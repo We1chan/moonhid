@@ -38,7 +38,7 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 | 层 | 当前状态 | 后续验收目标 |
 | --- | --- | --- |
 | 文件 CLI | inspect / lint / decode / encode / generate；encode 支持位置数组与 Usage 对象两种值文件，generate 支持五种模板；Unicode 路径、机器可读输出、退出码 | 结构化描述符声明文件、批量帧重放 |
-| 浏览器检查器 | 描述符/布局/解码/JSON 导出、WebHID Input、collections 对照 | 字段编辑、编码导出、Output/Feature 适配 |
+| 浏览器检查器 | 描述符/布局/解码/JSON 导出、WebHID Input、collections 对照；源码版新增三方向报告初始化、字段/元素编辑与完整 HEX 导出，见 [网页报告编辑](browser-editor.md) | Output/Feature 传输适配、按 Usage 编辑 |
 | 设备传输适配 | 浏览器 Input 与 Xbox 蓝牙实测，核心离线 Bytes | 独立设备信息、枚举、打开/关闭、Input 订阅、Output 发送、Feature 读写；验证 ID、长度、断开和错误 |
 | 原生 HID 接入 | 规划阶段 | native HIDAPI FFI；至少键盘 LED 和厂商 Feature 实机验收，记录平台、权限和驱动限制 |
 | Usage/单位语义 | 数字 Usage、常见名称、Unit/Physical 元数据、物理量换算 | 完整 Usage 名称数据包、单位制之间的转换 |

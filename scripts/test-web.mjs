@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { inspect_descriptor, decode_wire, examples_json } from '../web/moonhid-core.js';
+import { inspect_descriptor, decode_wire, initialize_wire, write_wire_field, examples_json } from '../web/moonhid-core.js';
 
 const inspect = hex => JSON.parse(inspect_descriptor(hex));
 const decode = (descriptor, kind, wire) => JSON.parse(decode_wire(descriptor, kind, wire));
+const initialize = (descriptor, kind, id = 0) => JSON.parse(initialize_wire(descriptor, kind, id));
+const write = (descriptor, kind, wire, field, element, value) => JSON.parse(write_wire_field(descriptor, kind, wire, field, element, value));
 const fixtures = JSON.parse(examples_json());
 assert.deepEqual(fixtures.map(f => f.name), ['mouse', 'keyboard', 'gamepad']);
 for (const fixture of fixtures) {
@@ -83,6 +85,55 @@ assert.equal(inspect('a9 00').error.code, 'delimiter');
 assert.equal(inspect('99 02').error.code, 'local_range');
 assert.equal(inspect('79 01 '.repeat(1025)).error.code, 'local_limit');
 
+// Browser writes use core validation and independent, fixed wire expectations.
+assert.equal(initialize(keyboard.descriptor_hex, 'output').wire_hex, '00');
+assert.equal(write(keyboard.descriptor_hex, 'output', 'e0', 3, 0, '1').wire_hex, 'e1');
+const keyArray = inspect(keyboard.descriptor_hex).descriptor.layout.fields.findIndex(field => field.kind === 'input' && !(field.flags & 3));
+const pressed = write(keyboard.descriptor_hex, 'input', '00 00 00 00 00 00 00 00', keyArray, 2, '4');
+assert.equal(pressed.wire_hex, '00 00 00 00 04 00 00 00');
+assert.deepEqual(pressed.decoded.values.find(value => value.field_index === keyArray && value.element_index === 2).usage, { page: 7, id: 4 });
+const packed = '85 07 15 00 26 ff 0f 75 03 95 01 81 01 75 0c 81 02 75 01 81 01';
+assert.equal(initialize(packed, 'input', 7).wire_hex, '07 00 00');
+// Payload 0xFFFF -> (0x123 << 3) | 0x8007 = 0x891F: both pads remain set.
+assert.equal(write(packed, 'input', '07 ff ff', 1, 0, '291').wire_hex, '07 1f 89');
+assert.equal(write(unsigned, 'input', '00 00 00 00', 0, 0, '4294967295').wire_hex, 'ff ff ff ff');
+const signed32 = '17 00 00 00 80 27 ff ff ff 7f 75 20 95 01 81 02';
+assert.equal(write(signed32, 'input', '00 00 00 00', 0, 0, '-2147483648').wire_hex, '00 00 00 80');
+assert.equal(write(composite, 'input', '02 00', 2, 0, '-1').wire_hex, '02 ff');
+assert.equal(write(composite, 'input', '02 00', 2, 0, '-128').error.code, 'logical_range');
+assert.equal(write(unsigned, 'input', '00 00 00 00', 0, 0, '4294967296').error.code, 'value_range');
+assert.equal(write(opaque, 'input', '07 ff ff ff ff ff', 1, 0, '00 00 00 00 00').wire_hex, '07 07 00 00 00 f0');
+assert.equal(write(opaque, 'input', '07 ff ff ff ff ff', 1, 0, 'ff ff ff ff ff').error.code, 'value_range');
+const hat = '05 01 09 39 15 00 25 07 75 04 95 01 81 42';
+assert.equal(initialize(hat, 'input').wire_hex, '0f');
+assert.equal(write(hat, 'input', 'af', 0, 0, '2').wire_hex, 'a2');
+assert.equal(write(hat, 'input', 'a2', 0, 0, '15').decoded.values[0].is_null, true);
+for (const [index, kind] of ['input', 'output', 'feature'].entries()) {
+  assert.equal(initialize(buffered, kind, 5).wire_hex, '05 00 00 00 00');
+  const stream = write(buffered, kind, '05 00 00 00 00', index, 0, '00 ff 01 80');
+  assert.equal(stream.wire_hex, '05 00 ff 01 80');
+  assert.equal(stream.decoded.buffered_values[0].hex, '00 ff 01 80');
+  assert.equal(write(buffered, kind, stream.wire_hex, index, 1, '00 ff 01 80').error.code, 'element_index');
+  assert.equal(write(buffered, kind, stream.wire_hex, index, 0, '00 ff').error.code, 'value_range');
+  assert.deepEqual([write(buffered, kind, stream.wire_hex, index, 0, '00 zz').stage, write(buffered, kind, stream.wire_hex, index, 0, '00 zz').error.offset], ['field_value_hex', 3]);
+}
+for (const value of ['', '1.5', '1e2', '0xff', '9223372036854775808']) {
+  const result = write(packed, 'input', '07 ff ff', 1, 0, value);
+  assert.equal(result.ok, false, value);
+  assert.equal(result.stage, 'field_value', value);
+}
+for (const [field, element, code] of [[-1, 0, 'field_index'], [1, -1, 'element_index'], [1, 1, 'element_index'], [0, 0, 'constant_field']]) {
+  assert.equal(write(packed, 'input', '07 ff ff', field, element, '0').error.code, code);
+}
+assert.equal(write(composite, 'input', '02 00', 0, 0, '0').error.code, 'field_report');
+assert.equal(write(packed, 'input', '07', 1, 0, '0').error.code, 'report_length');
+assert.equal(write(packed, 'input', '07 zz ff', 1, 0, '0').stage, 'report_hex');
+assert.equal(initialize(packed, 'invalid', 7).error.code, 'report_kind');
+assert.equal(initialize(packed, 'feature', 7).error.code, 'unknown_report');
+assert.equal(initialize(packed, 'input', 8).error.code, 'unknown_report');
+assert.equal(initialize('zz', 'input').stage, 'descriptor_hex');
+assert.equal(initialize('75', 'input').stage, 'descriptor');
+
 // Assert the JSON contract for every lint code, including optional field_index
 // and stable item offsets. Warnings must not become bridge failure responses.
 const app = body => `05 01 09 05 a1 01 ${body} c0`;
@@ -112,4 +163,4 @@ for (const [hex, code, level, offset, fieldIndex] of [
   assert.ok(entry.message.length > 0);
   assert.ok(result.descriptor.items.some(item => item.offset === entry.offset));
 }
-console.log('Browser bridge: fixtures, reports, metadata, uint32, ten lint codes/JSON v2 and error paths passed.');
+console.log('Browser bridge: fixtures, metadata, lint/JSON v2, initialization, field writes, padding/ID preservation, Array/Null/Raw/Buffered Bytes and errors passed.');

@@ -1,12 +1,19 @@
 import {
   "We1chan/moonhid" @hid,
   "We1chan/moonhid/examples",
+  "moonbitlang/core/string",
 }
 
 options(
   link: {
     "js": {
-      "exports": [ "inspect_descriptor", "decode_wire", "examples_json" ],
+      "exports": [
+        "inspect_descriptor",
+        "decode_wire",
+        "initialize_wire",
+        "write_wire_field",
+        "examples_json",
+      ],
       "format": "esm",
     },
   },

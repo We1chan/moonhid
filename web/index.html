@@ -91,6 +91,12 @@
             <textarea id="report" rows="2" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="report-status" placeholder="例如 05 ff 02 fe" disabled></textarea>
           </div>
           <div id="report-status" class="status" role="status" aria-live="polite"></div>
+          <div class="report-actions">
+            <button id="initialize-report" type="button" class="btn" disabled>初始化报告</button>
+            <button id="export-hex" type="button" class="btn" disabled>导出报告 HEX</button>
+            <span class="block-note">选择字段后可编辑；生成的报告可离线保存。</span>
+          </div>
+          <div id="report-action-status" class="status" role="status" aria-live="polite"></div>
         </div>
 
         <section class="block" aria-labelledby="bitmap-title">
@@ -121,6 +127,23 @@
       <div class="pane-head">
         <h2 id="detail-title">字段详情</h2>
       </div>
+      <section class="field-editor" aria-labelledby="field-editor-title">
+        <h3 id="field-editor-title">编辑字段</h3>
+        <p id="field-edit-hint" class="block-note">选择数据字段并初始化或载入报告。</p>
+        <form id="field-edit-form">
+          <fieldset id="field-edit-controls" disabled>
+            <div id="field-element-row" hidden>
+              <label for="field-element">元素索引（从 0 开始）</label>
+              <input id="field-element" type="number" min="0" step="1" value="0" required>
+            </div>
+            <label id="field-value-label" for="field-value">值（十进制整数）</label>
+            <textarea id="field-value" rows="2" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="393216" aria-describedby="field-value-help field-edit-status"></textarea>
+            <p id="field-value-help" class="block-note"></p>
+            <button id="apply-field" type="submit" class="btn">写入报告</button>
+          </fieldset>
+        </form>
+        <div id="field-edit-status" class="status" role="status" aria-live="polite"></div>
+      </section>
       <div id="field-detail" class="detail"></div>
       <div class="list-head">
         <h3>Collection</h3>
