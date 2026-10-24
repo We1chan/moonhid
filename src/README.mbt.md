@@ -112,14 +112,15 @@ MoonHID 在一个库中同时提供解析库的报告访问和设备端库的描
 在现有 MoonBit 模块目录中执行：
 
 ```sh
-moon add We1chan/moonhid@0.6.0
+moon add We1chan/moonhid@0.6.1
 ```
 
+0.6.1 是文档与验收补丁：更新 AI 协作说明，修复 Windows 默认换行下的验收测试，库接口与 0.6.0 相同。
 0.6.0 新增结构化声明 v1、批量报告重放、网页字段编辑和 transport 帧转换，保留已有编解码与 Usage 接口。
 展示 JSON schema 保持 v2；声明使用独立的 v1 格式。
-发布入口与安装验收见 [0.6.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.0.md)。
+发布入口与安装验收见 [0.6.1 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.1.md)。
 从 0.4.0 升级时，手工构造 `DecodedReport` 的代码需增加 `buffered_values: []`。
-历史版本记录保留在 [0.5.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)、[0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
+历史版本记录保留在 [0.6.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.0.md)、[0.5.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)、[0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
 
 在使用库的包的 `moon.pkg` 中声明导入，别名与下方 API 示例一致：
 
@@ -676,6 +677,6 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 | MoonBit 为主 | 核心解析、编解码、lint、构建器、CLI、场景逻辑和浏览器桥接使用 MoonBit；JS 处理界面、设备适配和验收编排。[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md)、[源码行数统计命令](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#源码统计) |
 | 仓库公开 | 公开保留开发与交付记录。[提交历史](https://github.com/We1chan/moonhid/commits/main/)、[Issues 与里程碑](https://github.com/We1chan/moonhid/milestone/1)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[Release](https://github.com/We1chan/moonhid/releases) |
 | 能够运行 | 一键复现四后端、CLI、网页、离线包和场景演示；可选检查缺依赖明确跳过。[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md)、[CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) |
-| 工作有效 | 仓库创建于 2026-10-01，已有 0.2.0 至 0.6.0 的版本记录，新增工作通过独立 Issue/PR 跟踪。[版本记录](https://github.com/We1chan/moonhid/releases)、[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md) |
+| 工作有效 | 仓库创建于 2026-10-01，已有 0.2.0 至 0.6.1 的版本记录，新增工作通过独立 Issue/PR 跟踪。[版本记录](https://github.com/We1chan/moonhid/releases)、[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md) |
 | 开源合规 | Apache-2.0；核心按公开协议独立实现，记录模板参考和真实描述符来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
 | AI 可解释 | 公开参赛者与 AI 工具的分工、质量控制和纠错记录，核心设计有独立说明。[AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)、[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md) |
