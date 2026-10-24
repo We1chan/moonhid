@@ -1,7 +1,7 @@
 # 网页报告编辑
 
-仓库源码版检查器支持 Input / Output / Feature 报告初始化、按字段与元素写入，以及完整报告 HEX 导出。
-核心包接口与已发布的 0.5.2 相同；新增的是浏览器桥接和交互入口，使用源码重新构建后体验。
+检查器支持 Input / Output / Feature 报告初始化、按字段与元素写入，以及完整报告 HEX 导出。
+该功能从 0.6.0 起提供，[在线检查器](https://we1chan.github.io/moonhid/) 和 Release 离线包都可以直接使用。
 这项能力用于离线构造字节，设备 Output/Feature 传输仍在 [开发路线](../ROADMAP.md) 中。
 
 ## 启动与操作

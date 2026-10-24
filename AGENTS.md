@@ -61,3 +61,12 @@ You can browse and install extra skills here:
   scientific computations), prefer assertion tests. You can use
   `moon coverage analyze > uncovered.log` to see which parts of your code are
   not covered by tests.
+
+## Project documentation
+
+- README, `docs/` and Release notes describe the contestant/AI division of
+  labor only as verifiable facts. Don't record the contestant's
+  self-assessment of how well they understand the implementation.
+
+- `submission/` is gitignored and holds competition materials. Draft them when
+  the user asks; the user reviews and submits them.
