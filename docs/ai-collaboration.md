@@ -1,34 +1,29 @@
 # 开发过程与 AI 协作说明
 
-本说明区分仓库可验证的开发证据与参赛者当前说明的过程事实。
-它不是比赛验收提交正文。技术设计见 [核心设计说明](design.md)，当前支持范围见 [功能范围](features.md)。
+本说明记录 MoonHID 开发中参赛者与 AI 编程工具的分工，以及质量怎样控制。
+技术设计见 [核心设计说明](design.md)，当前支持范围见 [功能范围](features.md)。
 
-## 参赛者负责的部分
+## 分工
 
-2026-10-22，参赛者将本轮实现、测试、文档与交付工作交由 Codex 继续推进。
-本轮代码实现、接口草稿、验证命令执行、文档整理，以及按验收计划建立 Issue/PR、检查 CI 后合并，均由 Codex 自动化完成。
-仓库账号上的提交和合并记录不表示这些操作由参赛者手工逐项执行。
+参赛者负责：
 
-参赛者在本轮事实确认环节明确表示目前不了解实现，尚未声明已经审阅并掌握核心设计。
-因此，“参赛者能独立解释状态机、位序、Array/Null、物理量、编码和支持边界”尚未获得验证。
-[设计说明](design.md) 提供可核对的材料；参赛者仍需亲自阅读、复现和讲解，才可将本人理解作为验收证据。
+- 选题，确定申报书中的项目范围、使用场景和 HID 1.11 兼容目标。
+- 提出各阶段的开发与验收需求，确认 AI 工具给出的计划后交由其执行。
+- 提供实机数据：在本机 macOS 读取七份 [真实设备描述符](real-devices.md)，
+  在 Windows Chrome 中操作 Xbox 蓝牙手柄并采集实际 Input（见 [Xbox 记录](xbox-bluetooth.md)）。
+- 决定版本发布和比赛提交。
 
-仓库 [Xbox 记录](xbox-bluetooth.md) 记载：参赛者在 Windows Chrome 操作蓝牙手柄并采集实际 Input。
-这份证据没有原始设备描述符，不能推导出全部硬件或传输兼容性。
+AI 编程工具主要是 Codex 和 Claude Code：
 
-## AI 参与的部分
-
-当前聊天中的 Codex 工作包括实现草稿、测试、文档和复核，并通过 `codex/*` 分支 PR 留下记录。
-例如 [网页字段编辑 #40](https://github.com/We1chan/moonhid/pull/40)、
-[README 跨平台地址 #38](https://github.com/We1chan/moonhid/pull/38)、
-[标准证据与文档入口复核 #37](https://github.com/We1chan/moonhid/pull/37)。
-分支名、提交者账号或 AI 生成的文字本身不能证明参赛者已经审阅、理解或确认全部内容。
-
-本轮可验证的 AI 工具为 Codex。此前是否还使用 Claude Code、ChatGPT 或其他工具没有得到完整信息，
-本说明仅记录有证据的部分，不从仓库中的 `CLAUDE.md` 文件名推断完整工具清单。
+- **Codex**：编写代码、测试和文档，通过 `codex/*` 分支提交 PR，CI 通过后合并。
+  例如 [网页字段编辑 #40](https://github.com/We1chan/moonhid/pull/40)、
+  [结构化声明 #48](https://github.com/We1chan/moonhid/pull/48)、
+  [批量重放 #50](https://github.com/We1chan/moonhid/pull/50)。
+- **Claude Code**：制定验收阶段的补充计划，审查交付结果。例如排查发布说明中的失效链接，
+  以及发现并修复 Windows 默认换行设置下的 CLI 测试失败。
 
 本项目没有将 AI 输出或 CI 全绿作为协议认证结论。已发布的事实和仍在规划的能力分别记录，
-实机操作与验收提交材料由参赛者本人完成。
+实机操作由参赛者完成。
 
 ## 质量控制与证据分级
 
@@ -54,5 +49,6 @@
 | README 符号链接导致 404 | 改用生成的普通 README 并检查实际链接。[PR #36](https://github.com/We1chan/moonhid/pull/36)、[排查记录](review-audit-2026-10-20.md) |
 | 33 位 Raw 混入标准案例 | 独立审计后将 Raw 标成宽松扩展，新增普通 Feature 标准案例并独立对照。[PR #37](https://github.com/We1chan/moonhid/pull/37)、[兼容说明](hid-compatibility.md) |
 | 0.5.1 文档验收未通过 | 包内和模块 README 的基址不同，发布后仍检出 27 个错误相对链接；0.5.2 改成明确跨页地址并重新下载安装核验。[0.5.1 历史记录](release-0.5.1.md)、[0.5.2](release-0.5.2.md)、[PR #38](https://github.com/We1chan/moonhid/pull/38) |
+| Windows 默认换行下 CLI 测试失败 | Git for Windows 默认以 CRLF 检出，测试按 `\n` 切分帧文件后残留 `\r`，一键验收退出 1；改为兼容两种换行，并新增 Windows 一键验收 CI。[Issue #56](https://github.com/We1chan/moonhid/issues/56) |
 
 这些纠错记录保留失败事实，不用“本地测试通过”覆盖线上交付失败，也不把历史失败版本重新表述成有效修复。

@@ -1,10 +1,9 @@
 # 结构化描述符声明 v1
 
-源码新增 `descriptor_from_declaration(String) -> Result[Bytes, Diagnostic]` 与
+0.6.0 新增 `descriptor_from_declaration(String) -> Result[Bytes, Diagnostic]` 与
 `declaration_from_descriptor(Bytes) -> Result[Json, Diagnostic]`，以及 CLI `build` / `declare`。
 声明描述的是如何生成原始 HID 描述符，使用独立 schema **version 1**；
 描述符展示与解码结果仍使用 [JSON schema v2](json-v2.md)，不能把 inspect JSON 当成声明输入。
-这些新增接口尚不属于已发布的 0.5.2。
 
 ## 最小例子
 

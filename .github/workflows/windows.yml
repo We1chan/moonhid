@@ -1,0 +1,33 @@
+name: Windows acceptance
+
+# Kept separate from CI so that Pages deployment still depends only on CI.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quick-acceptance:
+    name: acceptance --quick (windows)
+    runs-on: windows-latest
+    steps:
+      # Reproduce a default Git for Windows clone, which checks out text files as CRLF.
+      - run: git config --global core.autocrlf true
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: ./.github/actions/setup-moon
+      - run: moon update
+      - run: node scripts/acceptance.mjs --quick
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-acceptance
+          path: |
+            _build/acceptance-report.json
+            _build/acceptance-logs/

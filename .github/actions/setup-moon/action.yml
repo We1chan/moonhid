@@ -8,7 +8,8 @@ inputs:
 runs:
   using: composite
   steps:
-    - shell: bash
+    - if: runner.os != 'Windows'
+      shell: bash
       env:
         MOON_VERSION_OVERRIDE: ${{ inputs.version }}
       run: |
@@ -17,3 +18,14 @@ runs:
         PATH="$HOME/.moon/bin:$PATH" bash "$RUNNER_TEMP/install-moonbit.sh" "$version"
         echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
         "$HOME/.moon/bin/moon" version --all
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        MOON_VERSION_OVERRIDE: ${{ inputs.version }}
+      run: |
+        $toolchain = Get-Content toolchain.json -Raw | ConvertFrom-Json
+        $env:MOONBIT_INSTALL_VERSION = if ($env:MOON_VERSION_OVERRIDE) { $env:MOON_VERSION_OVERRIDE } else { $toolchain.moonbit }
+        Invoke-RestMethod https://cli.moonbitlang.com/install/powershell.ps1 | Invoke-Expression
+        $bin = Join-Path $HOME '.moon\bin'
+        Add-Content -Path $env:GITHUB_PATH -Value $bin
+        & (Join-Path $bin 'moon.exe') version --all

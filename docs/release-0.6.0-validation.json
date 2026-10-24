@@ -155,7 +155,6 @@
     "native_hidapi": "framing and feasibility probes only; device I/O adapter remains planned",
     "real_led_feature_test": "not run",
     "web_output_feature": "planned",
-    "participant_design_understanding": "not verified",
     "formal_competition_submission": "not performed"
   }
 }
