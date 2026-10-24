@@ -64,7 +64,7 @@ node scripts/check-public-docs.mjs --urls docs/acceptance-urls.txt
 
 HIDAPI 只完成 Windows 0.15.0 / Linux 0.14.0 原生链接、初始化，以及 Linux CI 的 UHID 创建/枚举探针；
 原生设备收发适配器、完整 UHID 收发、实机键盘 LED/Feature 和可选网页 Output/Feature 发送仍在规划中。
-Xbox 数据只说明既有主机 Input 观测。参赛者对核心设计的独立理解尚未验证，AI 说明如实披露此状态。
+Xbox 数据只说明既有主机 Input 观测。
 
 ## 离线交付
 
