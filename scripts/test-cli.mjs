@@ -347,8 +347,9 @@ try {
     assert.match(replay().stderr, /^replay_limit @65537:/);
     const deviceCases = join(root, 'examples/device-cases');
     const capture = JSON.parse(await readFile(join(deviceCases, 'xbox-bluetooth.json'), 'utf8'));
-    const expectedXbox = (await readFile(join(deviceCases, 'xbox-bluetooth-expected.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
-    const xboxFrames = (await readFile(join(deviceCases, 'xbox-bluetooth-frames.txt'), 'utf8')).trim().split('\n').filter(line => !line.startsWith('#'));
+    // Git for Windows checks out CRLF by default, so split example files on either line ending.
+    const expectedXbox = (await readFile(join(deviceCases, 'xbox-bluetooth-expected.jsonl'), 'utf8')).trim().split(/\r?\n/).map(JSON.parse);
+    const xboxFrames = (await readFile(join(deviceCases, 'xbox-bluetooth-frames.txt'), 'utf8')).trim().split(/\r?\n/).filter(line => !line.startsWith('#'));
     assert.deepEqual(xboxFrames, capture.reports.map(r => r.wire_hex));
     const xbox = run(['replay', '--kind', 'input', join(deviceCases, 'xbox-bluetooth-descriptor.hex'), join(deviceCases, 'xbox-bluetooth-frames.txt'), '--expect', join(deviceCases, 'xbox-bluetooth-expected.jsonl')]);
     assert.equal(xbox.status, 0, xbox.stderr);

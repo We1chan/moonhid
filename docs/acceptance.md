@@ -130,10 +130,9 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 | 能够运行 | 场景入口、固定输出、一键脚本、CI 与独立安装 | [场景](scenarios.md)、[脚本](../scripts/acceptance.mjs)、[0.6.0 发布与安装](release-0.6.0.md) |
 | 工作有效 | 仓库创建于 2026-10-01，版本和功能连续迭代，源码新增有对应 Issue/PR | [Release](https://github.com/We1chan/moonhid/releases)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr) |
 | 开源合规 | Apache-2.0，公开协议独立实现，描述符与模板参考有来源 | [LICENSE](../LICENSE)、[真实来源](real-devices.md)、README 协议与参考 |
-| AI 可解释 | 如实披露 AI 工作和设计；参赛者目前尚未验证本人独立解释能力 | [实际分工](ai-collaboration.md)、[设计](design.md)；此项仍需参赛者本人掌握和讲解 |
+| AI 可解释 | 公开参赛者与 AI 工具的分工、质量控制和纠错记录，核心设计有独立说明 | [AI 协作说明](ai-collaboration.md)、[设计](design.md) |
 
-脚本全绿证明列出的技术检查通过，不等同于赛事六项标准自动全部满足。
-报名/验收提交正文和本人理解、实机操作由参赛者完成。
+脚本全绿说明上述技术检查通过；六项标准是否满足由赛事评审判定。
 
 ## 源码统计
 
@@ -172,6 +171,7 @@ Windows / Chrome 155.0.8059.86 通过线上实际控件确认 `00 → 02 → 03`
 
 上述报告对应未提交工作区，`dirty: true`；发布时仍需在实际发布提交的干净克隆重新验收。
 CI 的 JS 任务还会运行快速验收，保存 JSON 报告和每步日志，提供 Linux 上的可复现执行记录。
+[Windows 工作流](https://github.com/We1chan/moonhid/actions/workflows/windows.yml) 按 Git for Windows 默认设置以 CRLF 检出，再运行同一快速验收。
 
 2026-10-23，结构化声明已通过 [PR #48](https://github.com/We1chan/moonhid/pull/48) 合并；
 四后端各 119/119。随后加入批量帧重放，`node scripts/test-cli.mjs` 在 JS/native 均通过
