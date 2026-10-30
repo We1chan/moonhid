@@ -1,7 +1,7 @@
 ///|
 /// WebHID carries Report ID separately from the payload.
 pub(all) struct WebFrame {
-  report_id : Int
+  report_id : Int32
   payload : Bytes
 } derive(Eq, @debug.Debug)
 
@@ -16,7 +16,7 @@ fn checked(
   layout : @hid.Layout,
   kind : @hid.ReportKind,
   wire : Bytes,
-) -> Result[Int, @hid.Diagnostic] {
+) -> Result[Int32, @hid.Diagnostic] {
   match @hid.decode_report(layout, kind, wire) {
     Ok(report) => Ok(report.report_id)
     Err(error) => Err(error)

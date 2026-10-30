@@ -14,7 +14,7 @@ fn lint(text : String) -> Array[@moonhid.Lint] raise {
 fn lint_rule(
   text : String,
   code : String,
-) -> Array[(@moonhid.LintLevel, Int, Int?)] raise {
+) -> Array[(@moonhid.LintLevel, Int32, Int32?)] raise {
   lint(text)
   .filter(l => l.code == code)
   .map(l => (l.level, l.offset, l.field_index))

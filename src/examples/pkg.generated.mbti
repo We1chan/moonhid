@@ -24,7 +24,7 @@ pub fn mouse_descriptor() -> Result[Bytes, @moonhid.Diagnostic]
 
 pub fn scenario_lines() -> Array[String]
 
-pub fn vendor_descriptor(report_bytes? : Int) -> Result[Bytes, @moonhid.Diagnostic]
+pub fn vendor_descriptor(report_bytes? : Int32) -> Result[Bytes, @moonhid.Diagnostic]
 
 // Errors
 

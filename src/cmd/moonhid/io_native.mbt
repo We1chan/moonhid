@@ -9,7 +9,7 @@ fn user_args() -> Array[String] {
 }
 
 ///|
-extern "C" fn stderr_byte(byte : Int) -> Unit = "moonhid_stderr_byte"
+extern "C" fn stderr_byte(byte : Int32) -> Unit = "moonhid_stderr_byte"
 
 ///|
 fn write_stderr_bytes(message : Bytes) -> Unit {
