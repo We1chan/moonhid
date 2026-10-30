@@ -17,7 +17,7 @@ fn validate_wire(
   layout : Layout,
   kind : ReportKind,
   bytes : Bytes,
-) -> Result[Int, Diagnostic] {
+) -> Result[Int32, Diagnostic] {
   let id = if layout.has_report_ids {
     if bytes.is_empty() {
       return Err(diagnostic(0, "short_report", "Missing Report ID"))
@@ -43,7 +43,7 @@ fn validate_wire(
 }
 
 ///|
-fn integer_fits(value : Int64, width : Int, signed : Bool) -> Bool {
+fn integer_fits(value : Int64, width : Int32, signed : Bool) -> Bool {
   let minimum = if signed { -(1L << (width - 1)) } else { 0L }
   let maximum = if signed {
     (1L << (width - 1)) - 1L
@@ -54,7 +54,7 @@ fn integer_fits(value : Int64, width : Int, signed : Bool) -> Bool {
 }
 
 ///|
-fn raw_fits(bytes : Bytes, width : Int) -> Bool {
+fn raw_fits(bytes : Bytes, width : Int32) -> Bool {
   if bytes.length() != (width + 7) / 8 {
     return false
   }
@@ -65,8 +65,8 @@ fn raw_fits(bytes : Bytes, width : Int) -> Bool {
 ///|
 fn put_integer(
   target : FixedArray[Byte],
-  offset : Int,
-  width : Int,
+  offset : Int32,
+  width : Int32,
   value : Int64,
 ) -> Unit {
   let start_byte = offset / 8
@@ -87,8 +87,8 @@ fn put_integer(
 ///|
 fn put_raw(
   target : FixedArray[Byte],
-  offset : Int,
-  width : Int,
+  offset : Int32,
+  width : Int32,
   bytes : Bytes,
 ) -> Unit {
   let start_byte = offset / 8
@@ -192,8 +192,8 @@ fn writable_value(
 ///|
 fn put_value(
   target : FixedArray[Byte],
-  offset : Int,
-  width : Int,
+  offset : Int32,
+  width : Int32,
   value : ReportValue,
 ) -> Unit {
   match value {
@@ -210,9 +210,9 @@ fn put_value(
 pub fn encode_report(
   layout : Layout,
   kind : ReportKind,
-  report_id : Int,
+  report_id : Int32,
   values : Array[ReportValue],
-  allow_out_of_range? : Bool = false,
+  allow_out_of_range~ : Bool = false,
 ) -> Result[Bytes, Diagnostic] {
   let length = match report_length(layout, kind, report_id) {
     Ok(length) => length
@@ -270,9 +270,9 @@ pub fn encode_report(
 fn selected_field(
   layout : Layout,
   kind : ReportKind,
-  id : Int,
-  field_index : Int,
-  element_index : Int,
+  id : Int32,
+  field_index : Int32,
+  element_index : Int32,
 ) -> Result[Field, Diagnostic] {
   if field_index < 0 || field_index >= layout.fields.length() {
     return Err(
@@ -317,8 +317,8 @@ pub fn read_field(
   layout : Layout,
   kind : ReportKind,
   bytes : Bytes,
-  field_index : Int,
-  element_index : Int,
+  field_index : Int32,
+  element_index : Int32,
 ) -> Result[ReportValue, Diagnostic] {
   let id = match validate_wire(layout, kind, bytes) {
     Ok(id) => id
@@ -353,10 +353,10 @@ pub fn write_field(
   layout : Layout,
   kind : ReportKind,
   bytes : Bytes,
-  field_index : Int,
-  element_index : Int,
+  field_index : Int32,
+  element_index : Int32,
   value : ReportValue,
-  allow_out_of_range? : Bool = false,
+  allow_out_of_range~ : Bool = false,
 ) -> Result[Bytes, Diagnostic] {
   let id = match validate_wire(layout, kind, bytes) {
     Ok(id) => id
@@ -387,7 +387,7 @@ pub fn write_field(
 pub fn find_fields(
   layout : Layout,
   kind : ReportKind,
-  report_id : Int,
+  report_id : Int32,
   usage : Usage,
 ) -> Result[Array[FieldRef], Diagnostic] {
   match report_length(layout, kind, report_id) {
@@ -417,8 +417,8 @@ pub fn find_fields(
 
 ///|
 pub(all) struct FieldRef {
-  field_index : Int
-  element_index : Int
+  field_index : Int32
+  element_index : Int32
 } derive(Debug, Eq)
 
 ///|

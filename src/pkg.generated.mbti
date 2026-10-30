@@ -28,15 +28,15 @@ pub fn diagnostic_to_json(Diagnostic) -> Json
 
 pub fn effective_physical_range(Field) -> (Int64, Int64)
 
-pub fn encode_report(Layout, ReportKind, Int, Array[ReportValue], allow_out_of_range? : Bool) -> Result[Bytes, Diagnostic]
+pub fn encode_report(Layout, ReportKind, Int32, Array[ReportValue], allow_out_of_range? : Bool) -> Result[Bytes, Diagnostic]
 
-pub fn extract_bits(Bytes, Int, Int, signed? : Bool) -> Result[Int64, Diagnostic]
+pub fn extract_bits(Bytes, Int32, Int32, signed? : Bool) -> Result[Int64, Diagnostic]
 
-pub fn extract_bytes(Bytes, Int, Int) -> Result[Bytes, Diagnostic]
+pub fn extract_bytes(Bytes, Int32, Int32) -> Result[Bytes, Diagnostic]
 
-pub fn field_usage(Field, Int) -> Usage?
+pub fn field_usage(Field, Int32) -> Usage?
 
-pub fn find_fields(Layout, ReportKind, Int, Usage) -> Result[Array[FieldRef], Diagnostic]
+pub fn find_fields(Layout, ReportKind, Int32, Usage) -> Result[Array[FieldRef], Diagnostic]
 
 pub fn format_hex(Bytes) -> String
 
@@ -44,9 +44,9 @@ pub fn get_physical_value(Layout, ReportKind, Bytes, Usage) -> Result[Double, Di
 
 pub fn get_usage_value(Layout, ReportKind, Bytes, Usage) -> Result[ReportValue, Diagnostic]
 
-pub fn insert_bits(Bytes, Int, Int, Int64, signed? : Bool) -> Result[Bytes, Diagnostic]
+pub fn insert_bits(Bytes, Int32, Int32, Int64, signed? : Bool) -> Result[Bytes, Diagnostic]
 
-pub fn insert_bytes(Bytes, Int, Int, Bytes) -> Result[Bytes, Diagnostic]
+pub fn insert_bytes(Bytes, Int32, Int32, Bytes) -> Result[Bytes, Diagnostic]
 
 pub fn layout_to_json(Layout) -> Json
 
@@ -58,7 +58,7 @@ pub fn list_reports(Layout) -> Result[Array[ReportInfo], Diagnostic]
 
 pub fn logical_from_physical(Field, Double) -> Result[Int64, Diagnostic]
 
-pub fn new_report(Layout, ReportKind, Int) -> Result[Bytes, Diagnostic]
+pub fn new_report(Layout, ReportKind, Int32) -> Result[Bytes, Diagnostic]
 
 pub fn parse_hex(String) -> Result[Bytes, Diagnostic]
 
@@ -66,11 +66,11 @@ pub fn parse_items(Bytes) -> Result[Array[Item], Diagnostic]
 
 pub fn physical_value(Field, Int64) -> Result[Double, Diagnostic]
 
-pub fn read_field(Layout, ReportKind, Bytes, Int, Int) -> Result[ReportValue, Diagnostic]
+pub fn read_field(Layout, ReportKind, Bytes, Int32, Int32) -> Result[ReportValue, Diagnostic]
 
 pub fn report_kind_name(ReportKind) -> String
 
-pub fn report_length(Layout, ReportKind, Int) -> Result[Int, Diagnostic]
+pub fn report_length(Layout, ReportKind, Int32) -> Result[Int32, Diagnostic]
 
 pub fn report_to_json(DecodedReport) -> Json
 
@@ -86,14 +86,14 @@ pub fn signed_value(Bytes) -> Result[Int64, Diagnostic]
 
 pub fn unsigned_value(Bytes) -> Result[Int64, Diagnostic]
 
-pub fn write_field(Layout, ReportKind, Bytes, Int, Int, ReportValue, allow_out_of_range? : Bool) -> Result[Bytes, Diagnostic]
+pub fn write_field(Layout, ReportKind, Bytes, Int32, Int32, ReportValue, allow_out_of_range? : Bool) -> Result[Bytes, Diagnostic]
 
 // Errors
 
 // Types and methods
 pub(all) struct BufferedValue {
-  field_index : Int
-  bit_offset : Int
+  field_index : Int32
+  bit_offset : Int32
   bytes : Bytes
 } derive(Eq, @debug.Debug)
 pub fn BufferedValue::equal(Self, Self) -> Bool
@@ -101,14 +101,14 @@ pub fn BufferedValue::not_equal(Self, Self) -> Bool
 pub fn BufferedValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Collection {
-  descriptor_offset : Int
-  end_offset : Int
-  collection_type : Int
+  descriptor_offset : Int32
+  end_offset : Int32
+  collection_type : Int32
   usage : Usage?
   string_spans : Array[IndexSpan]
   designator_spans : Array[IndexSpan]
   alternate_usages : Array[Array[UsageSpan]]
-  parent_index : Int?
+  parent_index : Int32?
 } derive(Eq, @debug.Debug)
 pub fn Collection::equal(Self, Self) -> Bool
 pub fn Collection::not_equal(Self, Self) -> Bool
@@ -116,7 +116,7 @@ pub fn Collection::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DecodedReport {
   kind : ReportKind
-  report_id : Int
+  report_id : Int32
   values : Array[DecodedValue]
   opaque_values : Array[OpaqueValue]
   buffered_values : Array[BufferedValue]
@@ -126,9 +126,9 @@ pub fn DecodedReport::not_equal(Self, Self) -> Bool
 pub fn DecodedReport::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DecodedValue {
-  field_index : Int
-  element_index : Int
-  bit_offset : Int
+  field_index : Int32
+  element_index : Int32
+  bit_offset : Int32
   value : Int64
   usage : Usage?
   is_array : Bool
@@ -143,29 +143,29 @@ pub struct DescriptorBuilder {
   // private fields
 }
 pub fn DescriptorBuilder::build(Self) -> Result[Bytes, Diagnostic]
-pub fn DescriptorBuilder::collection(Self, Int) -> Self
+pub fn DescriptorBuilder::collection(Self, Int32) -> Self
 pub fn DescriptorBuilder::end_collection(Self) -> Self
 pub fn DescriptorBuilder::extended_usage(Self, Usage) -> Self
-pub fn DescriptorBuilder::feature(Self, Int) -> Self
-pub fn DescriptorBuilder::input(Self, Int) -> Self
+pub fn DescriptorBuilder::feature(Self, Int32) -> Self
+pub fn DescriptorBuilder::input(Self, Int32) -> Self
 pub fn DescriptorBuilder::logical_range(Self, Int64, Int64) -> Self
 pub fn DescriptorBuilder::new() -> Self
-pub fn DescriptorBuilder::output(Self, Int) -> Self
+pub fn DescriptorBuilder::output(Self, Int32) -> Self
 pub fn DescriptorBuilder::physical_range(Self, Int64, Int64) -> Self
 pub fn DescriptorBuilder::pop(Self) -> Self
 pub fn DescriptorBuilder::push(Self) -> Self
-pub fn DescriptorBuilder::report_count(Self, Int) -> Self
-pub fn DescriptorBuilder::report_id(Self, Int) -> Self
-pub fn DescriptorBuilder::report_size(Self, Int) -> Self
-pub fn DescriptorBuilder::short_item(Self, Int, Int, Int64, signed? : Bool) -> Self
+pub fn DescriptorBuilder::report_count(Self, Int32) -> Self
+pub fn DescriptorBuilder::report_id(Self, Int32) -> Self
+pub fn DescriptorBuilder::report_size(Self, Int32) -> Self
+pub fn DescriptorBuilder::short_item(Self, Int32, Int32, Int64, signed? : Bool) -> Self
 pub fn DescriptorBuilder::unit(Self, Int64) -> Self
-pub fn DescriptorBuilder::unit_exponent(Self, Int) -> Self
-pub fn DescriptorBuilder::usage(Self, Int) -> Self
-pub fn DescriptorBuilder::usage_page(Self, Int) -> Self
-pub fn DescriptorBuilder::usage_range(Self, Int, Int) -> Self
+pub fn DescriptorBuilder::unit_exponent(Self, Int32) -> Self
+pub fn DescriptorBuilder::usage(Self, Int32) -> Self
+pub fn DescriptorBuilder::usage_page(Self, Int32) -> Self
+pub fn DescriptorBuilder::usage_range(Self, Int32, Int32) -> Self
 
 pub(all) struct Diagnostic {
-  offset : Int
+  offset : Int32
   code : String
   message : String
 } derive(Eq, @debug.Debug)
@@ -174,20 +174,20 @@ pub fn Diagnostic::not_equal(Self, Self) -> Bool
 pub fn Diagnostic::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Field {
-  descriptor_offset : Int
+  descriptor_offset : Int32
   kind : ReportKind
-  report_id : Int
-  bit_offset : Int
-  bit_size : Int
-  count : Int
-  flags : Int
+  report_id : Int32
+  bit_offset : Int32
+  bit_size : Int32
+  count : Int32
+  flags : Int32
   logical_min : Int64
   logical_max : Int64
   physical_min : Int64?
   physical_max : Int64?
   unit : Int64?
-  unit_exponent : Int?
-  collection_index : Int?
+  unit_exponent : Int32?
+  collection_index : Int32?
   usage_spans : Array[UsageSpan]
   string_spans : Array[IndexSpan]
   designator_spans : Array[IndexSpan]
@@ -198,8 +198,8 @@ pub fn Field::not_equal(Self, Self) -> Bool
 pub fn Field::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FieldRef {
-  field_index : Int
-  element_index : Int
+  field_index : Int32
+  element_index : Int32
 } derive(Eq, @debug.Debug)
 pub fn FieldRef::equal(Self, Self) -> Bool
 pub fn FieldRef::not_equal(Self, Self) -> Bool
@@ -214,9 +214,9 @@ pub fn IndexSpan::not_equal(Self, Self) -> Bool
 pub fn IndexSpan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Item {
-  offset : Int
-  type_code : Int
-  tag : Int
+  offset : Int32
+  type_code : Int32
+  tag : Int32
   data : Bytes
   is_long : Bool
 } derive(Eq, @debug.Debug)
@@ -234,11 +234,11 @@ pub fn Layout::not_equal(Self, Self) -> Bool
 pub fn Layout::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Lint {
-  offset : Int
+  offset : Int32
   code : String
   level : LintLevel
   message : String
-  field_index : Int?
+  field_index : Int32?
 } derive(Eq, @debug.Debug)
 pub fn Lint::equal(Self, Self) -> Bool
 pub fn Lint::not_equal(Self, Self) -> Bool
@@ -253,10 +253,10 @@ pub fn LintLevel::not_equal(Self, Self) -> Bool
 pub fn LintLevel::to_repr(Self) -> @debug.Repr
 
 pub(all) struct OpaqueValue {
-  field_index : Int
-  element_index : Int
-  bit_offset : Int
-  bit_size : Int
+  field_index : Int32
+  element_index : Int32
+  bit_offset : Int32
+  bit_size : Int32
   bytes : Bytes
 } derive(Eq, @debug.Debug)
 pub fn OpaqueValue::equal(Self, Self) -> Bool
@@ -265,10 +265,10 @@ pub fn OpaqueValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ReportInfo {
   kind : ReportKind
-  report_id : Int
-  payload_bits : Int
-  byte_length : Int
-  data_count : Int
+  report_id : Int32
+  payload_bits : Int32
+  byte_length : Int32
+  data_count : Int32
 } derive(Eq, @debug.Debug)
 pub fn ReportInfo::equal(Self, Self) -> Bool
 pub fn ReportInfo::not_equal(Self, Self) -> Bool
@@ -293,31 +293,31 @@ pub fn ReportValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct UnitDimensions {
   raw : Int64
-  system : Int
-  length : Int
-  mass : Int
-  time : Int
-  temperature : Int
-  current : Int
-  luminous_intensity : Int
-  reserved : Int
+  system : Int32
+  length : Int32
+  mass : Int32
+  time : Int32
+  temperature : Int32
+  current : Int32
+  luminous_intensity : Int32
+  reserved : Int32
 } derive(Eq, @debug.Debug)
 pub fn UnitDimensions::equal(Self, Self) -> Bool
 pub fn UnitDimensions::not_equal(Self, Self) -> Bool
 pub fn UnitDimensions::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Usage {
-  page : Int
-  id : Int
+  page : Int32
+  id : Int32
 } derive(Eq, @debug.Debug)
 pub fn Usage::equal(Self, Self) -> Bool
 pub fn Usage::not_equal(Self, Self) -> Bool
 pub fn Usage::to_repr(Self) -> @debug.Repr
 
 pub(all) struct UsageSpan {
-  page : Int
-  min : Int
-  max : Int
+  page : Int32
+  min : Int32
+  max : Int32
 } derive(Eq, @debug.Debug)
 pub fn UsageSpan::equal(Self, Self) -> Bool
 pub fn UsageSpan::not_equal(Self, Self) -> Bool

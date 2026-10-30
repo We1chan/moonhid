@@ -6,7 +6,7 @@ priv struct ReplayExpectation {
 }
 
 ///|
-fn replay_error(line : Int, message : String) -> @hid.Diagnostic {
+fn replay_error(line : Int32, message : String) -> @hid.Diagnostic {
   { offset: line, code: "replay_expect", message, }
 }
 
@@ -244,7 +244,7 @@ fn replay(
   descriptor_path : String,
   frames_path : String,
   expected_path : String?,
-) -> Result[(String, Int), @hid.Diagnostic] {
+) -> Result[(String, Int32), @hid.Diagnostic] {
   let descriptor = match read_hex(descriptor_path) {
     Ok(bytes) => bytes
     Err(error) => return Err(error)
@@ -257,7 +257,7 @@ fn replay(
     Ok(text) => text
     Err(error) => return Err(error)
   }
-  let frames : Array[(Int, String)] = []
+  let frames : Array[(Int32, String)] = []
   let mut line = 0
   for row in text.split("\n") {
     line = line + 1

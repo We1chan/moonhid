@@ -2,11 +2,11 @@
 
 ///|
 struct FuzzRng {
-  mut state : UInt
+  mut state : UInt32
 }
 
 ///|
-fn FuzzRng::next(self : FuzzRng) -> UInt {
+fn FuzzRng::next(self : FuzzRng) -> UInt32 {
   let mut x = self.state
   x = x ^ (x << 13)
   x = x ^ (x >> 17)
@@ -16,12 +16,12 @@ fn FuzzRng::next(self : FuzzRng) -> UInt {
 }
 
 ///|
-fn FuzzRng::below(self : FuzzRng, limit : Int) -> Int {
+fn FuzzRng::below(self : FuzzRng, limit : Int32) -> Int32 {
   (self.next() % limit.reinterpret_as_uint()).reinterpret_as_int()
 }
 
 ///|
-fn fuzz_diagnostic(error : @moonhid.Diagnostic, length : Int) -> Unit raise {
+fn fuzz_diagnostic(error : @moonhid.Diagnostic, length : Int32) -> Unit raise {
   assert_true(error.offset >= 0 && error.offset <= length)
   assert_false(error.message.is_empty())
   assert_true(
@@ -71,7 +71,7 @@ fn fuzz_metadata(
 }
 
 ///|
-fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int raise {
+fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int32 raise {
   assert_true(layout.fields.length() >= 1 && layout.fields.length() <= 4096)
   assert_true(layout.collections.length() <= 4096)
   for field in layout.fields {
@@ -277,7 +277,7 @@ fn fuzz_reports(layout : @moonhid.Layout, rng : FuzzRng) -> Int raise {
 }
 
 ///|
-fn fuzz_descriptor(bytes : Bytes, rng : FuzzRng) -> Int raise {
+fn fuzz_descriptor(bytes : Bytes, rng : FuzzRng) -> Int32 raise {
   let parsed = match @moonhid.parse_items(bytes) {
     Ok(items) => {
       assert_true(items.length() <= bytes.length() && items.length() <= 65536)
@@ -319,7 +319,7 @@ fn fuzz_u32(value : Int64) -> Bytes {
 }
 
 ///|
-fn fuzz_structured(iteration : Int, rng : FuzzRng) -> Bytes {
+fn fuzz_structured(iteration : Int32, rng : FuzzRng) -> Bytes {
   let mut bytes = b"\x05\x01\x09\x05\xa1\x01"
   for direction = 0; direction < 3; direction = direction + 1 {
     if iteration % 2 == 0 {

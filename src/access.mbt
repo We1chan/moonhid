@@ -4,10 +4,10 @@
 /// data_count is the number of values encode_report expects.
 pub(all) struct ReportInfo {
   kind : ReportKind
-  report_id : Int
-  payload_bits : Int
-  byte_length : Int
-  data_count : Int
+  report_id : Int32
+  payload_bits : Int32
+  byte_length : Int32
+  data_count : Int32
 } derive(Debug, Eq)
 
 ///|
@@ -21,7 +21,7 @@ pub extend ReportInfo with Eq::{equal, not_equal}
 pub fn list_reports(layout : Layout) -> Result[Array[ReportInfo], Diagnostic] {
   let reports : Array[ReportInfo] = []
   for kind in [Input, Output, Feature] {
-    let ids : Array[Int] = []
+    let ids : Array[Int32] = []
     for field in layout.fields {
       if field.kind == kind && !ids.contains(field.report_id) {
         ids.push(field.report_id)
@@ -111,8 +111,8 @@ fn is_switch(field : Field) -> Bool {
 ///|
 fn get_integer(
   source : FixedArray[Byte],
-  offset : Int,
-  width : Int,
+  offset : Int32,
+  width : Int32,
   signed : Bool,
 ) -> Int64 {
   let mut value = 0L
@@ -136,7 +136,7 @@ fn get_integer(
 pub fn new_report(
   layout : Layout,
   kind : ReportKind,
-  report_id : Int,
+  report_id : Int32,
 ) -> Result[Bytes, Diagnostic] {
   let length = match report_length(layout, kind, report_id) {
     Ok(length) => length
@@ -179,7 +179,7 @@ pub fn new_report(
 fn unique_reference(
   layout : Layout,
   kind : ReportKind,
-  report_id : Int,
+  report_id : Int32,
   usage : Usage,
 ) -> Result[FieldRef, Diagnostic] {
   let refs = match find_fields(layout, kind, report_id, usage) {
@@ -240,7 +240,7 @@ pub fn set_usage_value(
   bytes : Bytes,
   usage : Usage,
   value : ReportValue,
-  allow_out_of_range? : Bool = false,
+  allow_out_of_range~ : Bool = false,
 ) -> Result[Bytes, Diagnostic] {
   let id = match validate_wire(layout, kind, bytes) {
     Ok(id) => id
@@ -360,7 +360,7 @@ fn change_usages(
   let target = FixedArray::makei(bytes.length(), i => bytes[i])
   let prefix = if layout.has_report_ids { 8 } else { 0 }
   for usage in usages {
-    let switches : Array[(Field, Int)] = []
+    let switches : Array[(Field, Int32)] = []
     let mut variable = false
     for field in layout.fields {
       if field.kind != kind ||

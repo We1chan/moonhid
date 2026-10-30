@@ -109,7 +109,7 @@ pub fn consumer_descriptor() -> Result[Bytes, @hid.Diagnostic] {
 /// Vendor-defined raw Input and Output of report_bytes bytes each (1..8192).
 /// Same bytes as TinyUSB TUD_HID_REPORT_DESC_GENERIC_INOUT(report_bytes).
 pub fn vendor_descriptor(
-  report_bytes? : Int = 64,
+  report_bytes~ : Int32 = 64,
 ) -> Result[Bytes, @hid.Diagnostic] {
   if report_bytes < 1 || report_bytes > 8192 {
     return Err({

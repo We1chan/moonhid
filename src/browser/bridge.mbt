@@ -99,7 +99,7 @@ fn wire_result(
 pub fn initialize_wire(
   descriptor_hex : String,
   kind : String,
-  report_id : Int,
+  report_id : Int32,
 ) -> String {
   let (layout, kind) = match report_context(descriptor_hex, kind) {
     Ok(context) => context
@@ -119,8 +119,8 @@ pub fn write_wire_field(
   descriptor_hex : String,
   kind : String,
   report_hex : String,
-  field_index : Int,
-  element_index : Int,
+  field_index : Int32,
+  element_index : Int32,
   value_text : String,
 ) -> String {
   let (layout, kind) = match report_context(descriptor_hex, kind) {

@@ -2,7 +2,7 @@
 fn encoded(
   layout : @moonhid.Layout,
   kind : @moonhid.ReportKind,
-  id : Int,
+  id : Int32,
   values : Array[@moonhid.ReportValue],
 ) -> Bytes raise {
   match @moonhid.encode_report(layout, kind, id, values) {

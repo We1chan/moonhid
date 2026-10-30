@@ -13,8 +13,8 @@ pub extend ReportKind with Eq::{equal, not_equal}
 
 ///|
 pub(all) struct Usage {
-  page : Int
-  id : Int
+  page : Int32
+  id : Int32
 } derive(Debug, Eq)
 
 ///|
@@ -26,9 +26,9 @@ pub extend Usage with Eq::{equal, not_equal}
 ///|
 /// Inclusive Usage IDs on one page; a single Usage has min=max.
 pub(all) struct UsageSpan {
-  page : Int
-  min : Int
-  max : Int
+  page : Int32
+  min : Int32
+  max : Int32
 } derive(Debug, Eq)
 
 ///|
@@ -80,14 +80,14 @@ fn valid_usage_spans(spans : Array[UsageSpan]) -> Bool {
 }
 
 ///|
-fn usage_count(spans : Array[UsageSpan]) -> Int {
+fn usage_count(spans : Array[UsageSpan]) -> Int32 {
   spans.fold(init=0, (n, s) => n + s.max - s.min + 1)
 }
 
 ///|
 fn usage_at(
   spans : Array[UsageSpan],
-  index : Int,
+  index : Int32,
   repeat_last : Bool,
 ) -> Usage? {
   if index < 0 {
@@ -118,7 +118,7 @@ fn usage_at(
 /// Variable indices repeat the last Usage; Array selector indices never repeat.
 /// For Arrays, pass value-logical_min after checking the logical range.
 /// Buffered Bytes expose the first Usage at index 0 for the complete stream.
-pub fn field_usage(field : Field, index : Int) -> Usage? {
+pub fn field_usage(field : Field, index : Int32) -> Usage? {
   if (field.flags & 1) != 0 {
     return None
   }
@@ -130,7 +130,7 @@ pub fn field_usage(field : Field, index : Int) -> Usage? {
 
 ///|
 // A Buffered Bytes Main item is one fixed-size stream, not Count scalars.
-fn field_value_count(field : Field) -> Int {
+fn field_value_count(field : Field) -> Int32 {
   if (field.flags & 256) != 0 {
     1
   } else {
@@ -139,7 +139,7 @@ fn field_value_count(field : Field) -> Int {
 }
 
 ///|
-fn field_value_bits(field : Field) -> Int {
+fn field_value_bits(field : Field) -> Int32 {
   if (field.flags & 256) != 0 {
     field.bit_size * field.count
   } else {
@@ -150,14 +150,14 @@ fn field_value_bits(field : Field) -> Int {
 ///|
 /// Collections are stored in descriptor order. Parent indices form a tree.
 pub(all) struct Collection {
-  descriptor_offset : Int
-  end_offset : Int
-  collection_type : Int
+  descriptor_offset : Int32
+  end_offset : Int32
+  collection_type : Int32
   usage : Usage?
   string_spans : Array[IndexSpan]
   designator_spans : Array[IndexSpan]
   alternate_usages : Array[Array[UsageSpan]]
-  parent_index : Int?
+  parent_index : Int32?
 } derive(Debug, Eq)
 
 ///|
@@ -169,20 +169,20 @@ pub extend Collection with Eq::{equal, not_equal}
 ///|
 /// bit_offset excludes an optional Report ID prefix byte. Padding is retained.
 pub(all) struct Field {
-  descriptor_offset : Int
+  descriptor_offset : Int32
   kind : ReportKind
-  report_id : Int
-  bit_offset : Int
-  bit_size : Int
-  count : Int
-  flags : Int
+  report_id : Int32
+  bit_offset : Int32
+  bit_size : Int32
+  count : Int32
+  flags : Int32
   logical_min : Int64
   logical_max : Int64
   physical_min : Int64?
   physical_max : Int64?
   unit : Int64?
-  unit_exponent : Int?
-  collection_index : Int?
+  unit_exponent : Int32?
+  collection_index : Int32?
   usage_spans : Array[UsageSpan]
   string_spans : Array[IndexSpan]
   designator_spans : Array[IndexSpan]
@@ -210,7 +210,7 @@ pub extend Layout with Eq::{equal, not_equal}
 
 ///|
 priv struct GlobalState {
-  page : Int
+  page : Int32
   logical_min : Int64
   logical_max_unsigned : Int64
   logical_max_signed : Int64
@@ -218,14 +218,14 @@ priv struct GlobalState {
   physical_max_unsigned : Int64?
   physical_max_signed : Int64?
   unit : Int64?
-  unit_exponent : Int?
-  size : Int
-  count : Int
-  report_id : Int
+  unit_exponent : Int32?
+  size : Int32
+  count : Int32
+  report_id : Int32
 }
 
 ///|
-fn usage_value(item : Item, page : Int) -> Usage {
+fn usage_value(item : Item, page : Int32) -> Usage {
   let value = item_unsigned(item)
   if item.data.length() == 4 {
     { page: (value >> 16).to_int(), id: (value & 65535L).to_int(), }
@@ -244,8 +244,8 @@ pub fn compile_descriptor(bytes : Bytes) -> Result[Layout, Diagnostic] {
   }
   let fields : Array[Field] = []
   let collections : Array[Collection] = []
-  let collection_stack : Array[Int] = []
-  let offsets : Map[Int, Int] = Map([])
+  let collection_stack : Array[Int32] = []
+  let offsets : Map[Int32, Int32] = Map([])
   let mut global : GlobalState = {
     page: 0,
     logical_min: 0,
