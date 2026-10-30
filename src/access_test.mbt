@@ -23,7 +23,7 @@ fn ok_bytes(result : Result[Bytes, @moonhid.Diagnostic]) -> Bytes raise {
 }
 
 ///|
-fn usage(page : Int, id : Int) -> @moonhid.Usage {
+fn usage(page : Int32, id : Int32) -> @moonhid.Usage {
   { page, id, }
 }
 

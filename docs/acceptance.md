@@ -14,7 +14,8 @@ moon add We1chan/moonhid@0.6.1
 ## 环境与安装
 
 基础环境为 Git、Node.js 22+ 和 [`toolchain.json`](../toolchain.json) 中固定的 MoonBit 工具链：
-`moonc 0.10.14+7d59c7ec9`、`moon 0.1.20260920`。
+`moonc 0.10.18+6c83a7f62`、`moon 0.1.20261028`。项目要求 `moonc` 不低于 0.10.16；
+本机另用 `moonc 0.10.16+b1a0e846e` 完成四后端无警告检查与测试。
 完整模式测试 native，需要可用 C 编译器；只复核 wasm/js 可使用 `--quick`，不需要 native 工具链。
 Python 3.13（本机 3.14 也已验证）与 hid-tools 0.12、Chrome 用于额外独立对照和 DOM 检查，缺失时显示 SKIP。
 
@@ -23,7 +24,7 @@ Python 3.13（本机 3.14 也已验证）与 hid-tools 0.12、Chrome 用于额�
 
 ```sh
 curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moonbit.sh
-bash /tmp/install-moonbit.sh '0.10.14+7d59c7ec9'
+bash /tmp/install-moonbit.sh '0.10.18+6c83a7f62'
 export PATH="$HOME/.moon/bin:$PATH"
 moon version --all
 ```
@@ -31,7 +32,7 @@ moon version --all
 Windows PowerShell：
 
 ```powershell
-$env:MOONBIT_INSTALL_VERSION = '0.10.14+7d59c7ec9'
+$env:MOONBIT_INSTALL_VERSION = '0.10.18+6c83a7f62'
 irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
 $env:PATH = "$HOME\.moon\bin;$env:PATH"
 moon version --all
@@ -122,18 +123,22 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 具体步骤与已记录的浏览器环境见 [网页编辑](browser-editor.md)、[检查器验收](inspector-validation.md)。
 本页的网页编辑与导出构造离线字节；它不表示已增加真实设备 Output/Feature 传输。
 
-## 六项验收标准对照
+## 九项验收标准对照
 
-| 标准 | 本项目的做法 | 可核验证据 |
+| 要求 | 本项目的做法 | 可核验证据 |
 | --- | --- | --- |
-| MoonBit 为主 | 核心协议、编解码、构建器、Usage 访问、CLI 和 bridge 使用 MoonBit；JS 负责界面、传输适配与测试编排 | [设计](design.md)、[源码统计](#源码统计) |
-| 仓库公开 | 保留提交、Issue、PR、里程碑和发布历史 | [提交](https://github.com/We1chan/moonhid/commits/main/)、[里程碑](https://github.com/We1chan/moonhid/milestone/1) |
-| 能够运行 | 场景入口、固定输出、一键脚本、CI 与独立安装 | [场景](scenarios.md)、[脚本](../scripts/acceptance.mjs)、[0.6.1 发布与安装](release-0.6.1.md) |
-| 工作有效 | 仓库创建于 2026-10-01，版本和功能连续迭代，源码新增有对应 Issue/PR | [Release](https://github.com/We1chan/moonhid/releases)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr) |
-| 开源合规 | Apache-2.0，公开协议独立实现，描述符与模板参考有来源 | [LICENSE](../LICENSE)、[真实来源](real-devices.md)、README 协议与参考 |
-| AI 可解释 | 公开参赛者与 AI 工具的分工、质量控制和纠错记录，核心设计有独立说明 | [AI 协作说明](ai-collaboration.md)、[设计](design.md) |
+| 1. MoonBit 为主，moonc 不低于 0.10.16 | 核心协议、编解码、构建器、Usage 访问、CLI 和 bridge 使用 MoonBit；JS 负责界面、传输适配与测试编排；CI 固定 `moonc 0.10.18` 并另测最新版 | [设计](design.md)、[源码统计](#源码统计)、[`toolchain.json`](../toolchain.json) |
+| 2. 仓库公开，提交记录清晰 | 仓库创建于 2026-10-01，保留提交、Issue、PR、里程碑和发布历史 | [提交](https://github.com/We1chan/moonhid/commits/main/)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[里程碑](https://github.com/We1chan/moonhid/milestone/1) |
+| 3. 结构清晰，完成核心功能 | HEX → 条目 → 布局 → 解码/编码分阶段实现，每阶段返回结构化诊断 | [设计](design.md)、[功能范围](features.md)、[HID 兼容目标](hid-compatibility.md) |
+| 4. README 可复现 | README 说明目标、安装、API 示例和运行方式；本页给出安装与一键验收 | [README](../README.md)、[环境与安装](#环境与安装)、[一键验收](#一键验收) |
+| 5. 持续集成 | 四后端执行无警告检查、构建、测试，另含格式、公开接口、CLI、网页、hid-tools 对照和 Windows CRLF 验收 | [CI 配置](../.github/workflows/ci.yml)、[Windows 配置](../.github/workflows/windows.yml)、[运行记录](https://github.com/We1chan/moonhid/actions) |
+| 6. 可运行示例 | 样例解码、四场景入口、文件 CLI 演示链和网页检查器 | [四场景演示](#四场景演示)、[文件 CLI 演示链](#文件-cli-演示链)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
+| 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，另有 CLI、bridge、离线包、Chrome DOM 与 hid-tools 独立对照 | [完整报告案例](report-cases.md)、[模糊测试](fuzz-validation.md)、[脚本](../scripts/acceptance.mjs) |
+| 8. 发布到 mooncakes.io | 各版本发布后在仓库外全新项目从注册表安装并测试 | [Mooncakes](https://mooncakes.io/docs/We1chan/moonhid)、[0.6.1 发布与安装](release-0.6.1.md) |
+| 9. OSI 许可证 | Apache-2.0，公开协议独立实现，描述符与模板参考有来源 | [LICENSE](../LICENSE)、[真实来源](real-devices.md)、README 协议与参考 |
 
-脚本全绿说明上述技术检查通过；六项标准是否满足由赛事评审判定。
+AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](ai-collaboration.md)。
+脚本全绿说明上述技术检查通过；各项要求是否满足由赛事评审判定。
 
 ## 源码统计
 

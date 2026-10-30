@@ -1,5 +1,5 @@
 ///|
-let declaration_tags : Array[(String, Int, Int)] = [
+let declaration_tags : Array[(String, Int32, Int32)] = [
   ("usage_page", 1, 0),
   ("logical_minimum", 1, 1),
   ("logical_maximum", 1, 2),
@@ -31,12 +31,12 @@ let declaration_tags : Array[(String, Int, Int)] = [
 ///|
 priv struct DeclarationContext {
   builder : DescriptorBuilder
-  sources : Array[(Int, Int, String)]
+  sources : Array[(Int32, Int32, String)]
   saved : Array[(Int64, Int64)]
   mut logical_min : Int64
   mut physical_min : Int64
-  mut count : Int
-  mut active : Int
+  mut count : Int32
+  mut active : Int32
   mut error : Diagnostic?
 }
 
@@ -45,7 +45,7 @@ fn DeclarationContext::reject(
   self : DeclarationContext,
   path : String,
   message : String,
-  code? : String = "declaration_value",
+  code~ : String = "declaration_value",
 ) -> Unit {
   if self.error is None {
     self.error = Some(diagnostic(self.active, code, "\{path}: \{message}"))
@@ -119,7 +119,7 @@ fn DeclarationContext::flags(
   path : String,
 ) -> Int64 {
   guard value is Array(names) else { return self.number(value, path) }
-  let tokens : Array[(String, Int, Bool)] = [
+  let tokens : Array[(String, Int32, Bool)] = [
     ("data", 1, false),
     ("constant", 1, true),
     ("array", 2, false),
@@ -139,7 +139,7 @@ fn DeclarationContext::flags(
     ("bit_field", 256, false),
     ("buffered_bytes", 256, true),
   ]
-  let seen : Map[Int, Bool] = Map([])
+  let seen : Map[Int32, Bool] = Map([])
   let mut flags = 0
   for index, name in names {
     let entry_path = "\{path}[\{index}]"
@@ -166,10 +166,10 @@ fn DeclarationContext::flags(
 ///|
 fn DeclarationContext::emit(
   self : DeclarationContext,
-  type_code : Int,
-  tag : Int,
+  type_code : Int32,
+  tag : Int32,
   value : Int64,
-  size : Int?,
+  size : Int32?,
   path : String,
 ) -> Unit {
   if self.error is Some(_) {
@@ -261,7 +261,7 @@ fn DeclarationContext::visit(
   self : DeclarationContext,
   items : Array[Json],
   path : String,
-  depth : Int,
+  depth : Int32,
 ) -> Unit {
   for position, entry in items {
     if self.error is Some(_) {

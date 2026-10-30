@@ -3,7 +3,7 @@ priv enum Command {
   Inspect(String)
   Lint(String)
   Decode(@hid.ReportKind, String, String)
-  Encode(@hid.ReportKind, Int, String, String)
+  Encode(@hid.ReportKind, Int32, String, String)
   Generate(String)
   Build(String)
   Declare(String)
@@ -82,7 +82,7 @@ fn parse_command(args : Array[String]) -> Result[Command, String] {
 }
 
 ///|
-fn values_error(offset : Int, message : String) -> @hid.Diagnostic {
+fn values_error(offset : Int32, message : String) -> @hid.Diagnostic {
   { offset, code: "values_json", message, }
 }
 
@@ -103,7 +103,10 @@ fn read_values(path : String) -> Result[Json, @hid.Diagnostic] {
 }
 
 ///|
-fn json_integer(number : Double, index : Int) -> Result[Int64, @hid.Diagnostic] {
+fn json_integer(
+  number : Double,
+  index : Int32,
+) -> Result[Int64, @hid.Diagnostic] {
   if number.is_nan() ||
     number.is_inf() ||
     number < -2147483648.0 ||
@@ -176,7 +179,7 @@ fn positional_values(
 }
 
 ///|
-fn usage_part(object : Map[String, Json], name : String) -> Int? {
+fn usage_part(object : Map[String, Json], name : String) -> Int32? {
   match object.get(name) {
     Some(Number(number, ..)) if number >= 0.0 &&
       number <= 65535.0 &&
@@ -189,7 +192,7 @@ fn usage_part(object : Map[String, Json], name : String) -> Int? {
 /// Reads {"page": 0..65535, "id": 0..65535} plus the listed extra keys.
 fn json_usage(
   entry : Json,
-  index : Int,
+  index : Int32,
   extra : Array[String],
 ) -> Result[(@hid.Usage, Map[String, Json]), @hid.Diagnostic] {
   let object = match entry {
@@ -225,7 +228,7 @@ fn usage_list(
 fn usage_report(
   layout : @hid.Layout,
   kind : @hid.ReportKind,
-  id : Int,
+  id : Int32,
   object : Map[String, Json],
 ) -> Result[Bytes, @hid.Diagnostic] {
   for key, _ in object {
@@ -318,7 +321,7 @@ fn read_hex(path : String) -> Result[Bytes, @hid.Diagnostic] {
 ///|
 // A successful operation can still use exit 3 for lint Warnings. Keep this
 // distinct from Diagnostic failures, whose message belongs on stderr.
-fn execute(command : Command) -> Result[(String, Int), @hid.Diagnostic] {
+fn execute(command : Command) -> Result[(String, Int32), @hid.Diagnostic] {
   match command {
     Help => Ok((usage(), 0))
     Replay(kind, descriptor, frames, expected) =>

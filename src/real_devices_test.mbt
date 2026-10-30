@@ -203,8 +203,8 @@ test "real device G: report structure and large System Control span" {
 ///|
 fn real_report_summary(
   layout : @moonhid.Layout,
-) -> Array[(@moonhid.ReportKind, Int, Int)] {
-  let result : Array[(@moonhid.ReportKind, Int, Int)] = []
+) -> Array[(@moonhid.ReportKind, Int32, Int32)] {
+  let result : Array[(@moonhid.ReportKind, Int32, Int32)] = []
   for field in layout.fields {
     if result.any(r => r.0 == field.kind && r.1 == field.report_id) {
       continue

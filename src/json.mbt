@@ -17,7 +17,7 @@ pub fn report_kind_name(kind : ReportKind) -> String {
 }
 
 ///|
-fn optional_int(value : Int?) -> Json {
+fn optional_int(value : Int32?) -> Json {
   match value {
     Some(value) => Json(value)
     None => Json::null()
@@ -83,7 +83,7 @@ fn unit_json(raw : Int64?) -> Json {
 /// A JSON component. Wrap in the schema_version=2 descriptor export for storage.
 pub fn layout_to_json(layout : Layout) -> Json {
   let reports : Array[Json] = []
-  let seen : Map[Int, Bool] = Map([])
+  let seen : Map[Int32, Bool] = Map([])
   for field in layout.fields {
     let kind_index = match field.kind {
       Input => 0

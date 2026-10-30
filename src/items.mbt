@@ -1,9 +1,9 @@
 ///|
 /// A raw short or long HID item. type_code: 0 Main, 1 Global, 2 Local, 3 reserved.
 pub(all) struct Item {
-  offset : Int
-  type_code : Int
-  tag : Int
+  offset : Int32
+  type_code : Int32
+  tag : Int32
   data : Bytes
   is_long : Bool
 } derive(Debug, Eq)
