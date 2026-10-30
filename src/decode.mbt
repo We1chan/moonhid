@@ -1,8 +1,8 @@
 ///|
 pub(all) struct DecodedValue {
-  field_index : Int
-  element_index : Int
-  bit_offset : Int
+  field_index : Int32
+  element_index : Int32
+  bit_offset : Int32
   value : Int64
   usage : Usage?
   is_array : Bool
@@ -19,10 +19,10 @@ pub extend DecodedValue with Eq::{equal, not_equal}
 ///|
 /// Values wider than 32 bits remain raw bytes with zero-filled trailing high bits.
 pub(all) struct OpaqueValue {
-  field_index : Int
-  element_index : Int
-  bit_offset : Int
-  bit_size : Int
+  field_index : Int32
+  element_index : Int32
+  bit_offset : Int32
+  bit_size : Int32
   bytes : Bytes
 } derive(Debug, Eq)
 
@@ -36,8 +36,8 @@ pub extend OpaqueValue with Eq::{equal, not_equal}
 /// A complete HID 1.11 Buffered Bytes Main item, with a payload bit offset.
 /// Contents are application-defined and have no integer, Array or Null meaning.
 pub(all) struct BufferedValue {
-  field_index : Int
-  bit_offset : Int
+  field_index : Int32
+  bit_offset : Int32
   bytes : Bytes
 } derive(Debug, Eq)
 
@@ -50,7 +50,7 @@ pub extend BufferedValue with Eq::{equal, not_equal}
 ///|
 pub(all) struct DecodedReport {
   kind : ReportKind
-  report_id : Int
+  report_id : Int32
   values : Array[DecodedValue]
   opaque_values : Array[OpaqueValue]
   buffered_values : Array[BufferedValue]
@@ -67,8 +67,8 @@ pub extend DecodedReport with Eq::{equal, not_equal}
 pub fn report_length(
   layout : Layout,
   kind : ReportKind,
-  report_id : Int,
-) -> Result[Int, Diagnostic] {
+  report_id : Int32,
+) -> Result[Int32, Diagnostic] {
   if layout.fields.length() > 4096 {
     return Err(diagnostic(0, "invalid_layout", "Layout exceeds 4096 fields"))
   }

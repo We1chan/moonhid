@@ -1,7 +1,7 @@
 ///|
 /// Offsets are UTF-16 indices for hex text and byte offsets for binary input.
 pub(all) struct Diagnostic {
-  offset : Int
+  offset : Int32
   code : String
   message : String
 } derive(Debug, Eq)
@@ -13,7 +13,7 @@ pub extend Diagnostic with @debug.Debug::{to_repr}
 pub extend Diagnostic with Eq::{equal, not_equal}
 
 ///|
-fn diagnostic(offset : Int, code : String, message : String) -> Diagnostic {
+fn diagnostic(offset : Int32, code : String, message : String) -> Diagnostic {
   { offset, code, message, }
 }
 

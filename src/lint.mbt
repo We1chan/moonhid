@@ -15,11 +15,11 @@ pub extend LintLevel with Eq::{equal, not_equal}
 /// offset is a descriptor item byte offset; field_index indexes Layout.fields.
 /// Codes and levels are documented in docs/lint.md. Messages are explanatory.
 pub(all) struct Lint {
-  offset : Int
+  offset : Int32
   code : String
   level : LintLevel
   message : String
-  field_index : Int?
+  field_index : Int32?
 } derive(Debug, Eq)
 
 ///|
@@ -37,7 +37,7 @@ priv struct LintGlobals {
 }
 
 ///|
-fn lint_report_key(field : Field) -> Int {
+fn lint_report_key(field : Field) -> Int32 {
   let kind = match field.kind {
     Input => 0
     Output => 1
@@ -48,7 +48,7 @@ fn lint_report_key(field : Field) -> Int {
 
 ///|
 // A nested Application is an ancestor, but is not a top-level Application.
-fn lint_application(layout : Layout, field : Field) -> (Bool, Int?) {
+fn lint_application(layout : Layout, field : Field) -> (Bool, Int32?) {
   let mut index = field.collection_index
   let mut has_application = false
   let mut top_application = None
@@ -71,8 +71,8 @@ fn lint_maximum(
   minimum_nonnegative : Bool,
   name : String,
   code : String,
-  field_index : Int,
-  seen : Map[Int, Bool],
+  field_index : Int32,
+  seen : Map[Int32, Bool],
   lints : Array[Lint],
 ) -> Unit {
   if minimum_nonnegative && item is Some(maximum) {
@@ -103,7 +103,7 @@ fn lint_encodings(
 ) -> Unit {
   let mut globals : LintGlobals = { logical_max: None, physical_max: None, }
   let stack : Array[LintGlobals] = []
-  let seen : Map[Int, Bool] = Map([])
+  let seen : Map[Int32, Bool] = Map([])
   let mut field_index = 0
   for item in items {
     if item.type_code == 1 {
@@ -147,7 +147,7 @@ fn lint_encodings(
 }
 
 ///|
-fn lint_field(field : Field, index : Int, lints : Array[Lint]) -> Unit {
+fn lint_field(field : Field, index : Int32, lints : Array[Lint]) -> Unit {
   // Constant/padding fields have no control Usage or meaningful logical range.
   if (field.flags & 1) != 0 {
     return
@@ -219,9 +219,9 @@ fn lint_field(field : Field, index : Int, lints : Array[Lint]) -> Unit {
 
 ///|
 fn lint_layout(layout : Layout, lints : Array[Lint]) -> Unit {
-  let last_fields : Map[Int, Int] = Map([])
-  let owners : Map[Int, Array[Int]] = Map([])
-  let unnumbered_conflicts : Map[Int, Bool] = Map([])
+  let last_fields : Map[Int32, Int32] = Map([])
+  let owners : Map[Int32, Array[Int32]] = Map([])
+  let unnumbered_conflicts : Map[Int32, Bool] = Map([])
   for i = 0; i < layout.fields.length(); i = i + 1 {
     let field = layout.fields[i]
     let key = lint_report_key(field)

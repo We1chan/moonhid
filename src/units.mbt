@@ -1,5 +1,5 @@
 ///|
-fn signed_nibble(value : Int) -> Int {
+fn signed_nibble(value : Int32) -> Int32 {
   let nibble = value & 15
   if nibble >= 8 {
     nibble - 16
@@ -12,14 +12,14 @@ fn signed_nibble(value : Int) -> Int {
 /// Unit dimensions are signed nibble exponents, not converted physical values.
 pub(all) struct UnitDimensions {
   raw : Int64
-  system : Int
-  length : Int
-  mass : Int
-  time : Int
-  temperature : Int
-  current : Int
-  luminous_intensity : Int
-  reserved : Int
+  system : Int32
+  length : Int32
+  mass : Int32
+  time : Int32
+  temperature : Int32
+  current : Int32
+  luminous_intensity : Int32
+  reserved : Int32
 } derive(Debug, Eq)
 
 ///|
@@ -60,7 +60,7 @@ pub fn effective_physical_range(field : Field) -> (Int64, Int64) {
 }
 
 ///|
-fn power_of_ten(exponent : Int) -> Double {
+fn power_of_ten(exponent : Int32) -> Double {
   let mut result = 1.0
   for i = 0; i < exponent.abs(); i = i + 1 {
     result = result * 10.0
@@ -70,7 +70,7 @@ fn power_of_ten(exponent : Int) -> Double {
 
 ///|
 /// Applies 10^exponent. Negative exponents divide by an exact power of ten.
-fn scale_by_exponent(value : Double, exponent : Int) -> Double {
+fn scale_by_exponent(value : Double, exponent : Int32) -> Double {
   if exponent >= 0 {
     value * power_of_ten(exponent)
   } else {

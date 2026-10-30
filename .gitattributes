@@ -1,0 +1,2 @@
+# moon check regenerates these with LF; a CRLF checkout would then show them as modified.
+*.mbti text eol=lf

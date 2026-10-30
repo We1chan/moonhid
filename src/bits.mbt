@@ -3,9 +3,9 @@
 /// signed=true interprets the result as two's complement.
 pub fn extract_bits(
   bytes : Bytes,
-  bit_offset : Int,
-  bit_size : Int,
-  signed? : Bool = false,
+  bit_offset : Int32,
+  bit_size : Int32,
+  signed~ : Bool = false,
 ) -> Result[Int64, Diagnostic] {
   if bit_offset < 0 || bit_size < 1 || bit_size > 32 {
     return Err(
@@ -39,8 +39,8 @@ pub fn extract_bits(
 /// Copies 1..65536 payload bits into LSB-first bytes; trailing high bits are zero.
 pub fn extract_bytes(
   bytes : Bytes,
-  bit_offset : Int,
-  bit_size : Int,
+  bit_offset : Int32,
+  bit_size : Int32,
 ) -> Result[Bytes, Diagnostic] {
   if bit_offset < 0 || bit_size < 1 || bit_size > 65536 {
     return Err(
@@ -72,10 +72,10 @@ pub fn extract_bytes(
 /// Replaces 1..32 bits in a copy, preserving every other bit. Never truncates.
 pub fn insert_bits(
   bytes : Bytes,
-  bit_offset : Int,
-  bit_size : Int,
+  bit_offset : Int32,
+  bit_size : Int32,
   value : Int64,
-  signed? : Bool = false,
+  signed~ : Bool = false,
 ) -> Result[Bytes, Diagnostic] {
   if bit_offset < 0 || bit_size < 1 || bit_size > 32 {
     return Err(
@@ -107,8 +107,8 @@ pub fn insert_bits(
 /// Replaces packed LSB-first bits in a copy. Raw trailing high bits must be zero.
 pub fn insert_bytes(
   bytes : Bytes,
-  bit_offset : Int,
-  bit_size : Int,
+  bit_offset : Int32,
+  bit_size : Int32,
   value : Bytes,
 ) -> Result[Bytes, Diagnostic] {
   if bit_offset < 0 || bit_size < 1 || bit_size > 65536 {

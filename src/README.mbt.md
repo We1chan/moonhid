@@ -622,7 +622,8 @@ MoonBit 按目录组织包，因此 `*_test.mbt` 与被测源码保留在同一�
 
 ## 开发
 
-本机验证工具链：`moon 0.1.20260920`、`moonc v0.10.14+7d59c7ec9`。
+需要 `moonc` 0.10.16 或更高版本。[`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json)
+固定 `moon 0.1.20261028`、`moonc v0.10.18+6c83a7f62`；本机还用 `moonc v0.10.16+b1a0e846e` 完成四后端无警告检查与测试。
 稳定 CI 固定 `toolchain.json` 中的官方工具链，验证四种后端，
 另设最新工具链兼容任务；日志记录完整版本：
 
@@ -670,13 +671,18 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 
 ## 比赛验收对照
 
-下表列出每项标准对应的可核对证据。
+下表按结项验收指南的九项要求列出可核对证据，是否满足由赛事评审判定。
 
-| 标准 | 本项目的做法与证据 |
+| 要求 | 本项目的做法与证据 |
 | --- | --- |
-| MoonBit 为主 | 核心解析、编解码、lint、构建器、CLI、场景逻辑和浏览器桥接使用 MoonBit；JS 处理界面、设备适配和验收编排。[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md)、[源码行数统计命令](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#源码统计) |
-| 仓库公开 | 公开保留开发与交付记录。[提交历史](https://github.com/We1chan/moonhid/commits/main/)、[Issues 与里程碑](https://github.com/We1chan/moonhid/milestone/1)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[Release](https://github.com/We1chan/moonhid/releases) |
-| 能够运行 | 一键复现四后端、CLI、网页、离线包和场景演示；可选检查缺依赖明确跳过。[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md)、[CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) |
-| 工作有效 | 仓库创建于 2026-10-01，已有 0.2.0 至 0.6.1 的版本记录，新增工作通过独立 Issue/PR 跟踪。[版本记录](https://github.com/We1chan/moonhid/releases)、[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md) |
-| 开源合规 | Apache-2.0；核心按公开协议独立实现，记录模板参考和真实描述符来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
-| AI 可解释 | 公开参赛者与 AI 工具的分工、质量控制和纠错记录，核心设计有独立说明。[AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)、[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md) |
+| 1. MoonBit 为主，moonc 不低于 0.10.16 | 核心解析、编解码、lint、构建器、CLI、场景逻辑和浏览器桥接使用 MoonBit；JS 处理界面、设备适配和验收编排。CI 按 [`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json) 安装 `moonc 0.10.18`，另测最新版。[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md)、[源码行数统计命令](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#源码统计) |
+| 2. 仓库公开，提交记录清晰 | 仓库创建于 2026-10-01，新增工作通过 Issue/PR 跟踪并经 CI 后合并。[提交历史](https://github.com/We1chan/moonhid/commits/main/)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[Issues 与里程碑](https://github.com/We1chan/moonhid/milestone/1)、[Release](https://github.com/We1chan/moonhid/releases) |
+| 3. 结构清晰，完成核心功能 | 核心按 HEX → 条目 → 布局 → 解码/编码分阶段实现，每阶段返回结构化诊断。[项目目录](#项目目录)、[已实现功能](#已实现功能)、[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md) |
+| 4. README 可复现 | 本页说明目标、安装、API 示例、快速运行和命令行工具；一键验收脚本复现全部检查。[安装](#安装)、[API 示例](#api-示例)、[快速运行](#快速运行)、[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md) |
+| 5. 持续集成 | [CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) 在 wasm、wasm-gc、js、native 上执行 `moon check --deny-warn`、`moon build`、`moon test`，并检查格式、公开接口、CLI、网页和 hid-tools 对照；[Windows 工作流](https://github.com/We1chan/moonhid/actions/workflows/windows.yml) 以 CRLF 检出运行快速验收 |
+| 6. 可运行示例 | `moon run src/cmd/main` 解码鼠标、键盘、手柄样例，`moon run src/cmd/scenarios` 运行四场景；本页 `mbt check` 代码块作为测试执行。[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
+| 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，覆盖 HEX、条目、布局、解码、编码、Usage 访问、lint、构建器、声明、资源上限、模糊输入和七份真实描述符；Node 脚本测试 CLI、浏览器桥接与离线包，hid-tools 独立对照布局和编解码。[完整报告案例](https://github.com/We1chan/moonhid/blob/main/docs/report-cases.md)、[模糊测试](https://github.com/We1chan/moonhid/blob/main/docs/fuzz-validation.md) |
+| 8. 发布到 mooncakes.io | [We1chan/moonhid](https://mooncakes.io/docs/We1chan/moonhid)；各版本注册表全新安装记录见 [Release](https://github.com/We1chan/moonhid/releases) 对应的发布说明 |
+| 9. OSI 许可证 | Apache-2.0；核心按公开协议独立实现，记录模板参考和真实描述符来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
+
+AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)。
