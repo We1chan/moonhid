@@ -646,6 +646,10 @@ moon fmt --check
 node scripts/sync-readme.mjs --check
 ```
 
+`moonc` 0.10.20 起把类型后置的 `derive(...)` 标为弃用，要求改用前置的 `#derive(...)`；
+但 0.10.16 与 0.10.18 不认识 `#derive`，会报未知属性。源码保留最低版本可编译的后置写法，
+最新工具链任务只豁免这一条 `deprecated_syntax` 警告（`--warn-list -deprecated_syntax`），其余警告仍按错误处理。
+
 修改 `src/README.mbt.md` 后运行 `node scripts/sync-readme.mjs`，同步仓库首页并改写相对链接。
 `moon.mod` 以生成的根 `README.md` 作为发布文档；Mooncakes 同时展示模块和包内可执行 README，
 因此源 README 的所有跨页链接均使用 GitHub 明确地址，避免依赖展示平台的相对路径基址。
