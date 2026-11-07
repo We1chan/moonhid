@@ -19,7 +19,7 @@ MoonHID 为 MoonBit 提供可组合的通用 HID 报告工具库。
 | 原始描述符编辑 | Item 序列化，保留宽度与未知数据 | `serialize_items`；原始 bytes 无损往返 |
 | 描述符创作 | Usage/范围/扩展 Usage、集合、三方向、ID、Physical/Unit、Push/Pop；Maximum 采用读法无歧义的编码 | `DescriptorBuilder`；生成后编译；模板 lint 为空 |
 | 结构化声明（0.6.0 新增） | JSON v1、命名 flags、嵌套集合、显式 raw 宽度、语义验证与字节无损导入导出 | `descriptor_from_declaration` / `declaration_from_descriptor`；五模板、复合设备、七真实与九 codec 描述符回放 |
-| 设备模板 | 鼠标、键盘（含 LED）、手柄、媒体键、厂商原始数据 | `@examples.*_descriptor`、CLI `generate`；三份独立 fixture、两份与 TinyUSB 宏展开逐字节相同 |
+| 设备模板 | 鼠标、键盘（含 LED）、手柄、媒体键、厂商原始数据 | `@examples.*_descriptor`、CLI `generate`；三份独立 fixture、两份与 TinyUSB 0.21.0 宏展开逐字节相同（MIT，见[第三方材料声明](../THIRD_PARTY_NOTICES.md)） |
 | 布局与元数据 | 每方向/ID 独立偏移、Constant、Array、集合树、String/Designator、Delimiter | `compile_descriptor`；七份真实描述符与 hid-tools 对照 |
 | 报告目录与初始化 | 每个报告的长度与值数量；Null 值、Array 空值或零 | `list_reports`、`new_report`（对应 `HidP_GetCaps`、`HidP_InitializeReportForID`）；Hat/轴 Null 与模糊性质 |
 | Usage 级访问 | 按钮/LED 开关、按键数组的按下/释放/列出，按 Usage 读写数值 | `set_usages`、`clear_usages`、`active_usages`、`get_usage_value`、`set_usage_value`（对应 `HidP_SetUsages` 等）；hid-tools 独立放置对照 |

@@ -70,3 +70,9 @@ You can browse and install extra skills here:
 
 - `submission/` is gitignored and holds competition materials. Draft them when
   the user asks; the user reviews and submits them.
+
+- Register any third-party code, data, macro expansion or device capture in
+  `THIRD_PARTY_NOTICES.md` with its upstream, version or capture date,
+  copyright holder and license, and point to that file from the affected
+  source. `node scripts/check-notices.mjs` (CI) checks the TinyUSB entries and
+  fails when an unlisted source or data file mentions TinyUSB.

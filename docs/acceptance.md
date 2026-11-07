@@ -66,7 +66,7 @@ node scripts/acceptance.mjs
 node scripts/acceptance.mjs --quick
 ```
 
-完整模式按顺序检查文档与公开链接检查器反例、四后端无警告检查与测试、wasm/js 四场景演示、browser bridge、WebHID 模拟、
+完整模式按顺序检查文档、第三方声明与公开链接检查器反例、四后端无警告检查与测试、wasm/js 四场景演示、browser bridge、WebHID 模拟、
 教学与 Xbox 42 帧回放、JS 文件 CLI、标准报告案例、固件 CI、离线打包与服务。
 native 文件 CLI、native 标准案例、两项 hid-tools 独立对照、Chrome DOM 为额外检查。
 `--quick` 仅执行 wasm/js 后端，跳过 native CLI、native 标准案例和需要 native 的 hid-tools 编码对照。
@@ -74,7 +74,7 @@ native 文件 CLI、native 标准案例、两项 hid-tools 独立对照、Chrome
 终端最后显示“步骤 / 结果 / 用时 / 是否必需”的表及汇总，例如依赖齐全的完整模式：
 
 ```text
-汇总：PASS 23 / FAIL 0 / SKIP 0
+汇总：PASS 24 / FAIL 0 / SKIP 0
 报告：_build/acceptance-report.json
 ```
 
@@ -135,7 +135,7 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 | 6. 可运行示例 | 样例解码、四场景入口、文件 CLI 演示链和网页检查器 | [四场景演示](#四场景演示)、[文件 CLI 演示链](#文件-cli-演示链)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，另有 CLI、bridge、离线包、Chrome DOM 与 hid-tools 独立对照 | [完整报告案例](report-cases.md)、[模糊测试](fuzz-validation.md)、[脚本](../scripts/acceptance.mjs) |
 | 8. 发布到 mooncakes.io | 各版本发布后在仓库外全新项目从注册表安装并测试 | [Mooncakes](https://mooncakes.io/docs/We1chan/moonhid)、[0.6.1 发布与安装](release-0.6.1.md) |
-| 9. OSI 许可证 | Apache-2.0，公开协议独立实现，描述符与模板参考有来源 | [LICENSE](../LICENSE)、[真实来源](real-devices.md)、README 协议与参考 |
+| 9. OSI 许可证 | Apache-2.0，公开协议独立实现；TinyUSB 0.21.0 派生的 `consumer` / `vendor` 模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源；`check-notices.mjs` 在 CI 中检查声明完整 | [LICENSE](../LICENSE)、[NOTICE](../NOTICE)、[第三方材料声明](../THIRD_PARTY_NOTICES.md)、[真实来源](real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](ai-collaboration.md)。
 脚本全绿说明上述技术检查通过；各项要求是否满足由赛事评审判定。

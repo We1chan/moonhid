@@ -97,7 +97,7 @@ MoonHID 的功能状态对应 0.5.0；Buffered Bytes 从此版本新增。
 
 依据：[Windows hidpi.h 参考](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/hidpi/)、
 [hid-tools 报告与字段实现](https://github.com/bentiss/hid-tools/blob/master/hidtools/hid.py)、
-[TinyUSB hid_device.h](https://github.com/hathach/tinyusb/blob/master/src/class/hid/hid_device.h)、
+[TinyUSB 0.21.0 hid_device.h](https://github.com/hathach/tinyusb/blob/0.21.0/src/class/hid/hid_device.h)、
 [usbd-hid descriptor 模块](https://docs.rs/usbd-hid/latest/usbd_hid/descriptor/index.html)、
 [HIDAPI 官方头文件](https://github.com/libusb/hidapi/blob/master/hidapi/hidapi.h)、
 [node-hid 官方 API](https://github.com/node-hid/node-hid#complete-async-api)。
@@ -614,6 +614,9 @@ moonhid/
 ├── web/                     # 检查器页面
 ├── scripts/                 # 构建、验收与打包脚本
 ├── docs/                    # 协议说明与验收记录
+├── LICENSE                  # Apache-2.0 许可证
+├── NOTICE                   # 项目版权与 TinyUSB 归属声明
+├── THIRD_PARTY_NOTICES.md   # 第三方材料来源、版权与许可
 └── README.md                # 从可执行 README 生成，链接按仓库根目录改写
 ```
 
@@ -667,7 +670,14 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 - [Linux 内核：HID report descriptors](https://docs.kernel.org/hid/hidintro.html)
 
 本项目按公开协议独立实现。仓库内的合成设备样例用于测试声明的支持范围。
-采用 Apache-2.0 许可证，见 [LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)。
+采用 Apache-2.0 许可证，见 [LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE) 与 [NOTICE](https://github.com/We1chan/moonhid/blob/main/NOTICE)。
+
+`consumer`、`vendor` 两个模板及其测试数据与 TinyUSB 0.21.0 的
+`TUD_HID_REPORT_DESC_CONSUMER()`、`TUD_HID_REPORT_DESC_GENERIC_INOUT()` 宏展开逐字节相同，
+这部分按 MIT 许可保留 TinyUSB 版权声明（Copyright (c) 2019 Ha Thach (tinyusb.org)）。
+七份真实描述符和 Xbox 手柄报告是参赛者从自己设备采集的数据。
+各项材料的版本、提交、版权、许可全文和涉及文件见
+[第三方材料声明](https://github.com/We1chan/moonhid/blob/main/THIRD_PARTY_NOTICES.md)。
 
 代码、测试与文档在 AI 编程工具协助下完成，分工与质量控制见 [AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)。
 
@@ -685,6 +695,6 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 | 6. 可运行示例 | `moon run src/cmd/main` 解码鼠标、键盘、手柄样例，`moon run src/cmd/scenarios` 运行四场景；本页 `mbt check` 代码块作为测试执行。[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，覆盖 HEX、条目、布局、解码、编码、Usage 访问、lint、构建器、声明、资源上限、模糊输入和七份真实描述符；Node 脚本测试 CLI、浏览器桥接与离线包，hid-tools 独立对照布局和编解码。[完整报告案例](https://github.com/We1chan/moonhid/blob/main/docs/report-cases.md)、[模糊测试](https://github.com/We1chan/moonhid/blob/main/docs/fuzz-validation.md) |
 | 8. 发布到 mooncakes.io | [We1chan/moonhid](https://mooncakes.io/docs/We1chan/moonhid)；各版本注册表全新安装记录见 [Release](https://github.com/We1chan/moonhid/releases) 对应的发布说明 |
-| 9. OSI 许可证 | Apache-2.0；核心按公开协议独立实现，记录模板参考和真实描述符来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
+| 9. OSI 许可证 | Apache-2.0；核心按公开协议独立实现。TinyUSB 0.21.0 派生的两个模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[NOTICE](https://github.com/We1chan/moonhid/blob/main/NOTICE)、[第三方材料声明](https://github.com/We1chan/moonhid/blob/main/THIRD_PARTY_NOTICES.md)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)。

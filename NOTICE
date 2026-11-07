@@ -1,0 +1,17 @@
+MoonHID
+Copyright 2026 We1chan
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+This product includes HID report descriptor templates and test data derived
+from TinyUSB 0.21.0 (https://github.com/hathach/tinyusb, commit
+dae3f9a366bfcddbf9dcf1b48d7500286a849539): the expansions of
+TUD_HID_REPORT_DESC_CONSUMER and TUD_HID_REPORT_DESC_GENERIC_INOUT in
+src/class/hid/hid_device.h.
+
+  Copyright (c) 2019 Ha Thach (tinyusb.org)
+  Copyright (c) 2012-2026, hathach (tinyusb.org)
+
+TinyUSB is licensed under the MIT License. The full license text, the list of
+affected files and the sources of other third-party material are in
+THIRD_PARTY_NOTICES.md.

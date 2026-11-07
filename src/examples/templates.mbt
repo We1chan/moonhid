@@ -90,7 +90,10 @@ pub fn gamepad_descriptor() -> Result[Bytes, @hid.Diagnostic] {
 
 ///|
 /// Consumer Control (media keys): one 16-bit Array over Usages 0..0x3FF.
-/// Same bytes as TinyUSB TUD_HID_REPORT_DESC_CONSUMER without a Report ID.
+/// Same bytes as TUD_HID_REPORT_DESC_CONSUMER() without a Report ID in
+/// TinyUSB 0.21.0 src/class/hid/hid_device.h.
+/// TinyUSB: Copyright (c) 2019 Ha Thach (tinyusb.org), MIT License.
+/// Full notice: THIRD_PARTY_NOTICES.md in the repository root.
 pub fn consumer_descriptor() -> Result[Bytes, @hid.Diagnostic] {
   @hid.DescriptorBuilder::new()
   .usage_page(0x0c)
@@ -107,7 +110,10 @@ pub fn consumer_descriptor() -> Result[Bytes, @hid.Diagnostic] {
 
 ///|
 /// Vendor-defined raw Input and Output of report_bytes bytes each (1..8192).
-/// Same bytes as TinyUSB TUD_HID_REPORT_DESC_GENERIC_INOUT(report_bytes).
+/// Same bytes as TUD_HID_REPORT_DESC_GENERIC_INOUT(report_bytes) without a
+/// Report ID in TinyUSB 0.21.0 src/class/hid/hid_device.h.
+/// TinyUSB: Copyright (c) 2019 Ha Thach (tinyusb.org), MIT License.
+/// Full notice: THIRD_PARTY_NOTICES.md in the repository root.
 pub fn vendor_descriptor(
   report_bytes~ : Int32 = 64,
 ) -> Result[Bytes, @hid.Diagnostic] {

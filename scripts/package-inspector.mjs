@@ -11,11 +11,11 @@ for (const file of ['index.html', 'capture.html', 'app.js', 'capture.js', 'brows
   await copyFile(join(root, 'web', file), join(destination, 'web', file));
 }
 await copyFile(join(root, 'scripts/serve-offline.mjs'), join(destination, 'scripts/serve-offline.mjs'));
-await copyFile(join(root, 'LICENSE'), join(destination, 'LICENSE'));
+for (const file of ['LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md']) await copyFile(join(root, file), join(destination, file));
 const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
 const metadata = await readFile(join(root, 'moon.mod'), 'utf8');
 const version = metadata.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
 await writeFile(join(destination, 'BUILD.json'), JSON.stringify({ version, commit, built_at: new Date().toISOString(), node: process.version }, null, 2) + '\n');
 await writeFile(join(destination, 'start-inspector.cmd'), '@echo off\r\ncd /d "%~dp0"\r\nnode scripts\\serve-offline.mjs\r\npause\r\n');
-await writeFile(join(destination, 'README.txt'), `MoonHID ${version} 离线检查器\n\n需要 Node.js 22+。直接运行，无需安装其他依赖。\n运行：node scripts/serve-offline.mjs\n浏览器打开：http://127.0.0.1:8765/\nWindows：双击 start-inspector.cmd。\n可离线解析描述符、解码报告、编辑字段并导出 HEX。\n可选 WebHID Input 需要用户选择兼容设备；浏览器采集仅能重建参考布局。\nBUILD.json 记录版本和构建提交。\n`);
+await writeFile(join(destination, 'README.txt'), `MoonHID ${version} 离线检查器\n\n需要 Node.js 22+。直接运行，无需安装其他依赖。\n运行：node scripts/serve-offline.mjs\n浏览器打开：http://127.0.0.1:8765/\nWindows：双击 start-inspector.cmd。\n可离线解析描述符、解码报告、编辑字段并导出 HEX。\n可选 WebHID Input 需要用户选择兼容设备；浏览器采集仅能重建参考布局。\nBUILD.json 记录版本和构建提交。\n许可证见 LICENSE；项目版权与第三方材料声明见 NOTICE、THIRD_PARTY_NOTICES.md。\n`);
 console.log(destination);
