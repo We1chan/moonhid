@@ -47,7 +47,7 @@ run(['check', '--target', 'all', '--deny-warn']);
 const output = run(['test', 'verify_test.mbt', '--target', 'all']);
 const tests = Object.fromEntries([...output.matchAll(/Total tests: (\d+), passed: (\d+), failed: (\d+)\. \[([^\]]+)\]/g)].map(([, total, passed, failed, target]) => [target, { total: Number(total), passed: Number(passed), failed: Number(failed) }]));
 for (const target of ['wasm', 'wasm-gc', 'js', 'native']) assert.ok(tests[target]?.total >= 14 && tests[target].failed === 0, `Missing/failed ${target} API verification`);
-const paths = git(['ls-tree', '-r', '--name-only', '-z', commit, '--', 'moon.mod', 'README.md', 'LICENSE', 'src']).toString().split('\0').filter(Boolean);
+const paths = git(['ls-tree', '-r', '--name-only', '-z', commit, '--', 'moon.mod', 'README.md', 'LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'src']).toString().split('\0').filter(Boolean);
 const sha = data => createHash('sha256').update(data).digest('hex');
 const lf = data => data.toString('utf8').replaceAll('\r\n', '\n');
 const files = [];

@@ -45,7 +45,7 @@ if (check) {
   await writeFile(destination, generated);
 }
 
-const files = ['README.md', source, 'ROADMAP.md',
+const files = ['README.md', source, 'ROADMAP.md', 'THIRD_PARTY_NOTICES.md', 'examples/README.md',
   ...(await readdir(new URL('docs/', root))).filter(name => name.endsWith('.md')).map(name => 'docs/' + name)];
 // GitHub heading IDs keep Unicode letters, numbers, hyphens and underscores.
 // A used-ID set also handles collisions between repeated and numbered headings.

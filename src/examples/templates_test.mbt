@@ -36,7 +36,10 @@ test "generated device templates match independent descriptor and report fixture
 ///|
 test "consumer and vendor templates match TinyUSB descriptor macros" {
   // Expansions of TUD_HID_REPORT_DESC_CONSUMER() and
-  // TUD_HID_REPORT_DESC_GENERIC_INOUT(64) from TinyUSB hid_device.h.
+  // TUD_HID_REPORT_DESC_GENERIC_INOUT(64) from TinyUSB 0.21.0
+  // (commit dae3f9a366bfcddbf9dcf1b48d7500286a849539) src/class/hid/hid_device.h.
+  // TinyUSB: Copyright (c) 2019 Ha Thach (tinyusb.org), MIT License.
+  // Full notice: THIRD_PARTY_NOTICES.md in the repository root.
   let consumer = match @examples.consumer_descriptor() {
     Ok(bytes) => bytes
     Err(error) => fail(error.code)

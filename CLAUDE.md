@@ -36,6 +36,7 @@ node scripts/test-offline.mjs              # serves that bundle and checks it (r
 node scripts/test-inspector.mjs            # DOM checks in headless Chrome (CHROME_BIN overrides the binary)
 node scripts/acceptance.mjs                 # full acceptance with JSON report; --quick uses wasm/js
 node scripts/test-public-docs.mjs           # local HTTP/Markdown/URL-list regression, no external network
+node scripts/check-notices.mjs              # NOTICE / THIRD_PARTY_NOTICES.md: TinyUSB version, copyright, MIT text, derived files
 node scripts/check-public-docs.mjs --urls docs/acceptance-urls.txt # published pages + all Releases, needs gh
 node scripts/verify-registry.mjs            # after publication/tagging: fresh registry install outside checkout
 node --expose-gc scripts/benchmark.mjs     # timing observations, not pass/fail
@@ -89,3 +90,4 @@ Cross-cutting invariants:
 - `docs/inspector-validation.md` records manual Chrome checks that CI does not run. Update it when you re-verify UI behavior.
 - `submission/` is gitignored and holds the competition proposal and acceptance materials. Draft them when the user asks; the user reviews and submits them.
 - Public docs (README, `docs/`, Release notes) describe the contestant/AI division of labor only as verifiable facts. Don't record the contestant's self-assessment of how well they understand the implementation.
+- `THIRD_PARTY_NOTICES.md` registers every third-party item with its upstream, version or capture date, copyright holder and license; `NOTICE` carries the Apache-2.0 attribution. The `consumer` and `vendor` templates in `src/examples/templates.mbt` and their expansion bytes come from TinyUSB 0.21.0 (MIT), so their comments must keep the copyright line. Register new third-party material there and in `scripts/check-notices.mjs` `derived` when it is TinyUSB-derived.

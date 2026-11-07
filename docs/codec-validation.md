@@ -44,6 +44,8 @@ Usage 形式的外部对照结果：
 
 `consumer` 与 `vendor` 模板另与 TinyUSB `TUD_HID_REPORT_DESC_CONSUMER()`、
 `TUD_HID_REPORT_DESC_GENERIC_INOUT(64)` 的展开结果逐字节比较。
+本轮记录未写 TinyUSB 版本；2026-11-07 已用 TinyUSB 0.21.0 重新展开核对，
+版本、版权与 MIT 许可见 [第三方材料声明](../THIRD_PARTY_NOTICES.md#1-tinyusb-hid-描述符宏mit)。
 
 本轮修正两处既有问题：构建器对 Minimum ≥ 0、Maximum 为 128..255 等值生成 `25 ff` 这类单字节编码，
 会触发本项目 lint `logical_max_sign`，现改为读法一致的最短宽度；`test-cli.mjs` 在 Windows native 上

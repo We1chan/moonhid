@@ -51,8 +51,10 @@ Physical 范围同理；Minimum ≥ 0 而 Maximum 为负的反向范围返回 `i
 | `consumer_descriptor()` / `consumer` | 媒体键：16 位 Array，Usage 0..0x3FF | 音量加 `e9 00` |
 | `vendor_descriptor(report_bytes=64)` / `vendor` | 厂商 0xFF00，等长原始 Input / Output | 64 字节原始数据 |
 
-前三个模板与仓库中独立保存的描述符逐字节比较；`consumer` 与 `vendor` 分别与 TinyUSB
+前三个模板与仓库中独立保存的描述符逐字节比较；`consumer` 与 `vendor` 分别与 TinyUSB 0.21.0
 `TUD_HID_REPORT_DESC_CONSUMER()`、`TUD_HID_REPORT_DESC_GENERIC_INOUT(64)` 的展开结果逐字节相同。
+这两个模板及其测试数据按 MIT 许可保留 TinyUSB 版权声明，提交、许可全文和涉及文件见
+[第三方材料声明](../THIRD_PARTY_NOTICES.md#1-tinyusb-hid-描述符宏mit)。
 五个模板的 lint 结果均为空。README 的可执行示例演示生成 LED 描述符、
 编码 Output、按 Usage 查询并修改 Caps Lock。
 
