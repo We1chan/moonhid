@@ -6,7 +6,7 @@ MoonHID (`We1chan/moonhid`) is a pure MoonBit library that parses USB HID report
 
 ## Commands
 
-`toolchain.json` pins the MoonBit, moon, Node and hid-tools versions that CI installs (`.github/actions/setup-moon`). A separate CI job also runs check/test on js with the latest MoonBit. The installer puts `moon` in `~/.moon/bin`, which may not be on `PATH` in a non-interactive shell. If `moon` isn't found, prepend that directory.
+`toolchain.json` pins the MoonBit, moon, Node and hid-tools versions that CI installs (`.github/actions/setup-moon`). A separate CI job also runs check/test on js with the latest MoonBit. That job passes `--warn-list -deprecated_syntax`: moonc 0.10.20 deprecates the trailing `} derive(...)`, but 0.10.16 and 0.10.18 reject the replacement `#derive(...)` as an unknown attribute, so keep the trailing form until the minimum version moves past 0.10.18. The installer puts `moon` in `~/.moon/bin`, which may not be on `PATH` in a non-interactive shell. If `moon` isn't found, prepend that directory.
 
 ```sh
 moon check --target all --deny-warn    # CI treats warnings as errors (the pre-commit hook runs `moon check --deny-warn`)

@@ -126,5 +126,9 @@ jobs:
       - uses: ./.github/actions/setup-moon
         with:
           version: latest
-      - run: moon update && moon check --target js --deny-warn && moon test --target js
+      - run: moon version --all
+      # moonc 0.10.20 deprecates `} derive(...)` in favour of `#derive(...)`, which
+      # 0.10.16 and the pinned 0.10.18 reject as an unknown attribute. Keep the
+      # syntax the minimum version accepts and exempt only that warning here.
+      - run: moon update && moon check --target js --deny-warn --warn-list -deprecated_syntax && moon test --target js
       - run: node scripts/build-web.mjs && node scripts/test-web.mjs && node scripts/test-usability.mjs
