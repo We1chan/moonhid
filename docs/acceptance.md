@@ -1,15 +1,16 @@
 # 验收说明与复现步骤
 
 MoonHID 是以 MoonBit 为核心的通用 HID 描述符生成、报告编解码和字段访问工具库。
-本页对应版本为 **0.6.1**，在独立模块中安装：
+本页对应版本为 **0.6.2**，在独立模块中安装：
 
 ```sh
-moon add We1chan/moonhid@0.6.1
+moon add We1chan/moonhid@0.6.2
 ```
 
 0.6.0 加入网页字段编辑、四场景入口、结构化声明、批量重放、纯帧转换和本页验收脚本；
 0.6.1 修复 Windows 默认换行下的验收测试并更新文档，库接口不变。
-安装和交付结果见 [0.6.1 发布记录](release-0.6.1.md)，原生设备收发仍为规划范围。
+0.6.2 补齐 TinyUSB 模板与测试数据的版本、版权和 MIT 许可，并随发布包分发第三方声明。
+安装与交付复核步骤见 [0.6.2 发布记录](release-0.6.2.md)，原生设备收发仍为规划范围。
 
 ## 环境与安装
 
@@ -116,7 +117,7 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 
 - [在线检查器](https://we1chan.github.io/moonhid/)：键盘 → Output → 初始化 → Caps Lock 写 1，报告 `00 → 02`；Num Lock 写 1，变为 `03`。
 - 将原始报告改为 `e0`，Caps Lock 写 1 得到 `e2`；写 2 显示 `value_range`，原报告保持不变。导出 HEX 包含完整报告字节。
-- [GitHub Release](https://github.com/We1chan/moonhid/releases/tag/v0.6.1) 提供对应离线包；也可执行
+- [GitHub Release](https://github.com/We1chan/moonhid/releases/tag/v0.6.2) 提供对应离线包；也可执行
   `node scripts/build-web.mjs`、`node scripts/package-inspector.mjs`，然后在生成目录运行 `node scripts/serve-offline.mjs`。
   离线包运行仅需 Node.js，Windows 可双击 `start-inspector.cmd`。
 
@@ -134,7 +135,7 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 | 5. 持续集成 | 四后端执行无警告检查、构建、测试，另含格式、公开接口、CLI、网页、hid-tools 对照和 Windows CRLF 验收 | [CI 配置](../.github/workflows/ci.yml)、[Windows 配置](../.github/workflows/windows.yml)、[运行记录](https://github.com/We1chan/moonhid/actions) |
 | 6. 可运行示例 | 样例解码、四场景入口、文件 CLI 演示链和网页检查器 | [四场景演示](#四场景演示)、[文件 CLI 演示链](#文件-cli-演示链)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，另有 CLI、bridge、离线包、Chrome DOM 与 hid-tools 独立对照 | [完整报告案例](report-cases.md)、[模糊测试](fuzz-validation.md)、[脚本](../scripts/acceptance.mjs) |
-| 8. 发布到 mooncakes.io | 各版本发布后在仓库外全新项目从注册表安装并测试 | [Mooncakes](https://mooncakes.io/docs/We1chan/moonhid)、[0.6.1 发布与安装](release-0.6.1.md) |
+| 8. 发布到 mooncakes.io | 各版本发布后在仓库外全新项目从注册表安装并测试 | [Mooncakes](https://mooncakes.io/docs/We1chan/moonhid)、[0.6.2 发布与安装](release-0.6.2.md) |
 | 9. OSI 许可证 | Apache-2.0，公开协议独立实现；TinyUSB 0.21.0 派生的 `consumer` / `vendor` 模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源；`check-notices.mjs` 在 CI 中检查声明完整 | [LICENSE](../LICENSE)、[NOTICE](../NOTICE)、[第三方材料声明](../THIRD_PARTY_NOTICES.md)、[真实来源](real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](ai-collaboration.md)。
