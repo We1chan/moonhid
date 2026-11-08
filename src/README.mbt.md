@@ -112,15 +112,15 @@ MoonHID 在一个库中同时提供解析库的报告访问和设备端库的描
 在现有 MoonBit 模块目录中执行：
 
 ```sh
-moon add We1chan/moonhid@0.6.1
+moon add We1chan/moonhid@0.6.2
 ```
 
-0.6.1 是文档与验收补丁：更新 AI 协作说明，修复 Windows 默认换行下的验收测试，库接口与 0.6.0 相同。
+0.6.2 补齐 TinyUSB 派生模板和测试数据的版本、来源、版权与 MIT 许可全文，并把声明随发布包分发；库接口与 0.6.0 相同。
 0.6.0 新增结构化声明 v1、批量报告重放、网页字段编辑和 transport 帧转换，保留已有编解码与 Usage 接口。
 展示 JSON schema 保持 v2；声明使用独立的 v1 格式。
-发布入口与安装验收见 [0.6.1 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.1.md)。
+发布入口与安装验收见 [0.6.2 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.2.md)。
 从 0.4.0 升级时，手工构造 `DecodedReport` 的代码需增加 `buffered_values: []`。
-历史版本记录保留在 [0.6.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.0.md)、[0.5.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)、[0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
+历史版本记录保留在 [0.6.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.1.md)、[0.6.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.0.md)、[0.5.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)、[0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
 
 在使用库的包的 `moon.pkg` 中声明导入，别名与下方 API 示例一致：
 
