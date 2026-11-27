@@ -1,22 +1,24 @@
 # 验收说明与复现步骤
 
 MoonHID 是以 MoonBit 为核心的通用 HID 描述符生成、报告编解码和字段访问工具库。
-从 GitHub 的 `main` 分支复现当前源码验收。Mooncakes 发布版 **0.6.2** 可用同一套 RC1 工具链在独立模块中安装。
+从 GitHub 的 `main` 分支复现当前源码验收。Mooncakes 发布版 **0.6.3** 由同一套 RC1 工具链从当前源码发布，可在独立模块中安装。
 
 ```sh
-moon add We1chan/moonhid@0.6.2
+moon add We1chan/moonhid@0.6.3
 ```
 
 0.6.0 加入网页字段编辑、四场景入口、结构化声明、批量重放、纯帧转换和本页验收脚本；
 0.6.1 修复 Windows 默认换行下的验收测试并更新文档，库接口不变。
 0.6.2 补齐 TinyUSB 模板与测试数据的版本、版权和 MIT 许可，并随发布包分发第三方声明。
-安装与交付复核步骤见 [0.6.2 发布记录](release-0.6.2.md)，原生设备收发仍为规划范围。
+0.6.3 改用 MoonBit 1.0.0-rc1 构建和发布，库接口不变；验收脚本在 Windows 未检测到 MSVC 时跳过 native 步骤并说明原因。
+安装与交付复核步骤见 [0.6.3 发布记录](release-0.6.3.md)，原生设备收发仍为规划范围。
 
 ## 环境与安装
 
 基础环境为 Git、Node.js 22+ 和 [`toolchain.json`](../toolchain.json) 中固定的 MoonBit 工具链：
 `moonc 1.0.0-rc1+3c0520448` 和 `moon 0.1.20261126`。十一月赛要求 `moonc` 不低于 `1.0.0-rc1`。
 完整模式测试 native，需要可用 C 编译器；只复核 wasm/js 可使用 `--quick`，不需要 native 工具链。
+Windows 上 rc1 的 native 运行时只支持 MSVC，MinGW/MSYS2 gcc 会报 `Currently only MSVC is supported on Windows`，详见下方说明。
 Python 3.13（本机 3.14 也已验证）与 hid-tools 0.12、Chrome 用于额外独立对照和 DOM 检查，缺失时显示 SKIP。
 
 安装命令依据 [MoonBit 官方下载说明](https://www.moonbitlang.com/download/)；固定版本的使用方式也见
@@ -40,7 +42,11 @@ moon version --all
 
 若工具链已安装到其他目录，设置 `MOON_HOME`，或把 `MOON_BIN` 指向 `moon` 可执行文件。
 验收脚本会把找到的二进制目录传给子进程，文件路径和命令参数通过 argv 传递，不拼接 shell 命令。
-完整模式的 native 编译器可使用 Windows 的 Visual Studio C++ Build Tools、macOS Command Line Tools 或 Linux 系统 C 工具链。
+完整模式的 native 编译器使用 macOS Command Line Tools 或 Linux 系统 C 工具链；Windows 需要 Visual Studio Build Tools 的 C++ 工具与 Windows SDK。
+`moon` 通过 `vswhere` 自动找到 MSVC，也可在 Developer PowerShell 中运行，或用 `MOON_CC` 指定编译器。
+验收脚本按同样顺序检测（`MOON_CC`、`PATH` 中的 `cl.exe`、`vswhere`）。Windows 未检测到 MSVC 时，完整模式测试 wasm、wasm-gc、js，
+并把 native 测试、native CLI、native 标准案例和 hid-tools 编码对照标为 SKIP，在输出开头和报告的 `native_skip_reason` 中说明原因。
+[Windows 工作流](https://github.com/We1chan/moonhid/actions/workflows/windows.yml) 在 GitHub 的 Windows 环境用 MSVC 运行完整验收，要求所有步骤 PASS。
 
 可选独立对照推荐单独创建 Python 虚拟环境并安装固定依赖：
 
@@ -80,7 +86,8 @@ native 文件 CLI、native 标准案例、两项 hid-tools 独立对照、Chrome
 
 计数以实际输出为准，可选依赖缺失时对应步骤显示 SKIP，并提示安装/环境变量。
 可选步骤一旦实际执行失败，同样会使本次验收失败；必需步骤未执行也不能算通过。
-任一 FAIL 或必需 SKIP 导致退出码 1。完整模式缺 C 编译器时，四后端测试会失败，应安装编译器或明确改用快速模式。
+任一 FAIL 或必需 SKIP 导致退出码 1。完整模式在 macOS/Linux 缺 C 编译器时，四后端测试会失败，应安装编译器或明确改用快速模式；
+Windows 缺 MSVC 时按上文跳过 native 步骤。
 
 JSON 报告包含 Git 提交、工作区是否有改动、平台、工具链预期和实际版本、每步命令、状态、耗时、退出码和日志位置。
 详细日志保存在 `_build/acceptance-logs/`。依赖某次失败构建的步骤会跳过，避免读取旧的生成文件。
@@ -88,11 +95,13 @@ JSON 报告包含 Git 提交、工作区是否有改动、平台、工具链预�
 
 ## Mooncakes 安装复测
 
-2026 年 11 月 27 日，使用本页固定的 RC1 从 Mooncakes 独立安装 0.6.2，wasm、wasm-gc、js 和 native 的 API 测试各通过 14 项。
-含 `v0.6.2` 标签的克隆可以在仓库根目录运行以下命令。脚本从注册表安装发布包，运行四后端 API 测试，并和发布标签比对源码、README 与许可声明。
+0.6.3 由本页固定的 RC1 从当前源码发布，安装复测结果记录在 [0.6.3 发布记录](release-0.6.3.md)。
+2026 年 11 月 27 日，0.6.2 也已用 RC1 从 Mooncakes 独立安装，wasm、wasm-gc、js 和 native 的 API 测试各通过 14 项。
+含 `v0.6.3` 标签的克隆可以在仓库根目录运行以下命令。脚本从注册表安装发布包，运行四后端 API 测试，并和发布标签比对源码、README 与许可声明。
+四后端包括 native，Windows 上需要 MSVC。
 
 ```sh
-node scripts/verify-registry.mjs --ref v0.6.2
+node scripts/verify-registry.mjs
 ```
 
 ## 四场景演示
@@ -125,7 +134,7 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 
 - [在线检查器](https://we1chan.github.io/moonhid/)：键盘 → Output → 初始化 → Caps Lock 写 1，报告 `00 → 02`；Num Lock 写 1，变为 `03`。
 - 将原始报告改为 `e0`，Caps Lock 写 1 得到 `e2`；写 2 显示 `value_range`，原报告保持不变。导出 HEX 包含完整报告字节。
-- [GitHub Release](https://github.com/We1chan/moonhid/releases/tag/v0.6.2) 提供对应离线包；也可执行
+- [GitHub Release](https://github.com/We1chan/moonhid/releases/tag/v0.6.3) 提供对应离线包；也可执行
   `node scripts/build-web.mjs`、`node scripts/package-inspector.mjs`，然后在生成目录运行 `node scripts/serve-offline.mjs`。
   离线包运行仅需 Node.js，Windows 可双击 `start-inspector.cmd`。
 
@@ -140,10 +149,10 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 | 2. 仓库公开，提交记录清晰 | 仓库创建于 2026-10-01，保留提交、Issue、PR、里程碑和发布历史 | [提交](https://github.com/We1chan/moonhid/commits/main/)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[里程碑](https://github.com/We1chan/moonhid/milestone/1) |
 | 3. 结构清晰，完成核心功能 | HEX → 条目 → 布局 → 解码/编码分阶段实现，每阶段返回结构化诊断 | [设计](design.md)、[功能范围](features.md)、[HID 兼容目标](hid-compatibility.md) |
 | 4. README 可复现 | README 说明目标、安装、API 示例和运行方式；本页给出安装与一键验收 | [README](../README.md)、[环境与安装](#环境与安装)、[一键验收](#一键验收) |
-| 5. 持续集成 | 四后端执行无警告检查、构建、测试，另含格式、公开接口、CLI、网页、hid-tools 对照和 Windows CRLF 验收 | [CI 配置](../.github/workflows/ci.yml)、[Windows 配置](../.github/workflows/windows.yml)、[运行记录](https://github.com/We1chan/moonhid/actions) |
+| 5. 持续集成 | 四后端执行无警告检查、构建、测试，另含格式、公开接口、CLI、网页、hid-tools 对照、Windows CRLF 快速验收和 MSVC 完整验收 | [CI 配置](../.github/workflows/ci.yml)、[Windows 配置](../.github/workflows/windows.yml)、[运行记录](https://github.com/We1chan/moonhid/actions) |
 | 6. 可运行示例 | 样例解码、四场景入口、文件 CLI 演示链和网页检查器 | [四场景演示](#四场景演示)、[文件 CLI 演示链](#文件-cli-演示链)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，另有 CLI、bridge、离线包、Chrome DOM 与 hid-tools 独立对照 | [完整报告案例](report-cases.md)、[模糊测试](fuzz-validation.md)、[脚本](../scripts/acceptance.mjs) |
-| 8. 发布到 mooncakes.io | 当前发布版 0.6.2 已用 RC1 独立安装并通过四后端 API 测试 | [Mooncakes 0.6.2](https://mooncakes.io/docs/We1chan/moonhid@0.6.2)、[安装复测](#mooncakes-安装复测) |
+| 8. 发布到 mooncakes.io | 当前发布版 0.6.3 用 RC1 从当前源码发布，在仓库外独立安装并运行四后端 API 测试 | [Mooncakes 0.6.3](https://mooncakes.io/docs/We1chan/moonhid@0.6.3)、[安装复测](#mooncakes-安装复测) |
 | 9. OSI 许可证 | Apache-2.0，公开协议独立实现；TinyUSB 0.21.0 派生的 `consumer` / `vendor` 模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源；`check-notices.mjs` 在 CI 中检查声明完整 | [LICENSE](../LICENSE)、[NOTICE](../NOTICE)、[第三方材料声明](../THIRD_PARTY_NOTICES.md)、[真实来源](real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](ai-collaboration.md)。

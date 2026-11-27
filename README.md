@@ -115,15 +115,16 @@ MoonHID 在一个库中同时提供解析库的报告访问和设备端库的描
 在现有 MoonBit 模块目录中执行：
 
 ```sh
-moon add We1chan/moonhid@0.6.2
+moon add We1chan/moonhid@0.6.3
 ```
 
-0.6.2 补齐 TinyUSB 派生模板和测试数据的版本、来源、版权与 MIT 许可全文，并把声明随发布包分发；库接口与 0.6.0 相同。
+0.6.3 用 MoonBit 1.0.0-rc1 构建和发布，源码改用前置 `#derive(...)`；库接口与 0.6.0 相同。
+0.6.2 补齐 TinyUSB 派生模板和测试数据的版本、来源、版权与 MIT 许可全文，并把声明随发布包分发。
 0.6.0 新增结构化声明 v1、批量报告重放、网页字段编辑和 transport 帧转换，保留已有编解码与 Usage 接口。
 展示 JSON schema 保持 v2；声明使用独立的 v1 格式。
-发布入口与安装验收见 [0.6.2 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.2.md)。
+发布入口与安装验收见 [0.6.3 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.3.md)。
 从 0.4.0 升级时，手工构造 `DecodedReport` 的代码需增加 `buffered_values: []`。
-历史版本记录保留在 [0.6.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.1.md)、[0.6.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.0.md)、[0.5.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)、[0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
+历史版本记录保留在 [0.6.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.2.md)、[0.6.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.1.md)、[0.6.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.6.0.md)、[0.5.2](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.2.md)、[0.5.1](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.1.md)、[0.5.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.5.0.md)、[0.4.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.4.0.md)、[0.3.0](https://github.com/We1chan/moonhid/blob/main/docs/release-0.3.0.md) 与 [0.2.0 发布说明](https://github.com/We1chan/moonhid/blob/main/docs/release-0.2.0.md)。
 
 在使用库的包的 `moon.pkg` 中声明导入，别名与下方 API 示例一致：
 
@@ -631,6 +632,8 @@ MoonBit 按目录组织包，因此 `*_test.mbt` 与被测源码保留在同一�
 当前源码要求 `moonc` 1.0.0-rc1 或更高版本。[`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json)
 固定 `moon 0.1.20261126` 和 `moonc v1.0.0-rc1+3c0520448`。
 四后端 CI 使用固定版，JS 兼容任务使用官方最新版，日志均记录完整版本。
+Windows 上 rc1 的 native 后端只支持 MSVC（Visual Studio Build Tools 的 C++ 工具与 Windows SDK），MinGW/MSYS2 gcc 会编译失败；
+未检测到 MSVC 时验收脚本跳过 native 步骤并说明原因，[Windows 工作流](https://github.com/We1chan/moonhid/actions/workflows/windows.yml) 用 MSVC 运行完整验收。
 
 ```sh
 moon check --target all --deny-warn
@@ -691,10 +694,10 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 | 2. 仓库公开，提交记录清晰 | 仓库创建于 2026-10-01，新增工作通过 Issue/PR 跟踪并经 CI 后合并。[提交历史](https://github.com/We1chan/moonhid/commits/main/)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[Issues 与里程碑](https://github.com/We1chan/moonhid/milestone/1)、[Release](https://github.com/We1chan/moonhid/releases) |
 | 3. 结构清晰，完成核心功能 | 核心按 HEX → 条目 → 布局 → 解码/编码分阶段实现，每阶段返回结构化诊断。[项目目录](#项目目录)、[已实现功能](#已实现功能)、[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md) |
 | 4. README 可复现 | 本页说明目标、安装、API 示例、快速运行和命令行工具；一键验收脚本复现全部检查。[安装](#安装)、[API 示例](#api-示例)、[快速运行](#快速运行)、[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md) |
-| 5. 持续集成 | [CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) 在 wasm、wasm-gc、js、native 上执行 `moon check --deny-warn`、`moon build`、`moon test`，并检查格式、公开接口、CLI、网页和 hid-tools 对照；[Windows 工作流](https://github.com/We1chan/moonhid/actions/workflows/windows.yml) 以 CRLF 检出运行快速验收 |
+| 5. 持续集成 | [CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) 在 wasm、wasm-gc、js、native 上执行 `moon check --deny-warn`、`moon build`、`moon test`，并检查格式、公开接口、CLI、网页和 hid-tools 对照；[Windows 工作流](https://github.com/We1chan/moonhid/actions/workflows/windows.yml) 以 CRLF 检出运行快速验收和 MSVC 完整验收 |
 | 6. 可运行示例 | `moon run src/cmd/main` 解码鼠标、键盘、手柄样例，`moon run src/cmd/scenarios` 运行四场景；本页 `mbt check` 代码块作为测试执行。[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，覆盖 HEX、条目、布局、解码、编码、Usage 访问、lint、构建器、声明、资源上限、模糊输入和七份真实描述符；Node 脚本测试 CLI、浏览器桥接与离线包，hid-tools 独立对照布局和编解码。[完整报告案例](https://github.com/We1chan/moonhid/blob/main/docs/report-cases.md)、[模糊测试](https://github.com/We1chan/moonhid/blob/main/docs/fuzz-validation.md) |
-| 8. 发布到 mooncakes.io | [Mooncakes 0.6.2](https://mooncakes.io/docs/We1chan/moonhid@0.6.2) 已用 RC1 独立安装，四后端 API 测试各通过 14 项。[复现步骤](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#mooncakes-安装复测) |
+| 8. 发布到 mooncakes.io | [Mooncakes 0.6.3](https://mooncakes.io/docs/We1chan/moonhid@0.6.3) 用 RC1 从当前源码发布，在仓库外独立安装后运行四后端 API 测试。[复现步骤](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#mooncakes-安装复测) |
 | 9. OSI 许可证 | Apache-2.0；核心按公开协议独立实现。TinyUSB 0.21.0 派生的两个模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[NOTICE](https://github.com/We1chan/moonhid/blob/main/NOTICE)、[第三方材料声明](https://github.com/We1chan/moonhid/blob/main/THIRD_PARTY_NOTICES.md)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)。
