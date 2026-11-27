@@ -41,3 +41,26 @@ node scripts/check-public-docs.mjs --urls docs/acceptance-urls.txt
 正式交付入口为 [GitHub v0.6.3](https://github.com/We1chan/moonhid/releases/tag/v0.6.3)、
 [Mooncakes 0.6.3](https://mooncakes.io/docs/We1chan/moonhid@0.6.3) 和 [在线检查器](https://we1chan.github.io/moonhid/)。
 Release 附件提供预构建离线检查器、`SHA256SUMS.txt` 和发布验收机器记录。
+
+## 2026-11-27 实际交付验收
+
+发布提交为 `a5a3252778434ed88c53c44d078c10b1ae098368`，Mooncakes 返回 `200 OK`，
+[GitHub v0.6.3](https://github.com/We1chan/moonhid/releases/tag/v0.6.3) 已公开。
+Mooncakes 包用 `moonc v1.0.0-rc1+3c0520448` 从 `core.autocrlf=false` 的标签克隆发布，`moon publish` 在打包前后各运行一次 `moon check`。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 发布前 PR 与发布提交 CI | [PR #66](https://github.com/We1chan/moonhid/pull/66) 七项检查通过；[发布提交 CI](https://github.com/We1chan/moonhid/actions/runs/46000806939) 的 wasm、wasm-gc、js、native 和最新工具链任务各 123/123 |
+| Windows MSVC 完整验收 | [Windows 验收](https://github.com/We1chan/moonhid/actions/runs/46000806938)：GitHub Windows 环境，CRLF 检出，`dirty: false`；PASS 24 / FAIL 0 / SKIP 0，native 测试、native CLI、native 标准案例和 hid-tools 编码对照均实际执行 |
+| 默认 Windows Git 全新克隆完整验收 | Windows x64，`core.autocrlf=true`，未安装 MSVC，`dirty: false`；PASS 21 / FAIL 0 / SKIP 4，wasm、wasm-gc、js 各 123/123，四个 SKIP 均为 native 相关步骤 |
+| 注册表独立安装 | Linux x64、rc1，仓库外新项目实际下载 0.6.3，无本地覆盖；四后端各 14/14；73 份源码、配置和许可文件与标签原始字节一致，见 [机器记录](registry-0.6.3-validation.json) |
+| Mooncakes 页面 | 0.6.3 文档构建成功，README 显示 `moonc` 1.0.0-rc1 门槛，不再出现 0.10.16 |
+| 公开交付链接 | GitHub/Mooncakes 0.6.3、全部 9 个 Release 正文与额外入口，共 346 个来源、139 个不同 URL，0 失败、无缺失的注册表链接；本机与 [手动触发的公开文档 CI](https://github.com/We1chan/moonhid/actions/runs/46006478264) 结果相同。发布时自动触发的运行因 github.com 返回 HTTP 503 而失败 |
+| 离线包 | 从标签构建，19 个文件，包含 `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`；从 GitHub 重新下载后 SHA-256 与 `SHA256SUMS.txt` 一致，离线服务检查通过 |
+| 线上检查器 | [Pages 部署](https://github.com/We1chan/moonhid/actions/runs/46001043129) 成功；线上 index/app/core 为 HTTP 200，与离线包对应文件逐字节相同 |
+
+离线 ZIP SHA-256：
+
+```text
+a20d10aefafb95fb28b9152089e764d84fd2a677b2fc3bfb467c4ebd73975b70
+```
