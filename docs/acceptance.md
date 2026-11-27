@@ -95,7 +95,8 @@ JSON 报告包含 Git 提交、工作区是否有改动、平台、工具链预�
 
 ## Mooncakes 安装复测
 
-0.6.3 由本页固定的 RC1 从当前源码发布，安装复测结果记录在 [0.6.3 发布记录](release-0.6.3.md)。
+2026 年 11 月 27 日，0.6.3 由本页固定的 RC1 从发布标签发布。仓库外全新项目从注册表安装后，wasm、wasm-gc、js 和 native 的 API 测试各通过 14 项，
+73 份源码、配置和许可文件与标签原始字节一致，见 [机器记录](registry-0.6.3-validation.json) 和 [0.6.3 实际交付](release-0.6.3.md#2026-11-27-实际交付验收)。
 2026 年 11 月 27 日，0.6.2 也已用 RC1 从 Mooncakes 独立安装，wasm、wasm-gc、js 和 native 的 API 测试各通过 14 项。
 含 `v0.6.3` 标签的克隆可以在仓库根目录运行以下命令。脚本从注册表安装发布包，运行四后端 API 测试，并和发布标签比对源码、README 与许可声明。
 四后端包括 native，Windows 上需要 MSVC。
@@ -152,7 +153,7 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 | 5. 持续集成 | 四后端执行无警告检查、构建、测试，另含格式、公开接口、CLI、网页、hid-tools 对照、Windows CRLF 快速验收和 MSVC 完整验收 | [CI 配置](../.github/workflows/ci.yml)、[Windows 配置](../.github/workflows/windows.yml)、[运行记录](https://github.com/We1chan/moonhid/actions) |
 | 6. 可运行示例 | 样例解码、四场景入口、文件 CLI 演示链和网页检查器 | [四场景演示](#四场景演示)、[文件 CLI 演示链](#文件-cli-演示链)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，另有 CLI、bridge、离线包、Chrome DOM 与 hid-tools 独立对照 | [完整报告案例](report-cases.md)、[模糊测试](fuzz-validation.md)、[脚本](../scripts/acceptance.mjs) |
-| 8. 发布到 mooncakes.io | 当前发布版 0.6.3 用 RC1 从当前源码发布，在仓库外独立安装并运行四后端 API 测试 | [Mooncakes 0.6.3](https://mooncakes.io/docs/We1chan/moonhid@0.6.3)、[安装复测](#mooncakes-安装复测) |
+| 8. 发布到 mooncakes.io | 当前发布版 0.6.3 用 RC1 发布，在仓库外独立安装后四后端 API 测试各 14/14 | [Mooncakes 0.6.3](https://mooncakes.io/docs/We1chan/moonhid@0.6.3)、[安装复测](#mooncakes-安装复测) |
 | 9. OSI 许可证 | Apache-2.0，公开协议独立实现；TinyUSB 0.21.0 派生的 `consumer` / `vendor` 模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源；`check-notices.mjs` 在 CI 中检查声明完整 | [LICENSE](../LICENSE)、[NOTICE](../NOTICE)、[第三方材料声明](../THIRD_PARTY_NOTICES.md)、[真实来源](real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](ai-collaboration.md)。
@@ -214,3 +215,9 @@ Xbox 42 帧独立期望、行号、坏帧后继续、长度与 ID、期望不匹
 在默认 Windows Git（CRLF 检出）的全新克隆上完整验收 PASS 23 / FAIL 0 / SKIP 0，四后端各 123/123；
 注册表全新安装四后端各 14/14，71 份文件与标签原始字节一致；公开链接 324 处 0 失败。
 详见 [0.6.1 实际交付](release-0.6.1.md#2026-10-24-实际交付验收)。
+
+2026-11-27，0.6.3 以 MoonBit 1.0.0-rc1 发布（提交 `a5a3252778434ed88c53c44d078c10b1ae098368`）。
+[Windows 工作流](https://github.com/We1chan/moonhid/actions/runs/46000806938) 的 MSVC 完整验收 PASS 24 / FAIL 0 / SKIP 0；
+未安装 MSVC 的默认 Windows Git 全新克隆完整验收 PASS 21 / FAIL 0 / SKIP 4，四个 SKIP 均为 native 相关步骤；
+注册表全新安装四后端各 14/14，73 份文件与标签原始字节一致；[公开链接检查](https://github.com/We1chan/moonhid/actions/runs/46006478264) 346 处 0 失败。
+详见 [0.6.3 实际交付](release-0.6.3.md#2026-11-27-实际交付验收)。
