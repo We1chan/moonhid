@@ -72,10 +72,23 @@ export async function runSteps(steps, { cwd = root, env = process.env, logDirect
 
 export const acceptanceFailed = results => results.some(result => result.status === 'FAIL' || (result.required && result.status !== 'PASS'));
 
+// MoonBit 1.0.0-rc1 builds its Windows native runtime only with MSVC. moon uses an explicit
+// MOON_CC, cl.exe on PATH, or an installation found by vswhere; otherwise it falls back to a
+// system cc such as MinGW gcc, which the runtime rejects with `#error`. Mirror that discovery.
+export async function windowsNativeSkipReason({ platform = process.platform, arch = process.arch, env = process.env, find = executable, query = probe } = {}) {
+  if (platform !== 'win32' || env.MOON_CC) return null;
+  if (await find(['cl'], env)) return null;
+  const vswhere = join(env['ProgramFiles(x86)'] ?? 'C:/Program Files (x86)', 'Microsoft Visual Studio/Installer/vswhere.exe');
+  const component = `Microsoft.VisualStudio.Component.VC.Tools.${arch === 'arm64' ? 'ARM64' : 'x86.x64'}`;
+  if (query(vswhere, ['-latest', '-products', '*', '-requires', component, '-property', 'installationPath'], env)) return null;
+  return 'Windows 上 MoonBit 1.0.0-rc1 的 native 后端只支持 MSVC（Build Tools 的 C++ 工具与 Windows SDK），未检测到 MSVC；MinGW/MSYS2 gcc 不受支持。'
+    + '已跳过 native 测试、native CLI 和编码对照；安装 MSVC 或设置 MOON_CC 后可重跑完整验收。';
+}
+
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
-    console.log('用法：node scripts/acceptance.mjs [--quick]\n默认检查四后端；--quick 仅检查 wasm/js，并跳过 native CLI 与需要 native 的 hid-tools 编码对照。\n可选环境变量：MOON_BIN、MOON_HOME、PYTHON、CHROME_BIN。报告：_build/acceptance-report.json');
+    console.log('用法：node scripts/acceptance.mjs [--quick]\n默认检查四后端；--quick 仅检查 wasm/js，并跳过 native CLI 与需要 native 的 hid-tools 编码对照。\nWindows 未检测到 MSVC 时，完整模式测试 wasm/wasm-gc/js 并跳过 native 步骤。\n可选环境变量：MOON_BIN、MOON_HOME、MOON_CC、PYTHON、CHROME_BIN。报告：_build/acceptance-report.json');
     return;
   }
   if (args.some(arg => arg !== '--quick')) throw new Error('仅支持 --quick 或 --help');
@@ -101,7 +114,9 @@ async function main() {
   const expected = JSON.parse(await readFile(join(root, 'toolchain.json'), 'utf8'));
   const nodeStep = (id, name, file, args = [], extra = {}) => ({ id, name, command: process.execPath, args: [`scripts/${file}`, ...args], ...extra });
   const moonStep = (id, name, args, extra = {}) => ({ id, name, command: moon ?? 'moon', args, needs: ['toolchain'], ...extra });
-  const optionalNative = quick ? '--quick 仅检查 wasm/js；完整运行请去掉 --quick。' : null;
+  const nativeSkip = quick ? null : await windowsNativeSkipReason({ env });
+  const optionalNative = quick ? '--quick 仅检查 wasm/js；完整运行请去掉 --quick。'
+    : nativeSkip ? 'Windows 未检测到 MSVC，rc1 的 native 不支持 MinGW gcc；原因见本次输出开头或报告 native_skip_reason。' : null;
   const optionalHid = hidTools === expected.hid_tools ? null : `需要 Python 与 hid-tools ${expected.hid_tools}；设置 PYTHON 后执行 python -m pip install hid-tools==${expected.hid_tools}。`;
   const checks = quick ? [
     moonStep('check-wasm', '无警告检查 wasm', ['check', '--target', 'wasm', '--deny-warn']),
@@ -110,6 +125,9 @@ async function main() {
   const tests = quick ? [
     moonStep('test-wasm', '测试 wasm', ['test', '--target', 'wasm']),
     moonStep('test-js', '测试 js', ['test', '--target', 'js']),
+  ] : nativeSkip ? [
+    moonStep('test-portable', '三后端测试 wasm/wasm-gc/js', ['test', '--target', 'wasm,wasm-gc,js']),
+    { id: 'test-native', name: '测试 native', required: false, skipReason: optionalNative },
   ] : [moonStep('test-all', '四后端测试', ['test', '--target', 'all'])];
   const steps = [
     { id: 'node', name: 'Node 版本', command: process.execPath, args: ['-e', 'if(Number(process.versions.node.split(".")[0])<22)process.exit(1);console.log(process.version)'] },
@@ -137,7 +155,8 @@ async function main() {
     { id: 'hid-codec', name: 'hid-tools 编码对照', command: python, args: ['scripts/compare-codec-hid-tools.py'], required: false, skipReason: optionalNative ?? optionalHid, needs: quick ? [] : ['test-all'] },
     nodeStep('inspector', 'Chrome 界面交互', 'test-inspector.mjs', [], { required: false, needs: ['web-build'], skipReason: !chrome || !pythonVersion ? '需要 Chrome 和 Python 3；设置 CHROME_BIN 与 PYTHON 后重试。' : null }),
   ];
-  console.log(`MoonHID ${quick ? '快速验收（wasm/js）' : '完整验收（四后端）'}，逐步日志保存在 _build/acceptance-logs。`);
+  console.log(`MoonHID ${quick ? '快速验收（wasm/js）' : nativeSkip ? '完整验收（未检测到 MSVC，native 跳过）' : '完整验收（四后端）'}，逐步日志保存在 _build/acceptance-logs。`);
+  if (nativeSkip) console.log('     ' + nativeSkip);
   const results = await runSteps(steps, { cwd: root, env, logDirectory: join(root, '_build/acceptance-logs'), progress: result => {
     console.log(`${result.status.padEnd(4)} ${result.name} (${(result.duration_ms / 1000).toFixed(2)}s)`);
     if (result.reason) console.log('     ' + result.reason);
@@ -146,7 +165,7 @@ async function main() {
   const report = {
     schema_version: 1, generated_at: new Date().toISOString(), mode: quick ? 'quick' : 'full',
     commit: probe('git', ['rev-parse', 'HEAD'], env), dirty: Boolean(probe('git', ['status', '--porcelain'], env)),
-    platform: { os: process.platform, arch: process.arch, release: release() },
+    platform: { os: process.platform, arch: process.arch, release: release() }, native_skip_reason: quick ? optionalNative : nativeSkip,
     toolchain: { expected, actual: { node: process.version, moon: results.find(result => result.id === 'toolchain')?.output_tail ?? null, python: pythonVersion, hid_tools: hidTools, chrome } },
     summary: Object.fromEntries(['PASS', 'FAIL', 'SKIP'].map(status => [status, results.filter(result => result.status === status).length])),
     success: !acceptanceFailed(results), steps: results,

@@ -13,7 +13,7 @@ name = "We1chan/moonhid"
 
 source = "src"
 
-version = "0.6.2"
+version = "0.6.3"
 
 readme = "README.md"
 

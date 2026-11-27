@@ -31,3 +31,32 @@ jobs:
           path: |
             _build/acceptance-report.json
             _build/acceptance-logs/
+
+  full-acceptance:
+    name: acceptance full (windows, MSVC)
+    runs-on: windows-latest
+    steps:
+      - run: git config --global core.autocrlf true
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install hid-tools==0.12
+      - uses: ./.github/actions/setup-moon
+      - run: moon update
+      # MoonBit 1.0.0-rc1 builds the Windows native runtime only with MSVC. moon finds the
+      # runner's Visual Studio through vswhere, so every step, native included, must pass here.
+      - run: node scripts/acceptance.mjs
+      - shell: bash
+        run: |
+          node -e "const r = require('./_build/acceptance-report.json'); const other = r.steps.filter(s => s.status !== 'PASS'); if (other.length) { console.error(other.map(s => s.name + ': ' + (s.reason ?? s.status)).join('\n')); process.exit(1); }"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-full-acceptance
+          path: |
+            _build/acceptance-report.json
+            _build/acceptance-logs/
