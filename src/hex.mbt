@@ -1,10 +1,11 @@
 ///|
 /// Offsets are UTF-16 indices for hex text and byte offsets for binary input.
+#derive(Debug, Eq)
 pub(all) struct Diagnostic {
   offset : Int32
   code : String
   message : String
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Diagnostic with @debug.Debug::{to_repr}

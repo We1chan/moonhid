@@ -1,12 +1,13 @@
 ///|
 /// A raw short or long HID item. type_code: 0 Main, 1 Global, 2 Local, 3 reserved.
+#derive(Debug, Eq)
 pub(all) struct Item {
   offset : Int32
   type_code : Int32
   tag : Int32
   data : Bytes
   is_long : Bool
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Item with @debug.Debug::{to_repr}

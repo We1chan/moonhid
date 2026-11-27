@@ -1,7 +1,7 @@
 # 验收说明与复现步骤
 
 MoonHID 是以 MoonBit 为核心的通用 HID 描述符生成、报告编解码和字段访问工具库。
-本页对应版本为 **0.6.2**，在独立模块中安装：
+从 GitHub 的 `main` 分支复现当前源码验收。Mooncakes 发布版 **0.6.2** 可用同一套 RC1 工具链在独立模块中安装。
 
 ```sh
 moon add We1chan/moonhid@0.6.2
@@ -15,8 +15,7 @@ moon add We1chan/moonhid@0.6.2
 ## 环境与安装
 
 基础环境为 Git、Node.js 22+ 和 [`toolchain.json`](../toolchain.json) 中固定的 MoonBit 工具链：
-`moonc 0.10.18+6c83a7f62`、`moon 0.1.20261028`。项目要求 `moonc` 不低于 0.10.16；
-本机另用 `moonc 0.10.16+b1a0e846e` 完成四后端无警告检查与测试。
+`moonc 1.0.0-rc1+3c0520448` 和 `moon 0.1.20261126`。十一月赛要求 `moonc` 不低于 `1.0.0-rc1`。
 完整模式测试 native，需要可用 C 编译器；只复核 wasm/js 可使用 `--quick`，不需要 native 工具链。
 Python 3.13（本机 3.14 也已验证）与 hid-tools 0.12、Chrome 用于额外独立对照和 DOM 检查，缺失时显示 SKIP。
 
@@ -25,7 +24,7 @@ Python 3.13（本机 3.14 也已验证）与 hid-tools 0.12、Chrome 用于额�
 
 ```sh
 curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moonbit.sh
-bash /tmp/install-moonbit.sh '0.10.18+6c83a7f62'
+bash /tmp/install-moonbit.sh '1.0.0-rc1+3c0520448'
 export PATH="$HOME/.moon/bin:$PATH"
 moon version --all
 ```
@@ -33,7 +32,7 @@ moon version --all
 Windows PowerShell：
 
 ```powershell
-$env:MOONBIT_INSTALL_VERSION = '0.10.18+6c83a7f62'
+$env:MOONBIT_INSTALL_VERSION = '1.0.0-rc1+3c0520448'
 irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
 $env:PATH = "$HOME\.moon\bin;$env:PATH"
 moon version --all
@@ -87,6 +86,15 @@ JSON 报告包含 Git 提交、工作区是否有改动、平台、工具链预�
 详细日志保存在 `_build/acceptance-logs/`。依赖某次失败构建的步骤会跳过，避免读取旧的生成文件。
 工作区有修改时报告保留 `dirty: true`；该报告证明当次源码验证，不等同于已发布包的独立安装验收。
 
+## Mooncakes 安装复测
+
+2026 年 11 月 27 日，使用本页固定的 RC1 从 Mooncakes 独立安装 0.6.2，wasm、wasm-gc、js 和 native 的 API 测试各通过 14 项。
+含 `v0.6.2` 标签的克隆可以在仓库根目录运行以下命令。脚本从注册表安装发布包，运行四后端 API 测试，并和发布标签比对源码、README 与许可声明。
+
+```sh
+node scripts/verify-registry.mjs --ref v0.6.2
+```
+
 ## 四场景演示
 
 ```sh
@@ -128,14 +136,14 @@ encode 输出 `02 00 04 06 00 00 00 00`；decode 返回 JSON v2，Left Shift = 1
 
 | 要求 | 本项目的做法 | 可核验证据 |
 | --- | --- | --- |
-| 1. MoonBit 为主，moonc 不低于 0.10.16 | 核心协议、编解码、构建器、Usage 访问、CLI 和 bridge 使用 MoonBit；JS 负责界面、传输适配与测试编排；CI 固定 `moonc 0.10.18` 并另测最新版 | [设计](design.md)、[源码统计](#源码统计)、[`toolchain.json`](../toolchain.json) |
+| 1. MoonBit 为主，moonc 不低于 1.0.0-rc1 | 核心协议、编解码、构建器、Usage 访问、CLI 和 bridge 使用 MoonBit；JS 负责界面、传输适配与测试编排；CI 固定 `moonc 1.0.0-rc1+3c0520448` 并另测最新版 | [设计](design.md)、[源码统计](#源码统计)、[`toolchain.json`](../toolchain.json) |
 | 2. 仓库公开，提交记录清晰 | 仓库创建于 2026-10-01，保留提交、Issue、PR、里程碑和发布历史 | [提交](https://github.com/We1chan/moonhid/commits/main/)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[里程碑](https://github.com/We1chan/moonhid/milestone/1) |
 | 3. 结构清晰，完成核心功能 | HEX → 条目 → 布局 → 解码/编码分阶段实现，每阶段返回结构化诊断 | [设计](design.md)、[功能范围](features.md)、[HID 兼容目标](hid-compatibility.md) |
 | 4. README 可复现 | README 说明目标、安装、API 示例和运行方式；本页给出安装与一键验收 | [README](../README.md)、[环境与安装](#环境与安装)、[一键验收](#一键验收) |
 | 5. 持续集成 | 四后端执行无警告检查、构建、测试，另含格式、公开接口、CLI、网页、hid-tools 对照和 Windows CRLF 验收 | [CI 配置](../.github/workflows/ci.yml)、[Windows 配置](../.github/workflows/windows.yml)、[运行记录](https://github.com/We1chan/moonhid/actions) |
 | 6. 可运行示例 | 样例解码、四场景入口、文件 CLI 演示链和网页检查器 | [四场景演示](#四场景演示)、[文件 CLI 演示链](#文件-cli-演示链)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，另有 CLI、bridge、离线包、Chrome DOM 与 hid-tools 独立对照 | [完整报告案例](report-cases.md)、[模糊测试](fuzz-validation.md)、[脚本](../scripts/acceptance.mjs) |
-| 8. 发布到 mooncakes.io | 各版本发布后在仓库外全新项目从注册表安装并测试 | [Mooncakes](https://mooncakes.io/docs/We1chan/moonhid)、[0.6.2 发布与安装](release-0.6.2.md) |
+| 8. 发布到 mooncakes.io | 当前发布版 0.6.2 已用 RC1 独立安装并通过四后端 API 测试 | [Mooncakes 0.6.2](https://mooncakes.io/docs/We1chan/moonhid@0.6.2)、[安装复测](#mooncakes-安装复测) |
 | 9. OSI 许可证 | Apache-2.0，公开协议独立实现；TinyUSB 0.21.0 派生的 `consumer` / `vendor` 模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源；`check-notices.mjs` 在 CI 中检查声明完整 | [LICENSE](../LICENSE)、[NOTICE](../NOTICE)、[第三方材料声明](../THIRD_PARTY_NOTICES.md)、[真实来源](real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](ai-collaboration.md)。

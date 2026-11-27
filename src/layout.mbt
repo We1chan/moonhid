@@ -1,9 +1,10 @@
 ///|
+#derive(Debug, Eq)
 pub(all) enum ReportKind {
   Input
   Output
   Feature
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend ReportKind with @debug.Debug::{to_repr}
@@ -12,10 +13,11 @@ pub extend ReportKind with @debug.Debug::{to_repr}
 pub extend ReportKind with Eq::{equal, not_equal}
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct Usage {
   page : Int32
   id : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Usage with @debug.Debug::{to_repr}
@@ -25,11 +27,12 @@ pub extend Usage with Eq::{equal, not_equal}
 
 ///|
 /// Inclusive Usage IDs on one page; a single Usage has min=max.
+#derive(Debug, Eq)
 pub(all) struct UsageSpan {
   page : Int32
   min : Int32
   max : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend UsageSpan with @debug.Debug::{to_repr}
@@ -39,10 +42,11 @@ pub extend UsageSpan with Eq::{equal, not_equal}
 
 ///|
 /// Inclusive unsigned short-item indices for String or Designator metadata.
+#derive(Debug, Eq)
 pub(all) struct IndexSpan {
   min : Int64
   max : Int64
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend IndexSpan with @debug.Debug::{to_repr}
@@ -149,6 +153,7 @@ fn field_value_bits(field : Field) -> Int32 {
 
 ///|
 /// Collections are stored in descriptor order. Parent indices form a tree.
+#derive(Debug, Eq)
 pub(all) struct Collection {
   descriptor_offset : Int32
   end_offset : Int32
@@ -158,7 +163,7 @@ pub(all) struct Collection {
   designator_spans : Array[IndexSpan]
   alternate_usages : Array[Array[UsageSpan]]
   parent_index : Int32?
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Collection with @debug.Debug::{to_repr}
@@ -168,6 +173,7 @@ pub extend Collection with Eq::{equal, not_equal}
 
 ///|
 /// bit_offset excludes an optional Report ID prefix byte. Padding is retained.
+#derive(Debug, Eq)
 pub(all) struct Field {
   descriptor_offset : Int32
   kind : ReportKind
@@ -187,7 +193,7 @@ pub(all) struct Field {
   string_spans : Array[IndexSpan]
   designator_spans : Array[IndexSpan]
   alternate_usages : Array[Array[UsageSpan]]
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Field with @debug.Debug::{to_repr}
@@ -196,11 +202,12 @@ pub extend Field with @debug.Debug::{to_repr}
 pub extend Field with Eq::{equal, not_equal}
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct Layout {
   fields : Array[Field]
   collections : Array[Collection]
   has_report_ids : Bool
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Layout with @debug.Debug::{to_repr}

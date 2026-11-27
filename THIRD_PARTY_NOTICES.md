@@ -105,7 +105,7 @@ Apple、Xbox 等名称是各自权利人的商标，这里只用来标明数据�
 | 依赖 | 版本 | 许可 | 用途 |
 | --- | --- | --- | --- |
 | [moonbitlang/x](https://github.com/moonbitlang/x) | 0.5.5 | Apache-2.0 | `moon.mod` 声明的依赖，构建时由 Mooncakes 下载 |
-| MoonBit 工具链 | `toolchain.json` 固定 0.10.18+6c83a7f62 | 以官方发布条款为准 | 编译、测试与格式检查 |
+| MoonBit 工具链 | `toolchain.json` 固定 1.0.0-rc1+3c0520448 | 以官方发布条款为准 | 编译、测试与格式检查 |
 | [hid-tools](https://gitlab.freedesktop.org/libevdev/hid-tools) | 0.12 | GPL-2.0（以上游 `COPYING` 为准） | `scripts/compare-hid-tools.py` 与 `scripts/compare-codec-hid-tools.py` 作为独立进程调用它做对照；仓库不复制其代码，`docs/hid-tools-comparison.json` 是对照运行记录 |
 | [HIDAPI](https://github.com/libusb/hidapi) | 运行环境中安装的版本 | 上游 `LICENSE`：BSD、GPLv3 与原始 HIDAPI 许可三选一 | `scripts/probe-hidapi.mjs` 在临时目录中链接系统库，只检查链接与版本，不打开设备 |
 | Node.js 22+、Python 3、Google Chrome | 运行环境中安装的版本 | 各自的许可 | 运行脚本、对照与浏览器测试 |

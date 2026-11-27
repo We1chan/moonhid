@@ -2,13 +2,14 @@
 /// One report of a layout, like the report lengths of HidP_GetCaps.
 /// byte_length includes the Report ID prefix when the layout uses IDs, and
 /// data_count is the number of values encode_report expects.
+#derive(Debug, Eq)
 pub(all) struct ReportInfo {
   kind : ReportKind
   report_id : Int32
   payload_bits : Int32
   byte_length : Int32
   data_count : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend ReportInfo with @debug.Debug::{to_repr}

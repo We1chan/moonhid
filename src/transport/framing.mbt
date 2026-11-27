@@ -1,9 +1,10 @@
 ///|
 /// WebHID carries Report ID separately from the payload.
+#derive(Eq, @debug.Debug)
 pub(all) struct WebFrame {
   report_id : Int32
   payload : Bytes
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend WebFrame with Eq::{equal, not_equal}

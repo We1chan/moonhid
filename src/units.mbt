@@ -10,6 +10,7 @@ fn signed_nibble(value : Int32) -> Int32 {
 
 ///|
 /// Unit dimensions are signed nibble exponents, not converted physical values.
+#derive(Debug, Eq)
 pub(all) struct UnitDimensions {
   raw : Int64
   system : Int32
@@ -20,7 +21,7 @@ pub(all) struct UnitDimensions {
   current : Int32
   luminous_intensity : Int32
   reserved : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend UnitDimensions with @debug.Debug::{to_repr}

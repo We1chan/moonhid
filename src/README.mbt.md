@@ -2,7 +2,8 @@
 
 [![CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml/badge.svg)](https://github.com/We1chan/moonhid/actions/workflows/ci.yml)
 
-**验收入口**：在仓库根目录运行 `node scripts/acceptance.mjs`（快速模式加 `--quick`）。
+**验收入口**使用 [`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json) 固定的 MoonBit 1.0 RC1。
+在仓库根目录运行 `moon update`，再运行 `node scripts/acceptance.mjs`（快速模式加 `--quick`）。
 复现步骤、完整输出与证据：[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md)。
 交互演示：[在线检查器](https://we1chan.github.io/moonhid/)。
 
@@ -625,10 +626,9 @@ MoonBit 按目录组织包，因此 `*_test.mbt` 与被测源码保留在同一�
 
 ## 开发
 
-需要 `moonc` 0.10.16 或更高版本。[`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json)
-固定 `moon 0.1.20261028`、`moonc v0.10.18+6c83a7f62`；本机还用 `moonc v0.10.16+b1a0e846e` 完成四后端无警告检查与测试。
-稳定 CI 固定 `toolchain.json` 中的官方工具链，验证四种后端，
-另设最新工具链兼容任务；日志记录完整版本：
+当前源码要求 `moonc` 1.0.0-rc1 或更高版本。[`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json)
+固定 `moon 0.1.20261126` 和 `moonc v1.0.0-rc1+3c0520448`。
+四后端 CI 使用固定版，JS 兼容任务使用官方最新版，日志均记录完整版本。
 
 ```sh
 moon check --target all --deny-warn
@@ -645,10 +645,6 @@ moon info
 moon fmt --check
 node scripts/sync-readme.mjs --check
 ```
-
-`moonc` 0.10.20 起把类型后置的 `derive(...)` 标为弃用，要求改用前置的 `#derive(...)`；
-但 0.10.16 与 0.10.18 不认识 `#derive`，会报未知属性。源码保留最低版本可编译的后置写法，
-最新工具链任务只豁免这一条 `deprecated_syntax` 警告（`--warn-list -deprecated_syntax`），其余警告仍按错误处理。
 
 修改 `src/README.mbt.md` 后运行 `node scripts/sync-readme.mjs`，同步仓库首页并改写相对链接。
 `moon.mod` 以生成的根 `README.md` 作为发布文档；Mooncakes 同时展示模块和包内可执行 README，
@@ -685,18 +681,18 @@ hid-tools 对照还独立放置按键、按钮与轴值，检查 Usage 级编码
 
 ## 比赛验收对照
 
-下表按结项验收指南的九项要求列出可核对证据，是否满足由赛事评审判定。
+下表列出十一月赛九项验收要求对应的可核对证据。
 
 | 要求 | 本项目的做法与证据 |
 | --- | --- |
-| 1. MoonBit 为主，moonc 不低于 0.10.16 | 核心解析、编解码、lint、构建器、CLI、场景逻辑和浏览器桥接使用 MoonBit；JS 处理界面、设备适配和验收编排。CI 按 [`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json) 安装 `moonc 0.10.18`，另测最新版。[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md)、[源码行数统计命令](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#源码统计) |
+| 1. MoonBit 为主，moonc 不低于 1.0.0-rc1 | 核心解析、编解码、lint、构建器、CLI、场景逻辑和浏览器桥接使用 MoonBit；JS 处理界面、设备适配和验收编排。CI 按 [`toolchain.json`](https://github.com/We1chan/moonhid/blob/main/toolchain.json) 安装 `moonc 1.0.0-rc1+3c0520448`，另测最新版。[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md)、[源码行数统计命令](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#源码统计) |
 | 2. 仓库公开，提交记录清晰 | 仓库创建于 2026-10-01，新增工作通过 Issue/PR 跟踪并经 CI 后合并。[提交历史](https://github.com/We1chan/moonhid/commits/main/)、[PR](https://github.com/We1chan/moonhid/pulls?q=is%3Apr)、[Issues 与里程碑](https://github.com/We1chan/moonhid/milestone/1)、[Release](https://github.com/We1chan/moonhid/releases) |
 | 3. 结构清晰，完成核心功能 | 核心按 HEX → 条目 → 布局 → 解码/编码分阶段实现，每阶段返回结构化诊断。[项目目录](#项目目录)、[已实现功能](#已实现功能)、[设计说明](https://github.com/We1chan/moonhid/blob/main/docs/design.md) |
 | 4. README 可复现 | 本页说明目标、安装、API 示例、快速运行和命令行工具；一键验收脚本复现全部检查。[安装](#安装)、[API 示例](#api-示例)、[快速运行](#快速运行)、[验收说明](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md) |
 | 5. 持续集成 | [CI](https://github.com/We1chan/moonhid/actions/workflows/ci.yml) 在 wasm、wasm-gc、js、native 上执行 `moon check --deny-warn`、`moon build`、`moon test`，并检查格式、公开接口、CLI、网页和 hid-tools 对照；[Windows 工作流](https://github.com/We1chan/moonhid/actions/workflows/windows.yml) 以 CRLF 检出运行快速验收 |
 | 6. 可运行示例 | `moon run src/cmd/main` 解码鼠标、键盘、手柄样例，`moon run src/cmd/scenarios` 运行四场景；本页 `mbt check` 代码块作为测试执行。[四场景示例](https://github.com/We1chan/moonhid/blob/main/docs/scenarios.md)、[示例数据](https://github.com/We1chan/moonhid/tree/main/examples) |
 | 7. 完整测试 | 123 个 MoonBit 测试在四后端运行，覆盖 HEX、条目、布局、解码、编码、Usage 访问、lint、构建器、声明、资源上限、模糊输入和七份真实描述符；Node 脚本测试 CLI、浏览器桥接与离线包，hid-tools 独立对照布局和编解码。[完整报告案例](https://github.com/We1chan/moonhid/blob/main/docs/report-cases.md)、[模糊测试](https://github.com/We1chan/moonhid/blob/main/docs/fuzz-validation.md) |
-| 8. 发布到 mooncakes.io | [We1chan/moonhid](https://mooncakes.io/docs/We1chan/moonhid)；各版本注册表全新安装记录见 [Release](https://github.com/We1chan/moonhid/releases) 对应的发布说明 |
+| 8. 发布到 mooncakes.io | [Mooncakes 0.6.2](https://mooncakes.io/docs/We1chan/moonhid@0.6.2) 已用 RC1 独立安装，四后端 API 测试各通过 14 项。[复现步骤](https://github.com/We1chan/moonhid/blob/main/docs/acceptance.md#mooncakes-安装复测) |
 | 9. OSI 许可证 | Apache-2.0；核心按公开协议独立实现。TinyUSB 0.21.0 派生的两个模板及测试数据随附 MIT 许可全文与版权声明，实机数据注明采集来源。[LICENSE](https://github.com/We1chan/moonhid/blob/main/LICENSE)、[NOTICE](https://github.com/We1chan/moonhid/blob/main/NOTICE)、[第三方材料声明](https://github.com/We1chan/moonhid/blob/main/THIRD_PARTY_NOTICES.md)、[真实设备来源](https://github.com/We1chan/moonhid/blob/main/docs/real-devices.md) |
 
 AI 工具的分工、质量控制和纠错记录见 [AI 协作说明](https://github.com/We1chan/moonhid/blob/main/docs/ai-collaboration.md)。

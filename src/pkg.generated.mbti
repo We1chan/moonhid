@@ -3,6 +3,7 @@ package "We1chan/moonhid"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -14,7 +15,7 @@ pub fn clear_usages(Layout, ReportKind, Bytes, Array[Usage]) -> Result[Bytes, Di
 
 pub fn compile_descriptor(Bytes) -> Result[Layout, Diagnostic]
 
-pub fn declaration_from_descriptor(Bytes) -> Result[Json, Diagnostic]
+pub fn declaration_from_descriptor(Bytes) -> Result[@json.Json, Diagnostic]
 
 pub fn decode_report(Layout, ReportKind, Bytes) -> Result[DecodedReport, Diagnostic]
 
@@ -22,9 +23,9 @@ pub fn decode_unit(Int64) -> Result[UnitDimensions, Diagnostic]
 
 pub fn descriptor_from_declaration(String) -> Result[Bytes, Diagnostic]
 
-pub fn descriptor_to_json(Bytes) -> Result[Json, Diagnostic]
+pub fn descriptor_to_json(Bytes) -> Result[@json.Json, Diagnostic]
 
-pub fn diagnostic_to_json(Diagnostic) -> Json
+pub fn diagnostic_to_json(Diagnostic) -> @json.Json
 
 pub fn effective_physical_range(Field) -> (Int64, Int64)
 
@@ -48,11 +49,11 @@ pub fn insert_bits(Bytes, Int32, Int32, Int64, signed? : Bool) -> Result[Bytes, 
 
 pub fn insert_bytes(Bytes, Int32, Int32, Bytes) -> Result[Bytes, Diagnostic]
 
-pub fn layout_to_json(Layout) -> Json
+pub fn layout_to_json(Layout) -> @json.Json
 
 pub fn lint_descriptor(Bytes) -> Result[Array[Lint], Diagnostic]
 
-pub fn lint_to_json(Lint) -> Json
+pub fn lint_to_json(Lint) -> @json.Json
 
 pub fn list_reports(Layout) -> Result[Array[ReportInfo], Diagnostic]
 
@@ -72,7 +73,7 @@ pub fn report_kind_name(ReportKind) -> String
 
 pub fn report_length(Layout, ReportKind, Int32) -> Result[Int32, Diagnostic]
 
-pub fn report_to_json(DecodedReport) -> Json
+pub fn report_to_json(DecodedReport) -> @json.Json
 
 pub fn serialize_items(Array[Item]) -> Result[Bytes, Diagnostic]
 
@@ -91,15 +92,17 @@ pub fn write_field(Layout, ReportKind, Bytes, Int32, Int32, ReportValue, allow_o
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct BufferedValue {
   field_index : Int32
   bit_offset : Int32
   bytes : Bytes
-} derive(Eq, @debug.Debug)
+}
 pub fn BufferedValue::equal(Self, Self) -> Bool
 pub fn BufferedValue::not_equal(Self, Self) -> Bool
 pub fn BufferedValue::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Collection {
   descriptor_offset : Int32
   end_offset : Int32
@@ -109,22 +112,24 @@ pub(all) struct Collection {
   designator_spans : Array[IndexSpan]
   alternate_usages : Array[Array[UsageSpan]]
   parent_index : Int32?
-} derive(Eq, @debug.Debug)
+}
 pub fn Collection::equal(Self, Self) -> Bool
 pub fn Collection::not_equal(Self, Self) -> Bool
 pub fn Collection::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct DecodedReport {
   kind : ReportKind
   report_id : Int32
   values : Array[DecodedValue]
   opaque_values : Array[OpaqueValue]
   buffered_values : Array[BufferedValue]
-} derive(Eq, @debug.Debug)
+}
 pub fn DecodedReport::equal(Self, Self) -> Bool
 pub fn DecodedReport::not_equal(Self, Self) -> Bool
 pub fn DecodedReport::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct DecodedValue {
   field_index : Int32
   element_index : Int32
@@ -134,7 +139,7 @@ pub(all) struct DecodedValue {
   is_array : Bool
   in_logical_range : Bool
   is_null : Bool
-} derive(Eq, @debug.Debug)
+}
 pub fn DecodedValue::equal(Self, Self) -> Bool
 pub fn DecodedValue::not_equal(Self, Self) -> Bool
 pub fn DecodedValue::to_repr(Self) -> @debug.Repr
@@ -164,15 +169,17 @@ pub fn DescriptorBuilder::usage(Self, Int32) -> Self
 pub fn DescriptorBuilder::usage_page(Self, Int32) -> Self
 pub fn DescriptorBuilder::usage_range(Self, Int32, Int32) -> Self
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Diagnostic {
   offset : Int32
   code : String
   message : String
-} derive(Eq, @debug.Debug)
+}
 pub fn Diagnostic::equal(Self, Self) -> Bool
 pub fn Diagnostic::not_equal(Self, Self) -> Bool
 pub fn Diagnostic::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Field {
   descriptor_offset : Int32
   kind : ReportKind
@@ -192,105 +199,116 @@ pub(all) struct Field {
   string_spans : Array[IndexSpan]
   designator_spans : Array[IndexSpan]
   alternate_usages : Array[Array[UsageSpan]]
-} derive(Eq, @debug.Debug)
+}
 pub fn Field::equal(Self, Self) -> Bool
 pub fn Field::not_equal(Self, Self) -> Bool
 pub fn Field::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct FieldRef {
   field_index : Int32
   element_index : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn FieldRef::equal(Self, Self) -> Bool
 pub fn FieldRef::not_equal(Self, Self) -> Bool
 pub fn FieldRef::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct IndexSpan {
   min : Int64
   max : Int64
-} derive(Eq, @debug.Debug)
+}
 pub fn IndexSpan::equal(Self, Self) -> Bool
 pub fn IndexSpan::not_equal(Self, Self) -> Bool
 pub fn IndexSpan::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Item {
   offset : Int32
   type_code : Int32
   tag : Int32
   data : Bytes
   is_long : Bool
-} derive(Eq, @debug.Debug)
+}
 pub fn Item::equal(Self, Self) -> Bool
 pub fn Item::not_equal(Self, Self) -> Bool
 pub fn Item::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Layout {
   fields : Array[Field]
   collections : Array[Collection]
   has_report_ids : Bool
-} derive(Eq, @debug.Debug)
+}
 pub fn Layout::equal(Self, Self) -> Bool
 pub fn Layout::not_equal(Self, Self) -> Bool
 pub fn Layout::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Lint {
   offset : Int32
   code : String
   level : LintLevel
   message : String
   field_index : Int32?
-} derive(Eq, @debug.Debug)
+}
 pub fn Lint::equal(Self, Self) -> Bool
 pub fn Lint::not_equal(Self, Self) -> Bool
 pub fn Lint::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum LintLevel {
   Warning
   Info
-} derive(Eq, @debug.Debug)
+}
 pub fn LintLevel::equal(Self, Self) -> Bool
 pub fn LintLevel::not_equal(Self, Self) -> Bool
 pub fn LintLevel::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct OpaqueValue {
   field_index : Int32
   element_index : Int32
   bit_offset : Int32
   bit_size : Int32
   bytes : Bytes
-} derive(Eq, @debug.Debug)
+}
 pub fn OpaqueValue::equal(Self, Self) -> Bool
 pub fn OpaqueValue::not_equal(Self, Self) -> Bool
 pub fn OpaqueValue::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ReportInfo {
   kind : ReportKind
   report_id : Int32
   payload_bits : Int32
   byte_length : Int32
   data_count : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn ReportInfo::equal(Self, Self) -> Bool
 pub fn ReportInfo::not_equal(Self, Self) -> Bool
 pub fn ReportInfo::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum ReportKind {
   Input
   Output
   Feature
-} derive(Eq, @debug.Debug)
+}
 pub fn ReportKind::equal(Self, Self) -> Bool
 pub fn ReportKind::not_equal(Self, Self) -> Bool
 pub fn ReportKind::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum ReportValue {
   Integer(Int64)
   Raw(Bytes)
-} derive(Eq, @debug.Debug)
+}
 pub fn ReportValue::equal(Self, Self) -> Bool
 pub fn ReportValue::not_equal(Self, Self) -> Bool
 pub fn ReportValue::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct UnitDimensions {
   raw : Int64
   system : Int32
@@ -301,24 +319,26 @@ pub(all) struct UnitDimensions {
   current : Int32
   luminous_intensity : Int32
   reserved : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn UnitDimensions::equal(Self, Self) -> Bool
 pub fn UnitDimensions::not_equal(Self, Self) -> Bool
 pub fn UnitDimensions::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Usage {
   page : Int32
   id : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn Usage::equal(Self, Self) -> Bool
 pub fn Usage::not_equal(Self, Self) -> Bool
 pub fn Usage::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct UsageSpan {
   page : Int32
   min : Int32
   max : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn UsageSpan::equal(Self, Self) -> Bool
 pub fn UsageSpan::not_equal(Self, Self) -> Bool
 pub fn UsageSpan::to_repr(Self) -> @debug.Repr

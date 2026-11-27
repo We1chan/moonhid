@@ -1,9 +1,10 @@
 ///|
 /// Warning identifies a likely mapping/structure problem; Info is advisory.
+#derive(Debug, Eq)
 pub(all) enum LintLevel {
   Warning
   Info
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend LintLevel with @debug.Debug::{to_repr}
@@ -14,13 +15,14 @@ pub extend LintLevel with Eq::{equal, not_equal}
 ///|
 /// offset is a descriptor item byte offset; field_index indexes Layout.fields.
 /// Codes and levels are documented in docs/lint.md. Messages are explanatory.
+#derive(Debug, Eq)
 pub(all) struct Lint {
   offset : Int32
   code : String
   level : LintLevel
   message : String
   field_index : Int32?
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Lint with @debug.Debug::{to_repr}
