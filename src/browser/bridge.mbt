@@ -138,7 +138,7 @@ pub fn write_wire_field(
   }
   let value = match current {
     @hid.Integer(_) => {
-      let value = @string.parse_int64(value_text.trim(), base=10) catch {
+      let value = @string.parse_int64(value_text.trim(), radix=10) catch {
         _ =>
           return failure("field_value", {
             offset: 0,

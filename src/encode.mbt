@@ -1,10 +1,11 @@
 ///|
 /// Integer values use the field's signedness; Raw values are packed LSB-first.
 /// A Buffered Bytes Main item takes one Raw value of Size * Count / 8 bytes.
+#derive(Debug, Eq)
 pub(all) enum ReportValue {
   Integer(Int64)
   Raw(Bytes)
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend ReportValue with @debug.Debug::{to_repr}
@@ -416,10 +417,11 @@ pub fn find_fields(
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct FieldRef {
   field_index : Int32
   element_index : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend FieldRef with @debug.Debug::{to_repr}

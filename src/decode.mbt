@@ -1,4 +1,5 @@
 ///|
+#derive(Debug, Eq)
 pub(all) struct DecodedValue {
   field_index : Int32
   element_index : Int32
@@ -8,7 +9,7 @@ pub(all) struct DecodedValue {
   is_array : Bool
   in_logical_range : Bool
   is_null : Bool
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend DecodedValue with @debug.Debug::{to_repr}
@@ -18,13 +19,14 @@ pub extend DecodedValue with Eq::{equal, not_equal}
 
 ///|
 /// Values wider than 32 bits remain raw bytes with zero-filled trailing high bits.
+#derive(Debug, Eq)
 pub(all) struct OpaqueValue {
   field_index : Int32
   element_index : Int32
   bit_offset : Int32
   bit_size : Int32
   bytes : Bytes
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend OpaqueValue with @debug.Debug::{to_repr}
@@ -35,11 +37,12 @@ pub extend OpaqueValue with Eq::{equal, not_equal}
 ///|
 /// A complete HID 1.11 Buffered Bytes Main item, with a payload bit offset.
 /// Contents are application-defined and have no integer, Array or Null meaning.
+#derive(Debug, Eq)
 pub(all) struct BufferedValue {
   field_index : Int32
   bit_offset : Int32
   bytes : Bytes
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend BufferedValue with @debug.Debug::{to_repr}
@@ -48,13 +51,14 @@ pub extend BufferedValue with @debug.Debug::{to_repr}
 pub extend BufferedValue with Eq::{equal, not_equal}
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct DecodedReport {
   kind : ReportKind
   report_id : Int32
   values : Array[DecodedValue]
   opaque_values : Array[OpaqueValue]
   buffered_values : Array[BufferedValue]
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend DecodedReport with @debug.Debug::{to_repr}

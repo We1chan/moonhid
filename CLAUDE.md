@@ -6,7 +6,7 @@ MoonHID (`We1chan/moonhid`) is a pure MoonBit library that parses USB HID report
 
 ## Commands
 
-`toolchain.json` pins the MoonBit, moon, Node and hid-tools versions that CI installs (`.github/actions/setup-moon`). A separate CI job also runs check/test on js with the latest MoonBit. That job passes `--warn-list -deprecated_syntax`: moonc 0.10.20 deprecates the trailing `} derive(...)`, but 0.10.16 and 0.10.18 reject the replacement `#derive(...)` as an unknown attribute, so keep the trailing form until the minimum version moves past 0.10.18. The installer puts `moon` in `~/.moon/bin`, which may not be on `PATH` in a non-interactive shell. If `moon` isn't found, prepend that directory.
+`toolchain.json` pins the MoonBit, moon, Node and hid-tools versions that CI installs (`.github/actions/setup-moon`). A separate CI job also runs check/test on js with the latest MoonBit. Both jobs treat compiler warnings as errors. Use `#derive(...)` before type declarations. The installer puts `moon` in `~/.moon/bin`, which may not be on `PATH` in a non-interactive shell. If `moon` isn't found, prepend that directory.
 
 ```sh
 moon check --target all --deny-warn    # CI treats warnings as errors (the pre-commit hook runs `moon check --deny-warn`)
@@ -72,7 +72,7 @@ Cross-cutting invariants:
 - Size limits (descriptor 65536 B, 4096 fields, 1..32 bits/integer or opaque Variable fields, at most 65536 values/field within 65536 bits/report, 1024 Usage spans, 4096 collections, stack depth 64) are enforced in `compile_descriptor`. `report_length` re-checks them because callers can build `Layout` values by hand.
 - JSON v2 (`docs/json-v2.md`) is versioned. An incompatible change to fields or semantics must bump `schema_version`. Encode `Int64` with `number64` (`Json::number`), because the default `ToJson` emits strings.
 - Use `Json(value)` for primitive JSON conversions. Direct `.to_json()` calls have been deprecated since the 0.10.15 toolchain and fail `--deny-warn`. Keep explicit numeric `number64` conversion for HID Int64 values.
-- The competition requires moonc 0.10.16 or later; `toolchain.json` pins 0.10.18. Its formatter writes `Int32`/`UInt32` and optional parameters as `label~ : T = default`, and 0.10.16 also accepts that output. Check new syntax against 0.10.16 before relying on it.
+- The November competition requires moonc 1.0.0-rc1 or later. Run formatting, interface generation and tests with the version pinned in `toolchain.json`.
 
 **Other packages:**
 - `src/examples/`: synthetic mouse, keyboard and gamepad `Fixture`s shared by `cmd/main`, `browser`, the tests and the web UI. `scripts/test-web.mjs` asserts the fixture names and their order. The keyboard LED output report `03` is hard-coded in `src/browser/bridge.mbt` `examples_json`, not stored in `Fixture`. The toplevel `examples/` directory holds device data and firmware CI examples.

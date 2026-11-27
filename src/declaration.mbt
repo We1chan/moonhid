@@ -95,7 +95,7 @@ fn DeclarationContext::number(
       number <= 4294967295.0 &&
       number.to_int64().to_double() == number => number.to_int64()
     String(text) if text.has_prefix("0x") || text.has_prefix("-0x") =>
-      @string.parse_int64(text, base=16) catch {
+      @string.parse_int64(text, radix=16) catch {
         _ => {
           self.reject(path, "Invalid hexadecimal integer")
           return 0L

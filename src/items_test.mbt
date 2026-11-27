@@ -38,7 +38,7 @@ test "truncated items return the offending prefix offset" {
   }
   assert_true(@moonhid.parse_items(b"\xc0\x27\xff") is Err({ offset: 1, .. }))
   assert_true(
-    @moonhid.parse_items(Bytes::new(65537))
+    @moonhid.parse_items(Bytes::make(65537, b'\x00'))
     is Err({ code: "descriptor_limit", .. }),
   )
 }
